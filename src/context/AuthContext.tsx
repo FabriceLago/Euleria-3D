@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { onIdTokenChanged, signInWithPopup, signOut, User as FirebaseUser } from 'firebase/auth';
 import { auth, googleAuthProvider } from '../lib/firebase.ts';
+import { apiUrl } from '../lib/api.ts';
 import type {
   BadgeItem,
   ChapterProgress,
@@ -51,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (activeToken) {
       headers.set('Authorization', `Bearer ${activeToken}`);
     }
-    return fetch(url, { ...options, headers });
+    return fetch(apiUrl(url), { ...options, headers });
   }, []);
 
   const refreshDashboard = useCallback(async () => {
@@ -135,6 +136,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (code === 'auth/popup-blocked') {
           setAuthError(
             'La fenêtre de connexion Google a été bloquée par votre navigateur. Veuillez autoriser les fenêtres pop-up pour ce site.'
+          );
+          return false;
+        }
+
+        if (code === 'auth/unauthorized-domain') {
+          setAuthError(
+            `Le domaine « ${window.location.hostname} » n'est pas encore autorisé dans Firebase Authentication (Console Firebase → Authentication → Settings → Authorized domains).`
           );
           return false;
         }

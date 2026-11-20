@@ -8,7 +8,12 @@ import {
   Send,
   TrendingUp,
 } from 'lucide-react';
-import { GRADE_LEVELS } from '../db/curriculumData.ts';
+import { GRADE_LEVELS, SEED_CHAPTERS } from '../db/curriculumData.ts';
+import {
+  computeRealTimePrediction,
+  evaluateExerciseAnswer,
+  type AttemptSample,
+} from '../services/predictionEngine.ts';
 import type {
   AccentColor,
   BadgeItem,
@@ -33,6 +38,7 @@ interface ChapterWorkspaceProps {
   layoutDensity: LayoutDensity;
   showGrid: boolean;
   isAuthenticated: boolean;
+  backendAvailable?: boolean;
   signingIn?: boolean;
   onRequireSignIn: () => Promise<boolean>;
   apiFetch: (url: string, options?: RequestInit) => Promise<Response>;
@@ -62,6 +68,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
   layoutDensity,
   showGrid,
   isAuthenticated,
+  backendAvailable = true,
   signingIn = false,
   onRequireSignIn,
   apiFetch,
@@ -98,6 +105,9 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
     newBadges?: BadgeItem[];
   } | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [localAttemptsByChapter, setLocalAttemptsByChapter] = useState<
+    Record<number, Array<AttemptSample & { exerciseId: number }>>
+  >({});
 
   const startTimeRef = useRef<number>(performance.now());
 
@@ -125,10 +135,73 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
 
   const handleSubmitAnswer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeExercise || !answerInput.trim() || submitting || signingIn) return;
+    if (!activeExercise || !activeChapter || !answerInput.trim() || submitting || signingIn) return;
 
     setSubmitting(true);
     setSubmitError(null);
+    const responseTimeMs = Math.round(performance.now() - startTimeRef.current);
+
+    // Mode autonome (hébergement statique sans backend Cloud Run relié) :
+    // Évaluation réelle des exercices + moteur prédictif BKT/EWMA dans le navigateur.
+    if (!backendAvailable) {
+      const seedChap = SEED_CHAPTERS.find((c) => c.slug === activeChapter.slug);
+      const seedEx = seedChap?.exercises.find((ex) => ex.orderIndex === activeExercise.orderIndex);
+      if (seedEx) {
+        const isCorrect = evaluateExerciseAnswer(
+          seedEx.exerciseType,
+          answerInput.trim(),
+          seedEx.correctAnswer,
+          seedEx.numericTolerance
+        );
+        const prevAttempts = localAttemptsByChapter[activeChapter.id] || [];
+        const nextAttempts = [
+          ...prevAttempts,
+          {
+            exerciseId: activeExercise.id,
+            isCorrect,
+            responseTimeMs,
+            createdAt: new Date(),
+          },
+        ];
+        setLocalAttemptsByChapter((prev) => ({
+          ...prev,
+          [activeChapter.id]: nextAttempts,
+        }));
+        const solvedCount = new Set(
+          nextAttempts.filter((a) => a.isCorrect).map((a) => a.exerciseId)
+        ).size;
+        const totalCount = activeChapter.exercises.length;
+        const prediction = computeRealTimePrediction(nextAttempts, totalCount, solvedCount);
+
+        const localProgress: ChapterProgress = {
+          id: activeChapter.id,
+          userId: 0,
+          chapterId: activeChapter.id,
+          completedExercisesCount: solvedCount,
+          totalExercisesCount: totalCount,
+          masteryScore: prediction.masteryScore,
+          predictedSuccessRate: prediction.predictedSuccessRate,
+          status:
+            solvedCount >= totalCount
+              ? 'completed'
+              : nextAttempts.length > 0
+                ? 'in_progress'
+                : 'not_started',
+          lastPracticedAt: new Date().toISOString(),
+          completedAt: solvedCount >= totalCount ? new Date().toISOString() : null,
+        };
+
+        setFeedback({
+          isCorrect,
+          explanation: seedEx.explanation,
+          xpEarned: isCorrect ? seedEx.xpValue : 0,
+          prediction,
+        });
+        onAttemptRecorded(localProgress, 0, []);
+      }
+      setSubmitting(false);
+      return;
+    }
 
     if (!isAuthenticated) {
       const signedIn = await onRequireSignIn();
@@ -137,8 +210,6 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
         return;
       }
     }
-
-    const responseTimeMs = Math.round(performance.now() - startTimeRef.current);
 
     try {
       const res = await apiFetch('/api/progress/attempt', {
