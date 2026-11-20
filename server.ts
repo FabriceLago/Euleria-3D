@@ -1,3 +1,5 @@
+import 'dotenv/config';
+import fs from 'fs';
 import http from 'http';
 import path from 'path';
 import express from 'express';
@@ -18,7 +20,11 @@ import {
 } from './src/db/learning.ts';
 
 const PORT = Number(process.env.PORT) || 3000;
-const IS_PROD = process.env.NODE_ENV === 'production';
+const DIST_DIR = path.resolve(process.cwd(), 'dist');
+const RUNNING_UNDER_TSX = process.execArgv.some((arg) => arg.includes('tsx'));
+const IS_PROD =
+  process.env.NODE_ENV === 'production' ||
+  (!RUNNING_UNDER_TSX && fs.existsSync(path.join(DIST_DIR, 'index.html')));
 
 interface ConnectedClient {
   ws: WebSocket;
@@ -291,10 +297,9 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distDir = path.resolve(process.cwd(), 'dist');
-    app.use(express.static(distDir));
+    app.use(express.static(DIST_DIR));
     app.get('*', (_req, res) => {
-      res.sendFile(path.join(distDir, 'index.html'));
+      res.sendFile(path.join(DIST_DIR, 'index.html'));
     });
   }
 
