@@ -19,6 +19,7 @@ interface AuthContextValue {
   signingIn: boolean;
   authError: string | null;
   idToken: string | null;
+  getFreshIdToken: (forceRefresh?: boolean) => Promise<string | null>;
   signInWithGoogle: () => Promise<boolean>;
   logout: () => Promise<void>;
   refreshDashboard: () => Promise<void>;
@@ -43,17 +44,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const tokenRef = useRef<string | null>(null);
   const signInPromiseRef = useRef<Promise<boolean> | null>(null);
 
-  const apiFetch = useCallback(async (url: string, options: RequestInit = {}) => {
-    const headers = new Headers(options.headers);
-    if (!headers.has('Content-Type') && options.body) {
-      headers.set('Content-Type', 'application/json');
+  const getFreshIdToken = useCallback(async (forceRefresh = false): Promise<string | null> => {
+    if (!auth.currentUser) {
+      return null;
     }
-    const activeToken = auth.currentUser ? await auth.currentUser.getIdToken() : tokenRef.current;
-    if (activeToken) {
-      headers.set('Authorization', `Bearer ${activeToken}`);
+    try {
+      const token = await auth.currentUser.getIdToken(forceRefresh);
+      tokenRef.current = token;
+      setIdToken(token);
+      return token;
+    } catch {
+      return null;
     }
-    return fetch(apiUrl(url), { ...options, headers });
   }, []);
+
+  const apiFetch = useCallback(
+    async (url: string, options: RequestInit = {}) => {
+      const buildHeaders = (token: string | null) => {
+        const headers = new Headers(options.headers);
+        if (!headers.has('Content-Type') && options.body) {
+          headers.set('Content-Type', 'application/json');
+        }
+        if (token) {
+          headers.set('Authorization', `Bearer ${token}`);
+        }
+        return headers;
+      };
+
+      const activeToken = auth.currentUser ? await getFreshIdToken(false) : tokenRef.current;
+      let response = await fetch(apiUrl(url), { ...options, headers: buildHeaders(activeToken) });
+
+      if (response.status === 401 && auth.currentUser) {
+        const refreshedToken = await getFreshIdToken(true);
+        if (refreshedToken && refreshedToken !== activeToken) {
+          response = await fetch(apiUrl(url), {
+            ...options,
+            headers: buildHeaders(refreshedToken),
+          });
+        }
+      }
+
+      return response;
+    },
+    [getFreshIdToken]
+  );
 
   const refreshDashboard = useCallback(async () => {
     if (!auth.currentUser) {
@@ -202,6 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signingIn,
         authError,
         idToken,
+        getFreshIdToken,
         signInWithGoogle,
         logout,
         refreshDashboard,

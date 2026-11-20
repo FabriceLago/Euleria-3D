@@ -21,7 +21,17 @@ export const requireAuth = async (
     const decodedToken = await adminAuth.verifyIdToken(token);
     req.user = decodedToken;
     next();
-  } catch (error) {
+  } catch (error: unknown) {
+    const code =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: unknown }).code)
+        : '';
+    if (code === 'auth/id-token-expired') {
+      return res.status(401).json({
+        error: 'Session expirée, renouvellement du jeton requis.',
+        code: 'auth/id-token-expired',
+      });
+    }
     console.error('Error verifying Firebase ID token:', error);
     return res.status(401).json({ error: 'Authentification invalide ou expirée.' });
   }

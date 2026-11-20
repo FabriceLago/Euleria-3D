@@ -277,17 +277,43 @@ async function startServer() {
       try {
         const data = JSON.parse(raw.toString());
         if (data.type === 'auth' && typeof data.token === 'string') {
-          const decoded = await adminAuth.verifyIdToken(data.token);
-          const dbUser = await getOrCreateUser(
-            decoded.uid,
-            decoded.email || `${decoded.uid}@euleria.local`,
-            decoded.name,
-            decoded.picture
-          );
-          client.userUid = dbUser.uid;
-          client.displayName = dbUser.displayName;
-          client.gradeLevel = dbUser.gradeLevel;
-          broadcastPresence();
+          try {
+            const decoded = await adminAuth.verifyIdToken(data.token);
+            const dbUser = await getOrCreateUser(
+              decoded.uid,
+              decoded.email || `${decoded.uid}@euleria.local`,
+              decoded.name,
+              decoded.picture
+            );
+            client.userUid = dbUser.uid;
+            client.displayName = dbUser.displayName;
+            client.gradeLevel = dbUser.gradeLevel;
+            broadcastPresence();
+          } catch (authErr: unknown) {
+            const code =
+              typeof authErr === 'object' && authErr !== null && 'code' in authErr
+                ? String((authErr as { code?: unknown }).code)
+                : '';
+
+            client.userUid = null;
+            if (code === 'auth/id-token-expired') {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ event: 'auth:expired' }));
+              }
+              return;
+            }
+            if (
+              code === 'auth/argument-error' ||
+              code === 'auth/invalid-id-token' ||
+              code === 'auth/id-token-revoked'
+            ) {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ event: 'auth:invalid' }));
+              }
+              return;
+            }
+            console.error('WebSocket auth error:', authErr);
+          }
         } else if (data.type === 'room:join' && typeof data.roomSlug === 'string') {
           client.roomSlug = data.roomSlug;
           broadcastPresence();

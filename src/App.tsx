@@ -54,13 +54,14 @@ function buildLocalCurriculum(): ChapterItem[] {
 
 const PlatformShell: React.FC = () => {
   const {
+    firebaseUser,
     profile,
     progress,
     badges,
     overallPrediction,
-    idToken,
     signingIn,
     authError,
+    getFreshIdToken,
     signInWithGoogle,
     logout,
     apiFetch,
@@ -199,18 +200,28 @@ const PlatformShell: React.FC = () => {
     function connectWs() {
       const ws = new WebSocket(wsUrl('/ws'));
       wsRef.current = ws;
+      let retriedExpiredAuth = false;
 
-      ws.onopen = () => {
+      ws.onopen = async () => {
         ws.send(JSON.stringify({ type: 'room:join', roomSlug: activeRoomRef.current }));
-        if (idToken) {
-          ws.send(JSON.stringify({ type: 'auth', token: idToken }));
+        const freshToken = await getFreshIdToken(false);
+        if (!closedByUnmount && freshToken && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'auth', token: freshToken }));
         }
       };
 
-      ws.onmessage = (evt) => {
+      ws.onmessage = async (evt) => {
         try {
           const msg = JSON.parse(evt.data);
-          if (msg.event === 'leaderboard:updated' && Array.isArray(msg.payload?.leaderboard)) {
+          if (msg.event === 'auth:expired') {
+            if (!retriedExpiredAuth) {
+              retriedExpiredAuth = true;
+              const refreshedToken = await getFreshIdToken(true);
+              if (!closedByUnmount && refreshedToken && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'auth', token: refreshedToken }));
+              }
+            }
+          } else if (msg.event === 'leaderboard:updated' && Array.isArray(msg.payload?.leaderboard)) {
             setLeaderboard(msg.payload.leaderboard);
           } else if (msg.event === 'presence:update' && msg.payload) {
             setOnlineCount(msg.payload.onlineCount ?? 1);
@@ -244,7 +255,7 @@ const PlatformShell: React.FC = () => {
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [idToken, backendAvailable]);
+  }, [firebaseUser?.uid, backendAvailable, getFreshIdToken]);
 
   const handleUpdatePreferences = async (prefs: {
     displayName?: string;
