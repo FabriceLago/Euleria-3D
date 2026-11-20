@@ -2,12 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { AppSection, TopBar } from './components/TopBar.tsx';
 import { ChapterWorkspace } from './components/ChapterWorkspace.tsx';
+import { DynamicQuizView } from './components/DynamicQuizView.tsx';
 import { Studio3DView } from './components/Studio3DView.tsx';
 import { LeaderboardView } from './components/LeaderboardView.tsx';
 import { CollaborationView } from './components/CollaborationView.tsx';
 import { CustomizationDrawer } from './components/CustomizationDrawer.tsx';
 import { apiUrl, wsUrl } from './lib/api.ts';
-import { SEED_CHAPTERS, SEED_ROOMS } from './db/curriculumData.ts';
+import { ALL_SEED_CHAPTERS, ALL_SEED_ROOMS } from './db/curriculumData.ts';
 import type {
   AccentColor,
   ChapterItem,
@@ -16,17 +17,18 @@ import type {
   LayoutDensity,
   LeaderboardEntry,
   StudyRoom,
+  SubjectId,
   ThemeMode,
 } from './types/learning.ts';
 
 function buildLocalCurriculum(): ChapterItem[] {
   let exIdCounter = 1;
-  return SEED_CHAPTERS.map((ch, idx) => {
+  return ALL_SEED_CHAPTERS.map((ch, idx) => {
     const chapterId = idx + 1;
     return {
       id: chapterId,
       slug: ch.slug,
-      subject: 'mathematics',
+      subject: ch.subject || 'mathematics',
       gradeLevel: ch.gradeLevel,
       orderIndex: ch.orderIndex,
       title: ch.title,
@@ -66,6 +68,7 @@ const PlatformShell: React.FC = () => {
     logout,
     apiFetch,
     updateLocalProgress,
+    applyXpAndBadges,
     setProfileState,
   } = useAuth();
 
@@ -77,8 +80,10 @@ const PlatformShell: React.FC = () => {
   const [accentColor, setAccentColor] = useState<AccentColor>('indigo');
   const [layoutDensity, setLayoutDensity] = useState<LayoutDensity>('comfortable');
   const [show3DHints, setShow3DHints] = useState<boolean>(true);
+  const [selectedSubject, setSelectedSubject] = useState<SubjectId>('mathematics');
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel>('6e');
   const [selectedChapterId, setSelectedChapterId] = useState<number | null>(null);
+  const [quizSeedChapterIds, setQuizSeedChapterIds] = useState<number[] | undefined>(undefined);
 
   // Données temps réel depuis Cloud SQL PostgreSQL
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
@@ -97,15 +102,28 @@ const PlatformShell: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null);
   const activeRoomRef = useRef<string>(activeRoomSlug);
   activeRoomRef.current = activeRoomSlug;
+  const lastProfileUidRef = useRef<string | null>(null);
+  const lastProfileGradeRef = useRef<string | null>(null);
 
-  // Synchronise les préférences depuis le profil PostgreSQL
+  // Synchronise les préférences depuis le profil PostgreSQL sans réinitialiser la classe lors d'un gain d'XP
   useEffect(() => {
-    if (!profile) return;
+    if (!profile) {
+      lastProfileUidRef.current = null;
+      lastProfileGradeRef.current = null;
+      return;
+    }
     setThemeMode((profile.themeMode as ThemeMode) || 'light');
     setAccentColor((profile.accentColor as AccentColor) || 'indigo');
     setLayoutDensity((profile.layoutDensity as LayoutDensity) || 'comfortable');
     setShow3DHints(profile.show3DHints ?? true);
-    setSelectedGrade((profile.gradeLevel as GradeLevel) || '6e');
+
+    const isNewUserSession = lastProfileUidRef.current !== profile.uid;
+    const gradeChangedInProfile = lastProfileGradeRef.current !== profile.gradeLevel;
+    if (isNewUserSession || gradeChangedInProfile) {
+      setSelectedGrade((profile.gradeLevel as GradeLevel) || '6e');
+      lastProfileUidRef.current = profile.uid;
+      lastProfileGradeRef.current = profile.gradeLevel;
+    }
   }, [profile]);
 
   // Applique la classe .dark sur <html> pour Tailwind v4 @custom-variant dark
@@ -153,7 +171,7 @@ const PlatformShell: React.FC = () => {
         setChapters(buildLocalCurriculum());
         setLeaderboard([]);
         setRooms(
-          SEED_ROOMS.map((r, i) => ({
+          ALL_SEED_ROOMS.map((r, i) => ({
             id: i + 1,
             slug: r.slug,
             name: r.name,
@@ -288,6 +306,7 @@ const PlatformShell: React.FC = () => {
   };
 
   const handleOpenChapter = (chapter: ChapterItem) => {
+    setSelectedSubject(chapter.subject || 'mathematics');
     setSelectedGrade(chapter.gradeLevel);
     setSelectedChapterId(chapter.id);
     setActiveSection('curriculum');
@@ -323,7 +342,7 @@ const PlatformShell: React.FC = () => {
       {!loadingCurriculum && !backendAvailable && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
           <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-xs text-amber-800 dark:text-amber-200">
-            Hébergement statique détecté (API backend non reliée) : les 21 chapitres, modèles 3D WebGL et 63 exercices restent pleinement utilisables. Pour activer la synchronisation Cloud SQL, le classement et le chat temps réel, déployez sur Google Cloud Run ou configurez <span className="font-mono">VITE_API_BASE_URL</span>.
+            Hébergement statique détecté (API backend non reliée) : les 63 chapitres (Maths, Physique-Chimie & SQL), modèles 3D WebGL et 189 exercices restent pleinement utilisables. Pour activer la synchronisation Cloud SQL, le classement et le chat temps réel, déployez sur Google Cloud Run ou configurez <span className="font-mono">VITE_API_BASE_URL</span>.
           </div>
         </div>
       )}
@@ -353,11 +372,16 @@ const PlatformShell: React.FC = () => {
       <main className="pb-14">
         {loadingCurriculum ? (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-sm text-slate-500 dark:text-slate-400">
-            Initialisation du programme de mathématiques et du moteur WebGL...
+            Initialisation des programmes scientifiques et du moteur WebGL...
           </div>
         ) : activeSection === 'curriculum' ? (
           <ChapterWorkspace
             chapters={chapters}
+            selectedSubject={selectedSubject}
+            onSelectSubject={(subj) => {
+              setSelectedSubject(subj);
+              setSelectedChapterId(null);
+            }}
             selectedGrade={selectedGrade}
             onSelectGrade={(g) => setSelectedGrade(g)}
             selectedChapterId={selectedChapterId}
@@ -381,10 +405,35 @@ const PlatformShell: React.FC = () => {
                   .catch(() => {});
               }
             }}
+            onLaunchDynamicQuiz={(chapterId) => {
+              setQuizSeedChapterIds([chapterId]);
+              setActiveSection('quiz');
+            }}
+          />
+        ) : activeSection === 'quiz' ? (
+          <DynamicQuizView
+            chapters={chapters}
+            initialChapterIds={quizSeedChapterIds}
+            profile={profile}
+            accentColor={accentColor}
+            backendAvailable={backendAvailable}
+            onSignIn={signInWithGoogle}
+            apiFetch={apiFetch}
+            onXpSynced={(newTotalXp, newBadges) => {
+              applyXpAndBadges(newTotalXp, newBadges);
+              if (backendAvailable) {
+                fetch(apiUrl('/api/leaderboard'))
+                  .then((r) => (r.ok ? r.json() : null))
+                  .then((d) => d?.leaderboard && setLeaderboard(d.leaderboard))
+                  .catch(() => {});
+              }
+            }}
           />
         ) : activeSection === 'studio3d' ? (
           <Studio3DView
             chapters={chapters}
+            selectedSubject={selectedSubject}
+            onSelectSubject={setSelectedSubject}
             initialGrade={selectedGrade}
             themeMode={themeMode}
             accentColor={accentColor}
@@ -397,6 +446,7 @@ const PlatformShell: React.FC = () => {
             profile={profile}
             badges={badges}
             progress={progress}
+            totalChaptersCount={chapters.length || 63}
             overallPrediction={overallPrediction}
             onSignIn={signInWithGoogle}
           />

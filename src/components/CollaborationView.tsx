@@ -236,7 +236,12 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
                           <span className="flex items-center gap-1.5 truncate">
                             <BookOpen className="w-3.5 h-3.5 shrink-0" />
                             <span className="truncate">
-                              {sharedChap.gradeLevel} · {sharedChap.title}
+                              {sharedChap.subject === 'physics_chemistry'
+                                ? 'Phys.-Chim.'
+                                : sharedChap.subject === 'databases_sql'
+                                  ? 'SQL & BDD'
+                                  : 'Maths'}{' '}
+                              · {sharedChap.gradeLevel} · {sharedChap.title}
                             </span>
                           </span>
                           <span className="shrink-0 underline">Ouvrir 3D</span>
@@ -267,7 +272,13 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
                 <option value="">Joindre un chapitre (optionnel)</option>
                 {chapters.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.gradeLevel} — {c.title}
+                    [
+                    {c.subject === 'physics_chemistry'
+                      ? 'Phys.-Chim.'
+                      : c.subject === 'databases_sql'
+                        ? 'SQL & BDD'
+                        : 'Maths'}
+                    ] {c.gradeLevel} — {c.title}
                   </option>
                 ))}
               </select>

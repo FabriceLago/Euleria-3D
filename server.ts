@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import crypto from 'crypto';
 import fs from 'fs';
 import http from 'http';
 import path from 'path';
@@ -12,12 +13,23 @@ import {
   updateUserPreferences,
 } from './src/db/users.ts';
 import {
+  awardDynamicQuizXp,
   createChatMessage,
+  getChapterExercisesForGenerator,
   getFullCurriculum,
   getStudyRoomsWithMessages,
   getUserDashboardData,
   recordExerciseAttempt,
 } from './src/db/learning.ts';
+import {
+  evaluateDynamicQuestionAnswer,
+  generateDynamicQuiz,
+  sanitizeQuizQuestions,
+  type GeneratedQuizQuestion,
+  type QuizDifficulty,
+  type QuizMode,
+} from './src/services/dynamicQuizEngine.ts';
+import type { ChapterItem } from './src/types/learning.ts';
 
 const PORT = Number(process.env.PORT) || 3000;
 const DIST_DIR = path.resolve(process.cwd(), 'dist');
@@ -217,6 +229,186 @@ async function startServer() {
       broadcastEvent('leaderboard:updated', { leaderboard });
 
       res.json(outcome);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Erreur serveur';
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  // Sessions serveur pour le générateur de quiz dynamiques (évite toute falsification de réponses/XP)
+  interface DynamicQuizSession {
+    questions: GeneratedQuizQuestion[];
+    answeredIds: Set<string>;
+    currentStreak: number;
+    totalCorrect: number;
+    createdAt: number;
+  }
+  const dynamicQuizSessions = new Map<string, DynamicQuizSession>();
+
+  function pruneOldQuizSessions() {
+    const cutoff = Date.now() - 2 * 60 * 60 * 1000;
+    for (const [id, sess] of dynamicQuizSessions.entries()) {
+      if (sess.createdAt < cutoff) dynamicQuizSessions.delete(id);
+    }
+    if (dynamicQuizSessions.size > 500) {
+      const oldestKey = dynamicQuizSessions.keys().next().value;
+      if (oldestKey) dynamicQuizSessions.delete(oldestKey);
+    }
+  }
+
+  // Génération d'un quiz dynamique à partir des chapitres sélectionnés
+  app.post('/api/quiz/generate', async (req, res) => {
+    try {
+      const { chapterIds, questionCount, difficulty, mode } = req.body || {};
+      if (!Array.isArray(chapterIds) || chapterIds.length === 0) {
+        return res.status(400).json({ error: 'Sélectionnez au moins un chapitre pour générer le quiz.' });
+      }
+
+      const cleanIds = Array.from(
+        new Set(chapterIds.map((id: unknown) => Number(id)).filter((n) => Number.isInteger(n) && n > 0))
+      ).slice(0, 25);
+
+      if (cleanIds.length === 0) {
+        return res.status(400).json({ error: 'Identifiants de chapitres invalides.' });
+      }
+
+      const validDifficulty: QuizDifficulty =
+        difficulty === 'decouverte' || difficulty === 'defi' ? difficulty : 'standard';
+      const validMode: QuizMode =
+        mode === 'qcm' || mode === 'numerique' ? mode : 'mixte';
+      const validCount = Math.max(3, Math.min(15, Number(questionCount) || 6));
+
+      const allChapters = (await getFullCurriculum()) as ChapterItem[];
+      const idSet = new Set(cleanIds);
+      const selectedChapters = allChapters.filter((ch) => idSet.has(ch.id));
+
+      if (selectedChapters.length === 0) {
+        return res.status(404).json({ error: 'Aucun chapitre correspondant trouvé en base.' });
+      }
+
+      const exercisesMap = await getChapterExercisesForGenerator(cleanIds);
+      const questions = generateDynamicQuiz(selectedChapters, allChapters, exercisesMap, {
+        questionCount: validCount,
+        difficulty: validDifficulty,
+        mode: validMode,
+      });
+
+      pruneOldQuizSessions();
+      const sessionId = crypto.randomUUID();
+      dynamicQuizSessions.set(sessionId, {
+        questions,
+        answeredIds: new Set(),
+        currentStreak: 0,
+        totalCorrect: 0,
+        createdAt: Date.now(),
+      });
+
+      res.json({
+        sessionId,
+        difficulty: validDifficulty,
+        mode: validMode,
+        chapterCount: selectedChapters.length,
+        questions: sanitizeQuizQuestions(questions),
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Erreur lors de la génération du quiz.';
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  // Validation immédiate d'une réponse du quiz dynamique + calcul automatique d'XP + synchro Cloud SQL
+  app.post('/api/quiz/answer', async (req, res) => {
+    try {
+      const { sessionId, questionId, submittedAnswer, responseTimeMs } = req.body || {};
+      if (
+        typeof sessionId !== 'string' ||
+        typeof questionId !== 'string' ||
+        typeof submittedAnswer !== 'string'
+      ) {
+        return res.status(400).json({ error: 'Paramètres de réponse manquants.' });
+      }
+
+      const session = dynamicQuizSessions.get(sessionId);
+      if (!session) {
+        return res.status(404).json({ error: 'Session de quiz expirée. Générez un nouveau quiz.' });
+      }
+
+      const question = session.questions.find((q) => q.id === questionId);
+      if (!question) {
+        return res.status(404).json({ error: 'Question introuvable dans cette session.' });
+      }
+
+      if (session.answeredIds.has(questionId)) {
+        return res.status(409).json({ error: 'Cette question a déjà été validée.' });
+      }
+
+      const isFinalQuestion = session.answeredIds.size + 1 >= session.questions.length;
+      const evaluation = evaluateDynamicQuestionAnswer({
+        question,
+        submittedAnswer,
+        responseTimeMs: Math.max(500, Math.min(Number(responseTimeMs) || 10000, 300000)),
+        currentStreak: session.currentStreak,
+        isFinalQuestion,
+        totalCorrectSoFar: session.totalCorrect,
+        totalQuestions: session.questions.length,
+      });
+
+      session.answeredIds.add(questionId);
+      session.currentStreak = evaluation.nextStreak;
+      if (evaluation.isCorrect) {
+        session.totalCorrect += 1;
+      }
+
+      let persisted = false;
+      let userXp: number | null = null;
+      let newlyUnlockedBadges: Array<{
+        id: number;
+        slug: string;
+        title: string;
+        description: string;
+        iconName: string;
+        xpThreshold: number;
+        conditionType: string;
+      }> = [];
+
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.split('Bearer ')[1];
+          const decoded = await adminAuth.verifyIdToken(token);
+          const dbUser = await getOrCreateUser(
+            decoded.uid,
+            decoded.email || `${decoded.uid}@euleria.local`,
+            decoded.name,
+            decoded.picture
+          );
+          const awarded = await awardDynamicQuizXp(dbUser.id, evaluation.xpBreakdown.totalXp);
+          persisted = true;
+          userXp = awarded.userXp;
+          newlyUnlockedBadges = awarded.newlyUnlockedBadges;
+
+          if (evaluation.xpBreakdown.totalXp > 0) {
+            const leaderboard = await getLeaderboard(25);
+            broadcastEvent('leaderboard:updated', { leaderboard });
+          }
+        } catch {
+          // Jeton absent/expiré : on renvoie tout de même la rétroaction immédiate sans bloquer
+        }
+      }
+
+      res.json({
+        isCorrect: evaluation.isCorrect,
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation,
+        xpBreakdown: evaluation.xpBreakdown,
+        currentStreak: session.currentStreak,
+        totalCorrect: session.totalCorrect,
+        answeredCount: session.answeredIds.size,
+        totalQuestions: session.questions.length,
+        persisted,
+        userXp,
+        newlyUnlockedBadges,
+      });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Erreur serveur';
       res.status(500).json({ error: msg });

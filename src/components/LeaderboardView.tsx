@@ -1,5 +1,17 @@
 import React from 'react';
-import { Award, Box, CheckCircle2, Compass, Database, Lock, MessageSquare, TrendingUp, Trophy } from 'lucide-react';
+import {
+  Atom,
+  Award,
+  Box,
+  CheckCircle2,
+  Compass,
+  Database,
+  FlaskConical,
+  MessageSquare,
+  Server,
+  TrendingUp,
+  Trophy,
+} from 'lucide-react';
 import { GRADE_LEVELS } from '../db/curriculumData.ts';
 import type {
   BadgeItem,
@@ -14,15 +26,20 @@ interface LeaderboardViewProps {
   profile: UserProfile | null;
   badges: BadgeItem[];
   progress: ChapterProgress[];
+  totalChaptersCount: number;
   overallPrediction: PredictionMetrics | null;
   onSignIn: () => void;
 }
 
 const BADGE_ICONS: Record<string, React.FC<{ className?: string }>> = {
+  Atom,
   Award,
   Box,
   CheckCircle2,
   Compass,
+  Database,
+  FlaskConical,
+  Server,
   TrendingUp,
   MessageSquare,
 };
@@ -32,6 +49,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   profile,
   badges,
   progress,
+  totalChaptersCount,
   overallPrediction,
   onSignIn,
 }) => {
@@ -72,7 +90,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
             <div className="text-xs text-slate-500 dark:text-slate-400">Chapitres maîtrisés</div>
             <div className="mt-1 text-2xl font-mono tabular-nums font-bold text-slate-900 dark:text-white">
-              {completedCount} / 21
+              {completedCount} / {totalChaptersCount}
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
@@ -165,11 +183,11 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
         <div className="lg:col-span-5 space-y-6">
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">
-              Récompenses virtuelles ({badges.filter((b) => b.earned).length}/{badges.length || 6})
+              Récompenses virtuelles ({badges.filter((b) => b.earned).length}/{badges.length || 10})
             </h2>
             {badges.length === 0 ? (
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Connectez-vous pour suivre le déblocage de vos 6 badges d’excellence en temps réel.
+                Connectez-vous pour suivre le déblocage de vos 10 badges d’excellence en temps réel.
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -227,28 +245,32 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                 </span>
               </div>
 
-              <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+              <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20 flex items-center justify-between gap-2">
                 <div>
                   <div className="font-semibold text-slate-900 dark:text-white">
-                    2. Bases de données relationnelles & SQL
+                    2. Physique-Chimie & Simulations 3D (6ᵉ → Terminale)
                   </div>
-                  <div className="text-slate-500 dark:text-slate-400">
-                    Débloqué après validation du socle Mathématiques
+                  <div className="text-slate-600 dark:text-slate-400">
+                    21 chapitres · 63 exercices · Atomes, Molécules, Optique, Circuits & Titrages
                   </div>
                 </div>
-                <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400 shrink-0">
+                  Actif
+                </span>
               </div>
 
-              <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+              <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20 flex items-center justify-between gap-2">
                 <div>
                   <div className="font-semibold text-slate-900 dark:text-white">
-                    3. Physique-Chimie & Simulations 3D
+                    3. Bases de données relationnelles & SQL (6ᵉ → Terminale)
                   </div>
-                  <div className="text-slate-500 dark:text-slate-400">
-                    Prochain module scientifique
+                  <div className="text-slate-600 dark:text-slate-400">
+                    21 chapitres · 63 exercices · Tables, Jointures, 3NF, B-Tree & ACID
                   </div>
                 </div>
-                <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400 shrink-0">
+                  Actif
+                </span>
               </div>
             </div>
           </div>

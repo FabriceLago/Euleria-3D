@@ -1,7 +1,7 @@
 import React from 'react';
 import type { AccentColor, UserProfile } from '../types/learning.ts';
 
-export type AppSection = 'curriculum' | 'studio3d' | 'leaderboard' | 'collaboration';
+export type AppSection = 'curriculum' | 'quiz' | 'studio3d' | 'leaderboard' | 'collaboration';
 
 interface TopBarProps {
   activeSection: AppSection;
@@ -31,6 +31,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const navItems: Array<{ id: AppSection; label: string }> = [
     { id: 'curriculum', label: 'Programme' },
+    { id: 'quiz', label: 'Quiz Dynamique' },
     { id: 'studio3d', label: 'Atelier 3D' },
     { id: 'leaderboard', label: 'Classement' },
     { id: 'collaboration', label: 'Entraide' },

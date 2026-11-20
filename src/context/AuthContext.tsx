@@ -25,6 +25,7 @@ interface AuthContextValue {
   refreshDashboard: () => Promise<void>;
   apiFetch: (url: string, options?: RequestInit) => Promise<Response>;
   updateLocalProgress: (prog: ChapterProgress, newXp: number, newBadges?: BadgeItem[]) => void;
+  applyXpAndBadges: (newXp: number, newBadges?: BadgeItem[]) => void;
   setProfileState: React.Dispatch<React.SetStateAction<UserProfile | null>>;
 }
 
@@ -44,12 +45,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const tokenRef = useRef<string | null>(null);
   const signInPromiseRef = useRef<Promise<boolean> | null>(null);
 
+  const isJwtNearExpiry = (jwt: string | null): boolean => {
+    if (!jwt) return true;
+    try {
+      const parts = jwt.split('.');
+      if (parts.length !== 3) return true;
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if (typeof payload.exp !== 'number') return false;
+      return payload.exp * 1000 - Date.now() < 90_000;
+    } catch {
+      return false;
+    }
+  };
+
   const getFreshIdToken = useCallback(async (forceRefresh = false): Promise<string | null> => {
     if (!auth.currentUser) {
       return null;
     }
     try {
-      const token = await auth.currentUser.getIdToken(forceRefresh);
+      const shouldForce = forceRefresh || isJwtNearExpiry(tokenRef.current);
+      const token = await auth.currentUser.getIdToken(shouldForce);
       tokenRef.current = token;
       setIdToken(token);
       return token;
@@ -117,10 +132,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
-        const token = await user.getIdToken();
-        tokenRef.current = token;
-        setIdToken(token);
-        await refreshDashboard();
+        try {
+          const token = await user.getIdToken();
+          tokenRef.current = token;
+          setIdToken(token);
+          await refreshDashboard();
+        } catch {
+          tokenRef.current = null;
+          setIdToken(null);
+        }
       } else {
         tokenRef.current = null;
         setIdToken(null);
@@ -224,6 +244,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     []
   );
 
+  const applyXpAndBadges = useCallback((newXp: number, newBadges: BadgeItem[] = []) => {
+    setProfile((prev) => (prev ? { ...prev, xp: newXp } : prev));
+    if (newBadges.length > 0) {
+      const unlockedIds = new Set(newBadges.map((b) => b.id));
+      setBadges((prev) =>
+        prev.map((b) =>
+          unlockedIds.has(b.id)
+            ? { ...b, earned: true, awardedAt: new Date().toISOString() }
+            : b
+        )
+      );
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -242,6 +276,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshDashboard,
         apiFetch,
         updateLocalProgress,
+        applyXpAndBadges,
         setProfileState: setProfile,
       }}
     >

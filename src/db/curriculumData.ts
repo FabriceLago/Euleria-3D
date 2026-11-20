@@ -1,3 +1,46 @@
+import {
+  PHYSICS_BADGES,
+  PHYSICS_CHAPTERS,
+  PHYSICS_GRADE_FOCUS,
+  PHYSICS_ROOMS,
+} from './physicsCurriculumData.ts';
+import {
+  SQL_BADGES,
+  SQL_CHAPTERS,
+  SQL_GRADE_FOCUS,
+  SQL_ROOMS,
+} from './sqlCurriculumData.ts';
+
+export type SubjectKey = 'mathematics' | 'physics_chemistry' | 'databases_sql';
+
+export const SUBJECTS: Array<{
+  id: SubjectKey;
+  label: string;
+  shortLabel: string;
+  tagline: string;
+}> = [
+  {
+    id: 'mathematics',
+    label: 'Mathématiques Appliquées',
+    shortLabel: 'Mathématiques',
+    tagline: 'Géométrie 3D, analyse, probabilités et prédiction bayésienne',
+  },
+  {
+    id: 'physics_chemistry',
+    label: 'Physique-Chimie',
+    shortLabel: 'Physique-Chimie',
+    tagline: 'Matière, molécules, circuits, optique, mécanique et nucléaire',
+  },
+  {
+    id: 'databases_sql',
+    label: 'Bases de données relationnelles & SQL',
+    shortLabel: 'SQL & BDD',
+    tagline: 'Tables, clés étrangères, jointures, 3NF, B-Tree et transactions ACID',
+  },
+];
+
+export { PHYSICS_GRADE_FOCUS, SQL_GRADE_FOCUS };
+
 export interface SeedExercise {
   orderIndex: number;
   exerciseType: 'quiz' | 'practice';
@@ -12,6 +55,7 @@ export interface SeedExercise {
 
 export interface SeedChapter {
   slug: string;
+  subject?: SubjectKey;
   gradeLevel: '6e' | '5e' | '4e' | '3e' | '2nde' | '1ere' | 'terminale';
   orderIndex: number;
   title: string;
@@ -40,7 +84,23 @@ export interface SeedChapter {
     | 'probabilites_1ere'
     | 'integrales_term'
     | 'geometrie_espace_term'
-    | 'prediction_term';
+    | 'prediction_term'
+    | 'pc_states_matter'
+    | 'pc_circuit_3d'
+    | 'pc_optics_3d'
+    | 'pc_molecule_3d'
+    | 'pc_atom_3d'
+    | 'pc_gravity_3d'
+    | 'pc_wave_3d'
+    | 'pc_projectile_3d'
+    | 'pc_titration_3d'
+    | 'db_table_3d'
+    | 'db_keys_3d'
+    | 'db_query_3d'
+    | 'db_join_3d'
+    | 'db_btree_3d'
+    | 'db_acid_3d'
+    | 'db_norm_3d';
   defaultParams: Record<string, number>;
   xpReward: number;
   estimatedMinutes: number;
@@ -1224,3 +1284,11 @@ export const SEED_ROOMS = [
     topic: 'Modèles bayésiens, EWMA et descente de gradient',
   },
 ];
+
+export const ALL_SEED_CHAPTERS: SeedChapter[] = [
+  ...SEED_CHAPTERS,
+  ...PHYSICS_CHAPTERS,
+  ...SQL_CHAPTERS,
+];
+export const ALL_SEED_BADGES = [...SEED_BADGES, ...PHYSICS_BADGES, ...SQL_BADGES];
+export const ALL_SEED_ROOMS = [...SEED_ROOMS, ...PHYSICS_ROOMS, ...SQL_ROOMS];

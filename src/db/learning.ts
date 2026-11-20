@@ -11,7 +11,7 @@ import {
   userProgress,
   users,
 } from './schema.ts';
-import { SEED_BADGES, SEED_CHAPTERS, SEED_ROOMS } from './curriculumData.ts';
+import { ALL_SEED_BADGES, ALL_SEED_CHAPTERS, ALL_SEED_ROOMS } from './curriculumData.ts';
 import { computeRealTimePrediction, evaluateExerciseAnswer } from '../services/predictionEngine.ts';
 
 let seedPromise: Promise<void> | null = null;
@@ -28,74 +28,73 @@ export async function ensureCurriculumSeeded(): Promise<void> {
 
 async function runIdempotentSeed(): Promise<void> {
   try {
-    const existingChapters = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(chapters);
+    const existingChapterRows = await db.select({ slug: chapters.slug }).from(chapters);
+    const existingChapterSlugs = new Set(existingChapterRows.map((r) => r.slug));
 
-    if ((existingChapters[0]?.count ?? 0) === 0) {
-      for (const ch of SEED_CHAPTERS) {
-        const insertedChapter = await db
-          .insert(chapters)
-          .values({
-            slug: ch.slug,
-            subject: 'mathematics',
-            gradeLevel: ch.gradeLevel,
-            orderIndex: ch.orderIndex,
-            title: ch.title,
-            subtitle: ch.subtitle,
-            summary: ch.summary,
-            theoryContent: ch.theoryContent,
-            formulaDisplay: ch.formulaDisplay,
-            scenePreset: ch.scenePreset,
-            defaultParamsJson: JSON.stringify(ch.defaultParams),
-            xpReward: ch.xpReward,
-            estimatedMinutes: ch.estimatedMinutes,
-          })
-          .onConflictDoNothing({ target: chapters.slug })
-          .returning();
+    for (const ch of ALL_SEED_CHAPTERS) {
+      if (existingChapterSlugs.has(ch.slug)) continue;
 
-        const chapterRow =
-          insertedChapter[0] ||
-          (await db.select().from(chapters).where(eq(chapters.slug, ch.slug)).limit(1))[0];
+      const insertedChapter = await db
+        .insert(chapters)
+        .values({
+          slug: ch.slug,
+          subject: ch.subject || 'mathematics',
+          gradeLevel: ch.gradeLevel,
+          orderIndex: ch.orderIndex,
+          title: ch.title,
+          subtitle: ch.subtitle,
+          summary: ch.summary,
+          theoryContent: ch.theoryContent,
+          formulaDisplay: ch.formulaDisplay,
+          scenePreset: ch.scenePreset,
+          defaultParamsJson: JSON.stringify(ch.defaultParams),
+          xpReward: ch.xpReward,
+          estimatedMinutes: ch.estimatedMinutes,
+        })
+        .onConflictDoNothing({ target: chapters.slug })
+        .returning();
 
-        if (chapterRow) {
-          const existingEx = await db
-            .select({ count: sql<number>`count(*)::int` })
-            .from(exercises)
-            .where(eq(exercises.chapterId, chapterRow.id));
+      const chapterRow =
+        insertedChapter[0] ||
+        (await db.select().from(chapters).where(eq(chapters.slug, ch.slug)).limit(1))[0];
 
-          if ((existingEx[0]?.count ?? 0) === 0) {
-            await db.insert(exercises).values(
-              ch.exercises.map((ex) => ({
-                chapterId: chapterRow.id,
-                orderIndex: ex.orderIndex,
-                exerciseType: ex.exerciseType,
-                prompt: ex.prompt,
-                hint: ex.hint,
-                optionsJson: ex.options ? JSON.stringify(ex.options) : null,
-                correctAnswer: ex.correctAnswer,
-                numericTolerance: ex.numericTolerance,
-                explanation: ex.explanation,
-                xpValue: ex.xpValue,
-              }))
-            );
-          }
+      if (chapterRow) {
+        const existingEx = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(exercises)
+          .where(eq(exercises.chapterId, chapterRow.id));
+
+        if ((existingEx[0]?.count ?? 0) === 0) {
+          await db.insert(exercises).values(
+            ch.exercises.map((ex) => ({
+              chapterId: chapterRow.id,
+              orderIndex: ex.orderIndex,
+              exerciseType: ex.exerciseType,
+              prompt: ex.prompt,
+              hint: ex.hint,
+              optionsJson: ex.options ? JSON.stringify(ex.options) : null,
+              correctAnswer: ex.correctAnswer,
+              numericTolerance: ex.numericTolerance,
+              explanation: ex.explanation,
+              xpValue: ex.xpValue,
+            }))
+          );
         }
       }
     }
 
-    const existingBadges = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(badges);
-    if ((existingBadges[0]?.count ?? 0) === 0) {
-      await db.insert(badges).values(SEED_BADGES).onConflictDoNothing({ target: badges.slug });
+    const existingBadgeRows = await db.select({ slug: badges.slug }).from(badges);
+    const existingBadgeSlugs = new Set(existingBadgeRows.map((r) => r.slug));
+    const missingBadges = ALL_SEED_BADGES.filter((b) => !existingBadgeSlugs.has(b.slug));
+    if (missingBadges.length > 0) {
+      await db.insert(badges).values(missingBadges).onConflictDoNothing({ target: badges.slug });
     }
 
-    const existingRooms = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(studyRooms);
-    if ((existingRooms[0]?.count ?? 0) === 0) {
-      await db.insert(studyRooms).values(SEED_ROOMS).onConflictDoNothing({ target: studyRooms.slug });
+    const existingRoomRows = await db.select({ slug: studyRooms.slug }).from(studyRooms);
+    const existingRoomSlugs = new Set(existingRoomRows.map((r) => r.slug));
+    const missingRooms = ALL_SEED_ROOMS.filter((r) => !existingRoomSlugs.has(r.slug));
+    if (missingRooms.length > 0) {
+      await db.insert(studyRooms).values(missingRooms).onConflictDoNothing({ target: studyRooms.slug });
     }
   } catch (error) {
     console.error('Database error during ensureCurriculumSeeded:', error);
@@ -143,7 +142,7 @@ export async function getFullCurriculum() {
     }));
   } catch (error) {
     console.error('Database error in getFullCurriculum:', error);
-    throw new Error('Impossible de charger le programme de mathématiques.', { cause: error });
+    throw new Error('Impossible de charger le programme pédagogique.', { cause: error });
   }
 }
 
@@ -548,5 +547,87 @@ export async function createChatMessage(params: {
   } catch (error) {
     console.error('Database error in createChatMessage:', error);
     throw new Error('Impossible d’envoyer le message.', { cause: error });
+  }
+}
+
+export async function getChapterExercisesForGenerator(chapterIds: number[]) {
+  try {
+    await ensureCurriculumSeeded();
+    if (chapterIds.length === 0) return new Map();
+
+    const allEx = await db
+      .select()
+      .from(exercises)
+      .orderBy(asc(exercises.chapterId), asc(exercises.orderIndex));
+
+    const idSet = new Set(chapterIds);
+    const map = new Map<
+      number,
+      Array<{
+        chapterId: number;
+        orderIndex: number;
+        exerciseType: 'quiz' | 'practice';
+        prompt: string;
+        hint: string;
+        options: string[] | null;
+        correctAnswer: string;
+        numericTolerance: number;
+        explanation: string;
+        xpValue: number;
+      }>
+    >();
+
+    for (const ex of allEx) {
+      if (!idSet.has(ex.chapterId)) continue;
+      const list = map.get(ex.chapterId) || [];
+      list.push({
+        chapterId: ex.chapterId,
+        orderIndex: ex.orderIndex,
+        exerciseType: ex.exerciseType === 'quiz' ? 'quiz' : 'practice',
+        prompt: ex.prompt,
+        hint: ex.hint,
+        options: ex.optionsJson ? (JSON.parse(ex.optionsJson) as string[]) : null,
+        correctAnswer: ex.correctAnswer,
+        numericTolerance: ex.numericTolerance ?? 0.05,
+        explanation: ex.explanation,
+        xpValue: ex.xpValue,
+      });
+      map.set(ex.chapterId, list);
+    }
+
+    return map;
+  } catch (error) {
+    console.error('Database error in getChapterExercisesForGenerator:', error);
+    throw new Error('Impossible de charger les exercices pour le quiz dynamique.', { cause: error });
+  }
+}
+
+export async function awardDynamicQuizXp(userId: number, xpEarned: number) {
+  try {
+    const safeXp = Math.max(0, Math.min(500, Math.round(xpEarned)));
+    if (safeXp > 0) {
+      await db
+        .update(users)
+        .set({
+          xp: sql`${users.xp} + ${safeXp}`,
+          lastActiveAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+    }
+
+    const newlyUnlockedBadges = await evaluateAndAwardBadges(userId);
+    const [freshUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    return {
+      userXp: freshUser?.xp ?? 0,
+      newlyUnlockedBadges,
+    };
+  } catch (error) {
+    console.error('Database error in awardDynamicQuizXp:', error);
+    throw new Error('Impossible d’enregistrer les points XP du quiz dynamique.', { cause: error });
   }
 }

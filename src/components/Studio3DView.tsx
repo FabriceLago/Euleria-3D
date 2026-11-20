@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
-import { GRADE_LEVELS } from '../db/curriculumData.ts';
-import type { AccentColor, ChapterItem, GradeLevel, ThemeMode } from '../types/learning.ts';
+import { ArrowRight, Atom, Calculator, Database } from 'lucide-react';
+import { GRADE_LEVELS, SUBJECTS } from '../db/curriculumData.ts';
+import type { AccentColor, ChapterItem, GradeLevel, SubjectId, ThemeMode } from '../types/learning.ts';
 import { MathViewport3D } from './MathViewport3D.tsx';
 
 interface Studio3DViewProps {
   chapters: ChapterItem[];
+  selectedSubject: SubjectId;
+  onSelectSubject: (subject: SubjectId) => void;
   initialGrade: GradeLevel;
   themeMode: ThemeMode;
   accentColor: AccentColor;
@@ -15,6 +17,8 @@ interface Studio3DViewProps {
 
 export const Studio3DView: React.FC<Studio3DViewProps> = ({
   chapters,
+  selectedSubject,
+  onSelectSubject,
   initialGrade,
   themeMode,
   accentColor,
@@ -22,47 +26,83 @@ export const Studio3DView: React.FC<Studio3DViewProps> = ({
   onOpenChapterInCourse,
 }) => {
   const [grade, setGrade] = useState<GradeLevel>(initialGrade);
+  const subjectChapters = useMemo(
+    () => chapters.filter((c) => (c.subject || 'mathematics') === selectedSubject),
+    [chapters, selectedSubject]
+  );
   const gradeChapters = useMemo(
-    () => chapters.filter((c) => c.gradeLevel === grade),
-    [chapters, grade]
+    () => subjectChapters.filter((c) => c.gradeLevel === grade),
+    [subjectChapters, grade]
   );
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const activeChapter = useMemo(() => {
-    const found = chapters.find((c) => c.id === selectedId);
+    const found = subjectChapters.find((c) => c.id === selectedId);
     if (found && found.gradeLevel === grade) return found;
-    return gradeChapters[0] || chapters[0] || null;
-  }, [chapters, gradeChapters, selectedId, grade]);
+    return gradeChapters[0] || subjectChapters[0] || null;
+  }, [subjectChapters, gradeChapters, selectedId, grade]);
 
   if (!activeChapter) return null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-5">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Rendu WebGL PBR · Manipulation libre des modèles mathématiques
+            Rendu WebGL PBR · Manipulation libre des modèles scientifiques 3D
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Atelier de géométrie & modélisation 3D
+            Atelier de modélisation & simulation 3D
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          {GRADE_LEVELS.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => setGrade(g.id)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                grade === g.id
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              {g.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            {SUBJECTS.map((subj) => {
+              const Icon =
+                subj.id === 'physics_chemistry'
+                  ? Atom
+                  : subj.id === 'databases_sql'
+                    ? Database
+                    : Calculator;
+              const active = selectedSubject === subj.id;
+              return (
+                <button
+                  key={subj.id}
+                  type="button"
+                  onClick={() => {
+                    onSelectSubject(subj.id);
+                    setSelectedId(null);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    active
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{subj.shortLabel}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            {GRADE_LEVELS.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => setGrade(g.id)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  grade === g.id
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

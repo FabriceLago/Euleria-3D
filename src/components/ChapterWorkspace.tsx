@@ -1,14 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Atom,
   Award,
   BookOpen,
+  Calculator,
   CheckCircle2,
   ChevronRight,
+  Database,
   HelpCircle,
   Send,
+  Sparkles,
   TrendingUp,
 } from 'lucide-react';
-import { GRADE_LEVELS, SEED_CHAPTERS } from '../db/curriculumData.ts';
+import {
+  ALL_SEED_CHAPTERS,
+  GRADE_LEVELS,
+  PHYSICS_GRADE_FOCUS,
+  SQL_GRADE_FOCUS,
+  SUBJECTS,
+} from '../db/curriculumData.ts';
 import {
   computeRealTimePrediction,
   evaluateExerciseAnswer,
@@ -22,12 +32,15 @@ import type {
   GradeLevel,
   LayoutDensity,
   PredictionMetrics,
+  SubjectId,
   ThemeMode,
 } from '../types/learning.ts';
 import { MathViewport3D } from './MathViewport3D.tsx';
 
 interface ChapterWorkspaceProps {
   chapters: ChapterItem[];
+  selectedSubject: SubjectId;
+  onSelectSubject: (subject: SubjectId) => void;
   selectedGrade: GradeLevel;
   onSelectGrade: (grade: GradeLevel) => void;
   selectedChapterId: number | null;
@@ -47,6 +60,7 @@ interface ChapterWorkspaceProps {
     newXp: number,
     newBadges: BadgeItem[]
   ) => void;
+  onLaunchDynamicQuiz?: (chapterId: number) => void;
 }
 
 const ACCENT_RING_MAP: Record<AccentColor, string> = {
@@ -58,6 +72,8 @@ const ACCENT_RING_MAP: Record<AccentColor, string> = {
 
 export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
   chapters,
+  selectedSubject,
+  onSelectSubject,
   selectedGrade,
   onSelectGrade,
   selectedChapterId,
@@ -73,17 +89,23 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
   onRequireSignIn,
   apiFetch,
   onAttemptRecorded,
+  onLaunchDynamicQuiz,
 }) => {
+  const subjectChapters = useMemo(
+    () => chapters.filter((c) => (c.subject || 'mathematics') === selectedSubject),
+    [chapters, selectedSubject]
+  );
+
   const gradeChapters = useMemo(
-    () => chapters.filter((c) => c.gradeLevel === selectedGrade),
-    [chapters, selectedGrade]
+    () => subjectChapters.filter((c) => c.gradeLevel === selectedGrade),
+    [subjectChapters, selectedGrade]
   );
 
   const activeChapter = useMemo(() => {
-    const found = chapters.find((c) => c.id === selectedChapterId);
+    const found = subjectChapters.find((c) => c.id === selectedChapterId);
     if (found && found.gradeLevel === selectedGrade) return found;
-    return gradeChapters[0] || chapters[0] || null;
-  }, [chapters, gradeChapters, selectedChapterId, selectedGrade]);
+    return gradeChapters[0] || subjectChapters[0] || null;
+  }, [subjectChapters, gradeChapters, selectedChapterId, selectedGrade]);
 
   const progressMap = useMemo(() => {
     const map = new Map<number, ChapterProgress>();
@@ -144,7 +166,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
     // Mode autonome (hébergement statique sans backend Cloud Run relié) :
     // Évaluation réelle des exercices + moteur prédictif BKT/EWMA dans le navigateur.
     if (!backendAvailable) {
-      const seedChap = SEED_CHAPTERS.find((c) => c.slug === activeChapter.slug);
+      const seedChap = ALL_SEED_CHAPTERS.find((c) => c.slug === activeChapter.slug);
       const seedEx = seedChap?.exercises.find((ex) => ex.orderIndex === activeExercise.orderIndex);
       if (seedEx) {
         const isCorrect = evaluateExerciseAnswer(
@@ -246,20 +268,68 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
   if (!activeChapter) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 text-center text-slate-600 dark:text-slate-400">
-        Chargement du programme de mathématiques...
+        Chargement du programme scientifique...
       </div>
     );
   }
+
+  const activeSubjectMeta = SUBJECTS.find((s) => s.id === selectedSubject) || SUBJECTS[0];
+  const activeGradeFocus =
+    selectedSubject === 'physics_chemistry'
+      ? PHYSICS_GRADE_FOCUS[selectedGrade]
+      : selectedSubject === 'databases_sql'
+        ? SQL_GRADE_FOCUS[selectedGrade]
+        : activeGradeMeta?.focus;
 
   const padClass = layoutDensity === 'compact' ? 'p-4' : 'p-6';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* Sélecteur de discipline (Mathématiques / Physique-Chimie / SQL & BDD) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 self-start">
+          {SUBJECTS.map((subj) => {
+            const active = selectedSubject === subj.id;
+            const Icon =
+              subj.id === 'physics_chemistry'
+                ? Atom
+                : subj.id === 'databases_sql'
+                  ? Database
+                  : Calculator;
+            const count = chapters.filter(
+              (c) => (c.subject || 'mathematics') === subj.id
+            ).length;
+            return (
+              <button
+                key={subj.id}
+                type="button"
+                onClick={() => onSelectSubject(subj.id)}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  active
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{subj.shortLabel}</span>
+                <span className="font-mono tabular-nums text-[11px] opacity-65">
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="text-xs text-slate-500 dark:text-slate-400">
+          {activeSubjectMeta.tagline}
+        </div>
+      </div>
+
       {/* En-tête de section & Sélecteur de niveau 6e -> Terminale */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
         <div className="max-w-2xl">
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Mathématiques Appliquées · {activeGradeMeta?.cycle} · {activeGradeMeta?.focus}
+            {activeSubjectMeta.label} · {activeGradeMeta?.cycle} · {activeGradeFocus}
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white [text-wrap:balance]">
             Parcours interactif de la 6ᵉ à la Terminale
@@ -570,6 +640,22 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
                   </div>
                 )}
               </form>
+            )}
+
+            {onLaunchDynamicQuiz && (
+              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Besoin d’un entraînement varié ?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onLaunchDynamicQuiz(activeChapter.id)}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Générer un quiz dynamique</span>
+                </button>
+              </div>
             )}
           </div>
         </div>

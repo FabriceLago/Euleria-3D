@@ -37,6 +37,8 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
   const mountRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<MathSceneEngine | null>(null);
 
+  const presetKey = `${preset}:${defaultParams.a ?? 2}:${defaultParams.b ?? 3}:${defaultParams.c ?? 1}`;
+  const [prevPresetKey, setPrevPresetKey] = useState<string>(presetKey);
   const [paramA, setParamA] = useState<number>(defaultParams.a ?? 2);
   const [paramB, setParamB] = useState<number>(defaultParams.b ?? 3);
   const [paramC, setParamC] = useState<number>(defaultParams.c ?? 1);
@@ -45,13 +47,14 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
   const [dockOpen, setDockOpen] = useState<boolean>(true);
   const [contextLost, setContextLost] = useState<boolean>(false);
 
-  // Synchronise les valeurs par défaut quand on change de chapitre
-  useEffect(() => {
+  // Synchronise immédiatement les valeurs par défaut avant le rendu 3D lors d'un changement de chapitre
+  if (prevPresetKey !== presetKey) {
+    setPrevPresetKey(presetKey);
     setParamA(defaultParams.a ?? 2);
     setParamB(defaultParams.b ?? 3);
     setParamC(defaultParams.c ?? 1);
     setExplode(0);
-  }, [preset, defaultParams]);
+  }
 
   const paramMeta = useMemo(() => getParamMetadataForPreset(preset), [preset]);
   const accentHex = ACCENT_HEX_MAP[accentColor] || '#4f46e5';
