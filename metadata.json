@@ -1,0 +1,6 @@
+{
+  "name": "Euleria 3D",
+  "description": "Plateforme d'apprentissage interactif en mathématiques appliquées (6ᵉ à Terminale) avec rendu WebGL 3D, algorithme de prédiction temps réel, suivi des progrès et collaboration étudiante.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
