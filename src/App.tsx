@@ -342,7 +342,7 @@ const PlatformShell: React.FC = () => {
       {!loadingCurriculum && !backendAvailable && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
           <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-xs text-amber-800 dark:text-amber-200">
-            Hébergement statique détecté (API backend non reliée) : les 63 chapitres (Maths, Physique-Chimie & SQL), modèles 3D WebGL et 189 exercices restent pleinement utilisables. Pour activer la synchronisation Cloud SQL, le classement et le chat temps réel, déployez sur Google Cloud Run ou configurez <span className="font-mono">VITE_API_BASE_URL</span>.
+            Hébergement statique détecté (API backend non reliée) : les 126 chapitres (Mathématiques, Physique-Chimie, SVT, Histoire-Géo, Français & Philo, Anglais LV1), modèles 3D WebGL et 378 exercices restent pleinement utilisables. Pour activer la synchronisation Cloud SQL, le classement et le chat temps réel, déployez sur Google Cloud Run ou configurez <span className="font-mono">VITE_API_BASE_URL</span>.
           </div>
         </div>
       )}
@@ -446,7 +446,7 @@ const PlatformShell: React.FC = () => {
             profile={profile}
             badges={badges}
             progress={progress}
-            totalChaptersCount={chapters.length || 63}
+            totalChaptersCount={chapters.length || 126}
             overallPrediction={overallPrediction}
             onSignIn={signInWithGoogle}
           />

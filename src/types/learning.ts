@@ -1,5 +1,11 @@
 export type GradeLevel = '6e' | '5e' | '4e' | '3e' | '2nde' | '1ere' | 'terminale';
-export type SubjectId = 'mathematics' | 'physics_chemistry' | 'databases_sql';
+export type SubjectId =
+  | 'mathematics'
+  | 'physics_chemistry'
+  | 'svt'
+  | 'history_geography'
+  | 'french_philosophy'
+  | 'english_lv1';
 export type ThemeMode = 'light' | 'dark';
 export type AccentColor = 'indigo' | 'emerald' | 'amber' | 'sky';
 export type LayoutDensity = 'comfortable' | 'compact';

@@ -7,9 +7,12 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
-  Database,
+  Dna,
+  Feather,
   Flame,
   HelpCircle,
+  Landmark,
+  Languages,
   RefreshCw,
   Send,
   SlidersHorizontal,
@@ -479,8 +482,14 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
                     >
                       {s.id === 'physics_chemistry' ? (
                         <Atom className="w-3 h-3" />
-                      ) : s.id === 'databases_sql' ? (
-                        <Database className="w-3 h-3" />
+                      ) : s.id === 'svt' ? (
+                        <Dna className="w-3 h-3" />
+                      ) : s.id === 'history_geography' ? (
+                        <Landmark className="w-3 h-3" />
+                      ) : s.id === 'french_philosophy' ? (
+                        <Feather className="w-3 h-3" />
+                      ) : s.id === 'english_lv1' ? (
+                        <Languages className="w-3 h-3" />
                       ) : (
                         <Calculator className="w-3 h-3" />
                       )}
@@ -525,9 +534,15 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
                   const subjectLabel =
                     ch.subject === 'physics_chemistry'
                       ? 'Physique-Chimie'
-                      : ch.subject === 'databases_sql'
-                        ? 'SQL & BDD'
-                        : 'Mathématiques';
+                      : ch.subject === 'svt'
+                        ? 'SVT'
+                        : ch.subject === 'history_geography'
+                          ? 'Histoire-Géo'
+                          : ch.subject === 'french_philosophy'
+                            ? 'Français & Philo'
+                            : ch.subject === 'english_lv1'
+                              ? 'Anglais LV1'
+                              : 'Mathématiques';
                   return (
                     <button
                       key={ch.id}
@@ -729,9 +744,15 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
               <span>
                 {activeQuestion.subject === 'physics_chemistry'
                   ? 'Physique-Chimie'
-                  : activeQuestion.subject === 'databases_sql'
-                    ? 'SQL & BDD'
-                    : 'Mathématiques'}{' '}
+                  : activeQuestion.subject === 'svt'
+                    ? 'SVT'
+                    : activeQuestion.subject === 'history_geography'
+                      ? 'Histoire-Géo'
+                      : activeQuestion.subject === 'french_philosophy'
+                        ? 'Français & Philo'
+                        : activeQuestion.subject === 'english_lv1'
+                          ? 'Anglais LV1'
+                          : 'Mathématiques'}{' '}
                 · {activeQuestion.gradeLevel} ·{' '}
                 <strong className="text-slate-700 dark:text-slate-200">
                   {activeQuestion.chapterTitle}

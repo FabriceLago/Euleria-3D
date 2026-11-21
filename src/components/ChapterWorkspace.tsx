@@ -6,18 +6,24 @@ import {
   Calculator,
   CheckCircle2,
   ChevronRight,
-  Database,
+  Dna,
+  Feather,
   HelpCircle,
+  Landmark,
+  Languages,
   Send,
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
 import {
   ALL_SEED_CHAPTERS,
+  ENGLISH_GRADE_FOCUS,
+  FRENCH_GRADE_FOCUS,
   GRADE_LEVELS,
+  HG_GRADE_FOCUS,
   PHYSICS_GRADE_FOCUS,
-  SQL_GRADE_FOCUS,
   SUBJECTS,
+  SVT_GRADE_FOCUS,
 } from '../db/curriculumData.ts';
 import {
   computeRealTimePrediction,
@@ -277,15 +283,21 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
   const activeGradeFocus =
     selectedSubject === 'physics_chemistry'
       ? PHYSICS_GRADE_FOCUS[selectedGrade]
-      : selectedSubject === 'databases_sql'
-        ? SQL_GRADE_FOCUS[selectedGrade]
-        : activeGradeMeta?.focus;
+      : selectedSubject === 'svt'
+        ? SVT_GRADE_FOCUS[selectedGrade]
+        : selectedSubject === 'history_geography'
+          ? HG_GRADE_FOCUS[selectedGrade]
+          : selectedSubject === 'french_philosophy'
+            ? FRENCH_GRADE_FOCUS[selectedGrade]
+            : selectedSubject === 'english_lv1'
+              ? ENGLISH_GRADE_FOCUS[selectedGrade]
+              : activeGradeMeta?.focus;
 
   const padClass = layoutDensity === 'compact' ? 'p-4' : 'p-6';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Sélecteur de discipline (Mathématiques / Physique-Chimie / SQL & BDD) */}
+      {/* Sélecteur de discipline (6 matières du tronc commun 6ᵉ → Terminale) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 self-start">
           {SUBJECTS.map((subj) => {
@@ -293,9 +305,15 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
             const Icon =
               subj.id === 'physics_chemistry'
                 ? Atom
-                : subj.id === 'databases_sql'
-                  ? Database
-                  : Calculator;
+                : subj.id === 'svt'
+                  ? Dna
+                  : subj.id === 'history_geography'
+                    ? Landmark
+                    : subj.id === 'french_philosophy'
+                      ? Feather
+                      : subj.id === 'english_lv1'
+                        ? Languages
+                        : Calculator;
             const count = chapters.filter(
               (c) => (c.subject || 'mathematics') === subj.id
             ).length;

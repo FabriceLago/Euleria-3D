@@ -5,13 +5,37 @@ import {
   PHYSICS_ROOMS,
 } from './physicsCurriculumData.ts';
 import {
-  SQL_BADGES,
-  SQL_CHAPTERS,
-  SQL_GRADE_FOCUS,
-  SQL_ROOMS,
-} from './sqlCurriculumData.ts';
+  SVT_BADGES,
+  SVT_CHAPTERS,
+  SVT_GRADE_FOCUS,
+  SVT_ROOMS,
+} from './svtCurriculumData.ts';
+import {
+  HG_BADGES,
+  HG_CHAPTERS,
+  HG_GRADE_FOCUS,
+  HG_ROOMS,
+} from './hgCurriculumData.ts';
+import {
+  FRENCH_BADGES,
+  FRENCH_CHAPTERS,
+  FRENCH_GRADE_FOCUS,
+  FRENCH_ROOMS,
+} from './frenchCurriculumData.ts';
+import {
+  ENGLISH_BADGES,
+  ENGLISH_CHAPTERS,
+  ENGLISH_GRADE_FOCUS,
+  ENGLISH_ROOMS,
+} from './englishCurriculumData.ts';
 
-export type SubjectKey = 'mathematics' | 'physics_chemistry' | 'databases_sql';
+export type SubjectKey =
+  | 'mathematics'
+  | 'physics_chemistry'
+  | 'svt'
+  | 'history_geography'
+  | 'french_philosophy'
+  | 'english_lv1';
 
 export const SUBJECTS: Array<{
   id: SubjectKey;
@@ -32,14 +56,54 @@ export const SUBJECTS: Array<{
     tagline: 'Matière, molécules, circuits, optique, mécanique et nucléaire',
   },
   {
-    id: 'databases_sql',
-    label: 'Bases de données relationnelles & SQL',
-    shortLabel: 'SQL & BDD',
-    tagline: 'Tables, clés étrangères, jointures, 3NF, B-Tree et transactions ACID',
+    id: 'svt',
+    label: 'Sciences de la Vie et de la Terre (SVT)',
+    shortLabel: 'SVT',
+    tagline: 'Cellules, ADN, tectonique, écosystèmes, immunologie, neurosciences & climat',
+  },
+  {
+    id: 'history_geography',
+    label: 'Histoire-Géographie',
+    shortLabel: 'Histoire-Géo',
+    tagline: 'Antiquité, Moyen Âge, 1789, Guerres mondiales, métropolisation & géopolitique',
+  },
+  {
+    id: 'french_philosophy',
+    label: 'Français, Littérature & Philosophie',
+    shortLabel: 'Français & Philo',
+    tagline: 'Grammaire, versification, théâtre, mouvements littéraires, dissertation & philosophie',
+  },
+  {
+    id: 'english_lv1',
+    label: 'Anglais (LV1)',
+    shortLabel: 'Anglais LV1',
+    tagline: 'Temps verbaux, syntaxe, modaux, culture UK/US, linking words & axes du Bac B2',
   },
 ];
 
-export { PHYSICS_GRADE_FOCUS, SQL_GRADE_FOCUS };
+export {
+  ENGLISH_GRADE_FOCUS,
+  FRENCH_GRADE_FOCUS,
+  HG_GRADE_FOCUS,
+  PHYSICS_GRADE_FOCUS,
+  SVT_GRADE_FOCUS,
+};
+
+export interface SeedBadge {
+  slug: string;
+  title: string;
+  description: string;
+  iconName: string;
+  xpThreshold: number;
+  conditionType: 'xp' | 'chapters_completed' | 'prediction_master' | 'collaboration';
+}
+
+export interface SeedRoom {
+  slug: string;
+  name: string;
+  gradeLevel: string;
+  topic: string;
+}
 
 export interface SeedExercise {
   orderIndex: number;
@@ -94,13 +158,33 @@ export interface SeedChapter {
     | 'pc_wave_3d'
     | 'pc_projectile_3d'
     | 'pc_titration_3d'
-    | 'db_table_3d'
-    | 'db_keys_3d'
-    | 'db_query_3d'
-    | 'db_join_3d'
-    | 'db_btree_3d'
-    | 'db_acid_3d'
-    | 'db_norm_3d';
+    | 'svt_cell_3d'
+    | 'svt_dna_3d'
+    | 'svt_tectonics_3d'
+    | 'svt_ecosystem_3d'
+    | 'svt_organ_3d'
+    | 'svt_neuron_3d'
+    | 'svt_climate_3d'
+    | 'hg_monument_3d'
+    | 'hg_city_urban_3d'
+    | 'hg_globe_routes_3d'
+    | 'hg_demography_3d'
+    | 'hg_timeline_3d'
+    | 'hg_industry_3d'
+    | 'hg_geopolitics_3d'
+    | 'fr_syntax_3d'
+    | 'fr_narrative_3d'
+    | 'fr_grammar_3d'
+    | 'fr_theater_3d'
+    | 'fr_poetry_3d'
+    | 'fr_rhetoric_3d'
+    | 'fr_philo_3d'
+    | 'en_tense_3d'
+    | 'en_syntax_3d'
+    | 'en_modals_3d'
+    | 'en_vocab_3d'
+    | 'en_culture_3d'
+    | 'en_essay_3d';
   defaultParams: Record<string, number>;
   xpReward: number;
   estimatedMinutes: number;
@@ -1288,7 +1372,24 @@ export const SEED_ROOMS = [
 export const ALL_SEED_CHAPTERS: SeedChapter[] = [
   ...SEED_CHAPTERS,
   ...PHYSICS_CHAPTERS,
-  ...SQL_CHAPTERS,
+  ...SVT_CHAPTERS,
+  ...HG_CHAPTERS,
+  ...FRENCH_CHAPTERS,
+  ...ENGLISH_CHAPTERS,
 ];
-export const ALL_SEED_BADGES = [...SEED_BADGES, ...PHYSICS_BADGES, ...SQL_BADGES];
-export const ALL_SEED_ROOMS = [...SEED_ROOMS, ...PHYSICS_ROOMS, ...SQL_ROOMS];
+export const ALL_SEED_BADGES = [
+  ...SEED_BADGES,
+  ...PHYSICS_BADGES,
+  ...SVT_BADGES,
+  ...HG_BADGES,
+  ...FRENCH_BADGES,
+  ...ENGLISH_BADGES,
+];
+export const ALL_SEED_ROOMS = [
+  ...SEED_ROOMS,
+  ...PHYSICS_ROOMS,
+  ...SVT_ROOMS,
+  ...HG_ROOMS,
+  ...FRENCH_ROOMS,
+  ...ENGLISH_ROOMS,
+];

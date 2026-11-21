@@ -664,104 +664,430 @@ function buildParametricQuestion(
       );
     }
 
-    // ===== BASES DE DONNÉES RELATIONNELLES & SQL =====
-    case 'db_table_3d': {
-      const rows = randInt(6, 25);
-      const cols = randInt(4, 9);
-      const cells = rows * cols;
+    // ===== SCIENCES DE LA VIE ET DE LA TERRE (SVT) =====
+    case 'svt_cell_3d': {
+      const oc = pick([5, 10, 15]);
+      const obj = pick([10, 20, 40, 60, 100]);
+      const g = oc * obj;
       return wrapNumeric(
-        `Une table relationnelle « users » contient ${rows} lignes (enregistrements) et ${cols} colonnes (attributs). Combien de cellules de données stocke-t-elle au total ?`,
-        `Calcule N_lignes × N_colonnes.`,
-        cells,
+        `Au microscope optique, on observe une cellule végétale avec un oculaire ×${oc} et un objectif ×${obj}. Quel est le grossissement total G ?`,
+        `Multiplie le grossissement de l’oculaire (${oc}) par celui de l’objectif (${obj}).`,
+        g,
         0,
-        `${rows} × ${cols} = ${cells} cellules.`,
-        'cellules',
+        `G = G_oculaire × G_objectif = ${oc} × ${obj} = ${g}.`,
+        '×',
         0
       );
     }
-    case 'db_keys_3d': {
-      const usersN = randInt(4, 12);
-      const perUser = randInt(2, 6);
-      const totalLinks = usersN * perUser;
+    case 'svt_dna_3d': {
+      const pctA = randInt(16, 34);
+      const pctG = 50 - pctA;
       return wrapNumeric(
-        `Dans une relation N:N entre « users » et « badges », ${usersN} élèves ont débloqué chacun ${perUser} badges distincts. Combien de lignes contient la table associative user_badges ?`,
-        `Chaque couple unique (user_id, badge_id) occupe une ligne : ${usersN} × ${perUser}.`,
-        totalLinks,
-        0,
-        `${usersN} × ${perUser} = ${totalLinks} lignes dans user_badges.`,
-        'lignes',
-        0
-      );
-    }
-    case 'db_query_3d': {
-      const s1 = randInt(1, 5) * 40;
-      const s2 = randInt(2, 6) * 40;
-      const s3 = randInt(3, 8) * 40;
-      const s4 = randInt(4, 9) * 40;
-      const avg = (s1 + s2 + s3 + s4) / 4;
-      return wrapNumeric(
-        `Quatre utilisateurs possèdent les scores suivants : ${s1}, ${s2}, ${s3} et ${s4} XP. Quelle valeur renvoie SELECT AVG(xp) FROM users ?`,
-        `Calcule la moyenne des 4 valeurs : (${s1}+${s2}+${s3}+${s4}) / 4.`,
-        avg,
-        0.5,
-        `Somme = ${s1 + s2 + s3 + s4}, divisée par 4 = ${formatNum(avg, 1)} XP.`,
-        'XP',
-        1
-      );
-    }
-    case 'db_join_3d': {
-      const leftTotal = randInt(20, 50);
-      const matched = randInt(5, leftTotal - 4);
-      const unmatched = leftTotal - matched;
-      return wrapNumeric(
-        `La table « chapters » compte ${leftTotal} lignes. Un élève a une correspondance dans « user_progress » pour ${matched} chapitres. Combien de lignes renvoie LEFT JOIN ... WHERE user_progress.id IS NULL (chapitres non commencés) ?`,
-        `Soustrait les chapitres commencés du total : ${leftTotal} - ${matched}.`,
-        unmatched,
-        0,
-        `${leftTotal} - ${matched} = ${unmatched} chapitres sans correspondance.`,
-        'lignes',
-        0
-      );
-    }
-    case 'db_btree_3d': {
-      const exp = pick([6, 7, 8, 9, 10, 11, 12]);
-      const n = Math.pow(2, exp);
-      return wrapNumeric(
-        `Dans un arbre binaire de recherche équilibré (base 2) indexant N = ${n} utilisateurs, combien de comparaisons au maximum (log₂ N) suffisent pour retrouver un identifiant ?`,
-        `Cherche la puissance de 2 telle que 2^k = ${n}.`,
-        exp,
+        `Dans une molécule d’ADN double brin, l’analyse biochimique révèle ${pctA} % d’Adénine (A). D’après la règle de complémentarité (A = T et G = C), quel est le pourcentage de Guanine (G) ?`,
+        `Comme A = T = ${pctA} %, on a A + T = ${pctA * 2} %. Divise le reste (100 − ${pctA * 2}) par 2.`,
+        pctG,
         0.1,
-        `2^${exp} = ${n}, donc log₂(${n}) = ${exp} comparaisons.`,
-        'comparaisons',
+        `A = T = ${pctA} % ⇒ G + C = ${100 - pctA * 2} % ⇒ G = C = ${pctG} %.`,
+        '%',
         0
       );
     }
-    case 'db_acid_3d': {
-      const initialXp = randInt(2, 9) * 50;
-      const gain1 = pick([25, 40, 60]);
-      const gain2 = pick([30, 50, 75]);
-      const finalXp = initialXp + gain1 + gain2;
+    case 'svt_tectonics_3d': {
+      const speed = pick([2, 2.5, 3, 4, 5, 6]);
+      const millionsYears = pick([5, 10, 15, 20, 25]);
+      const distKm = speed * 10 * millionsYears;
       return wrapNumeric(
-        `Un élève possède ${initialXp} XP. Deux transactions concurrentes isolées exécutent chacune UPDATE users SET xp = xp + ${gain1} et UPDATE users SET xp = xp + ${gain2}, puis COMMIT. Quel est le solde final d’XP garanti par l’isolation ACID ?`,
-        `Avec un incrément atomique xp = xp + Δ, aucune mise à jour n’est perdue : additionne les deux gains.`,
-        finalXp,
+        `Deux plaques lithosphériques divergent à une dorsale à la vitesse v = ${formatNum(speed, 1)} cm/an. De quelle distance (en km) se sont-elles écartées en ${millionsYears} millions d’années ?`,
+        `1 cm/an pendant 1 million d’années = 10 km. Calcule ${formatNum(speed, 1)} × 10 × ${millionsYears}.`,
+        distKm,
+        1,
+        `d = ${formatNum(speed, 1)} × 10 × ${millionsYears} = ${distKm} km.`,
+        'km',
+        0
+      );
+    }
+    case 'svt_ecosystem_3d': {
+      const baseKg = pick([500, 800, 1000, 1500, 2000, 3000]);
+      const herbKg = baseKg / 10;
+      return wrapNumeric(
+        `Selon la règle de transfert énergétique (10 % par niveau trophique), si les producteurs primaires (végétaux) représentent ${baseKg} kg de biomasse, quelle biomasse (en kg) est transmise aux consommateurs primaires (herbivores) ?`,
+        `Calcule 10 % de ${baseKg} kg (divise par 10).`,
+        herbKg,
+        0.5,
+        `${baseKg} × 0,10 = ${herbKg} kg de biomasse transmise.`,
+        'kg',
+        0
+      );
+    }
+    case 'svt_organ_3d': {
+      const fc = pick([60, 70, 80, 90, 120, 140]);
+      const ves = pick([70, 75, 80, 85, 90]);
+      const qcMl = fc * ves;
+      return wrapNumeric(
+        `Un sportif présente une fréquence cardiaque FC = ${fc} battements/min et un volume d’éjection systolique VES = ${ves} mL. Calcule son débit cardiaque Qc = FC × VES en mL/min.`,
+        `Multiplie ${fc} × ${ves}.`,
+        qcMl,
+        5,
+        `Qc = ${fc} × ${ves} = ${qcMl} mL/min (soit ${formatNum(qcMl / 1000, 2)} L/min).`,
+        'mL/min',
+        0
+      );
+    }
+    case 'svt_neuron_3d': {
+      const distM = pick([0.6, 0.8, 1.0, 1.2, 1.5, 1.8]);
+      const speedMs = pick([40, 50, 60, 80, 100]);
+      const timeMs = Math.round((distM / speedMs) * 1000);
+      return wrapNumeric(
+        `Un message nerveux parcourt une fibre myélinisée de longueur d = ${formatNum(distM, 1)} m à la vitesse v = ${speedMs} m/s. Quelle est la durée du trajet en millisecondes (ms) ?`,
+        `Calcule t = (d / v) × 1000.`,
+        timeMs,
+        0.5,
+        `t = (${formatNum(distM, 1)} / ${speedMs}) × 1000 = ${timeMs} ms.`,
+        'ms',
+        0
+      );
+    }
+    case 'svt_climate_3d': {
+      const albedoPct = pick([20, 25, 30, 35, 40]);
+      const pInc = 340;
+      const pAbs = Math.round(pInc * (1 - albedoPct / 100));
+      return wrapNumeric(
+        `La puissance solaire incidente moyenne vaut 340 W/m². Si l’albédo planétaire vaut ${albedoPct} %, quelle puissance moyenne (en W/m²) est absorbée par le système Terre-atmosphère ?`,
+        `Calcule 340 × (1 − ${albedoPct}/100).`,
+        pAbs,
+        1,
+        `P_abs = 340 × ${(100 - albedoPct) / 100} = ${pAbs} W/m².`,
+        'W/m²',
+        0
+      );
+    }
+
+    // ===== HISTOIRE-GÉOGRAPHIE =====
+    case 'hg_monument_3d': {
+      const year = pick([476, 800, 1095, 1453, 1492, 1515, 1661, 1789, 1848, 1914]);
+      const century = Math.floor((year - 1) / 100) + 1;
+      return wrapNumeric(
+        `En chronologie historique, à quel numéro de siècle (en chiffres arabes, ex: 18 pour le XVIIIᵉ siècle) appartient l’année ${year} ?`,
+        `Ajoute 1 au nombre de centaines (sauf pour les années se terminant par 00).`,
+        century,
         0,
-        `${initialXp} + ${gain1} + ${gain2} = ${finalXp} XP (aucune lost update).`,
-        'XP',
+        `L’année ${year} se situe entre ${(century - 1) * 100 + 1} et ${century * 100} : elle appartient donc au ${century}ᵉ siècle.`,
+        'ᵉ siècle',
         0
       );
     }
-    case 'db_norm_3d': {
-      const connections = pick([10, 15, 20, 25]);
-      const ms = pick([5, 10, 20]);
-      const rps = Math.round((connections * 1000) / ms);
+    case 'hg_city_urban_3d': {
+      const pop = pick([120000, 240000, 360000, 450000, 600000, 900000]);
+      const area = pick([40, 60, 100, 120, 150, 200]);
+      const density = Math.round(pop / area);
       return wrapNumeric(
-        `Un pool pg.Pool maintient ${connections} connexions actives vers PostgreSQL. Si chaque requête indexée dure ${ms} ms, quel est le débit théorique en requêtes par seconde (RPS) ?`,
-        `Chaque connexion traite 1000 / ${ms} req/s ; multiplie par ${connections}.`,
-        rps,
-        10,
-        `(${connections} × 1000) / ${ms} = ${rps} req/s.`,
-        'req/s',
+        `Une métropole compte ${pop.toLocaleString('fr-FR')} habitants sur une superficie de ${area} km². Quelle est sa densité de population (en hab./km²) ?`,
+        `Applique Densité = Population / Superficie.`,
+        density,
+        2,
+        `Densité = ${pop} / ${area} = ${density} hab./km².`,
+        'hab./km²',
+        0
+      );
+    }
+    case 'hg_globe_routes_3d': {
+      const speed = pick([20, 25, 30, 40]);
+      const hours = pick([12, 18, 24, 30, 48]);
+      const distKm = speed * hours;
+      return wrapNumeric(
+        `Un porte-conteneurs parcourt une route maritime de ${distKm} km à une vitesse moyenne de ${speed} km/h. Quelle est la durée de la traversée en heures ?`,
+        `Calcule t = distance / vitesse = ${distKm} / ${speed}.`,
+        hours,
+        0.5,
+        `t = ${distKm} / ${speed} = ${hours} heures.`,
+        'h',
+        0
+      );
+    }
+    case 'hg_demography_3d': {
+      const birthRate = randInt(16, 38);
+      const deathRate = randInt(6, 14);
+      const naturalGrowth = birthRate - deathRate;
+      return wrapNumeric(
+        `Dans un pays en transition démographique, le taux de natalité est de ${birthRate} ‰ et le taux de mortalité est de ${deathRate} ‰. Quel est le taux d’accroissement naturel (en ‰) ?`,
+        `Accroissement naturel = Taux de natalité − Taux de mortalité.`,
+        naturalGrowth,
+        0.1,
+        `Taux d’accroissement naturel = ${birthRate} ‰ − ${deathRate} ‰ = ${naturalGrowth} ‰.`,
+        '‰',
+        0
+      );
+    }
+    case 'hg_timeline_3d': {
+      const pair = pick([
+        { labelA: 'la Révolution française', yA: 1789, labelB: 'l’abolition de l’esclavage en France', yB: 1848 },
+        { labelA: 'le déclenchement de la Première Guerre mondiale', yA: 1914, labelB: 'la fin de la Seconde Guerre mondiale', yB: 1945 },
+        { labelA: 'le traité de Rome (CEE)', yA: 1957, labelB: 'la chute du mur de Berlin', yB: 1989 },
+        { labelA: 'la loi de séparation des Églises et de l’État', yA: 1905, labelB: 'le droit de vote des femmes en France', yB: 1944 },
+        { labelA: 'la proclamation de la Vᵉ République', yA: 1958, labelB: 'le traité de Maastricht', yB: 1992 },
+      ]);
+      const span = pair.yB - pair.yA;
+      return wrapNumeric(
+        `Combien d’années séparent ${pair.labelA} (${pair.yA}) de ${pair.labelB} (${pair.yB}) ?`,
+        `Calcule l’écart chronologique ${pair.yB} − ${pair.yA}.`,
+        span,
+        0,
+        `${pair.yB} − ${pair.yA} = ${span} ans.`,
+        'ans',
+        0
+      );
+    }
+    case 'hg_industry_3d': {
+      const primary = randInt(2, 12);
+      const secondary = randInt(15, 32);
+      const tertiary = 100 - primary - secondary;
+      return wrapNumeric(
+        `Dans une économie développée, le secteur primaire représente ${primary} % des emplois et le secteur secondaire (industrie) ${secondary} %. Quelle est la part du secteur tertiaire (services) en % ?`,
+        `La somme des trois secteurs vaut 100 % : calcule 100 − (${primary} + ${secondary}).`,
+        tertiary,
+        0.1,
+        `Secteur tertiaire = 100 − (${primary} + ${secondary}) = ${tertiary} %.`,
+        '%',
+        0
+      );
+    }
+    case 'hg_geopolitics_3d': {
+      const scaleKmPerCm = pick([2, 5, 10, 25, 50]);
+      const mapCm = randInt(3, 12);
+      const realKm = scaleKmPerCm * mapCm;
+      const scaleDenom = (scaleKmPerCm * 100000).toLocaleString('fr-FR');
+      return wrapNumeric(
+        `Sur une carte géopolitique à l’échelle 1 : ${scaleDenom} (1 cm = ${scaleKmPerCm} km), deux capitales sont distantes de ${mapCm} cm. Quelle distance réelle (en km) les sépare ?`,
+        `Multiplie la distance mesurée sur la carte (${mapCm} cm) par ${scaleKmPerCm} km/cm.`,
+        realKm,
+        0.5,
+        `Distance réelle = ${mapCm} × ${scaleKmPerCm} = ${realKm} km.`,
+        'km',
+        0
+      );
+    }
+
+    // ===== FRANÇAIS, LITTÉRATURE & PHILOSOPHIE =====
+    case 'fr_syntax_3d': {
+      const clauses = randInt(2, 5);
+      const examples: Record<number, string> = {
+        2: '« Le soleil se lève et les oiseaux chantent. »',
+        3: '« L’élève lit le texte, il repère les verbes car l’exercice commence. »',
+        4: '« Nous arrivons au théâtre, les lumières s’éteignent, le rideau se lève et le public applaudit. »',
+        5: '« Elle ouvre son cahier, elle relit la consigne, elle rédige un plan, elle vérifie l’accord et elle conclut. »',
+      };
+      return wrapNumeric(
+        `Combien de propositions (autant que de verbes conjugués) comporte cette phrase : ${examples[clauses]} ?`,
+        `Compte chaque verbe conjugué dans la phrase.`,
+        clauses,
+        0,
+        `La phrase contient exactement ${clauses} verbes conjugués, donc ${clauses} propositions.`,
+        'propositions',
+        0
+      );
+    }
+    case 'fr_narrative_3d': {
+      const item = pick([
+        { title: 'Yvain de Chrétien de Troyes', year: 1177 },
+        { title: 'Les Fables de La Fontaine', year: 1668 },
+        { title: 'Candide de Voltaire', year: 1759 },
+        { title: 'Madame Bovary de Flaubert', year: 1857 },
+        { title: 'Germinal d’Émile Zola', year: 1885 },
+        { title: 'L’Étranger d’Albert Camus', year: 1942 },
+      ]);
+      const century = Math.floor((item.year - 1) / 100) + 1;
+      return wrapNumeric(
+        `L’œuvre « ${item.title} » a été publiée en ${item.year}. À quel numéro de siècle (en chiffres arabes, ex: 19 pour XIXᵉ) appartient-elle ?`,
+        `Ajoute 1 au nombre de centaines de l’année ${item.year}.`,
+        century,
+        0,
+        `${item.year} se situe dans le ${century}ᵉ siècle.`,
+        'ᵉ siècle',
+        0
+      );
+    }
+    case 'fr_grammar_3d': {
+      const persons = 6;
+      const tenses = pick([2, 3, 4]);
+      const totalForms = persons * tenses;
+      return wrapNumeric(
+        `Dans un tableau de conjugaison de l’indicatif (6 personnes : je, tu, il/elle, nous, vous, ils/elles), combien de formes conjuguées distinctes doit-on écrire pour réviser ${tenses} temps simples ?`,
+        `Multiplie 6 personnes par ${tenses} temps.`,
+        totalForms,
+        0,
+        `6 × ${tenses} = ${totalForms} formes verbales à maîtriser.`,
+        'formes',
+        0
+      );
+    }
+    case 'fr_theater_3d': {
+      const acts = pick([3, 5]);
+      const scenesPerAct = randInt(4, 8);
+      const totalScenes = acts * scenesPerAct;
+      return wrapNumeric(
+        `Une pièce de théâtre classique comporte ${acts} actes contenant chacun ${scenesPerAct} scènes. Combien de scènes la pièce compte-t-elle au total ?`,
+        `Calcule ${acts} × ${scenesPerAct}.`,
+        totalScenes,
+        0,
+        `${acts} actes × ${scenesPerAct} scènes = ${totalScenes} scènes.`,
+        'scènes',
+        0
+      );
+    }
+    case 'fr_poetry_3d': {
+      const verse = pick([
+        { name: 'alexandrins', syl: 12 },
+        { name: 'décasyllabes', syl: 10 },
+        { name: 'octosyllabes', syl: 8 },
+      ]);
+      const stanza = pick([
+        { name: 'un tercet (3 vers)', lines: 3 },
+        { name: 'un quatrain (4 vers)', lines: 4 },
+        { name: 'un sizain (6 vers)', lines: 6 },
+      ]);
+      const totalSyl = verse.syl * stanza.lines;
+      return wrapNumeric(
+        `En versification française, combien de syllabes compte au total ${stanza.name} composé uniquement d’${verse.name} (${verse.syl} syllabes par vers) ?`,
+        `Multiplie ${stanza.lines} vers par ${verse.syl} syllabes.`,
+        totalSyl,
+        0,
+        `${stanza.lines} × ${verse.syl} = ${totalSyl} syllabes.`,
+        'syllabes',
+        0
+      );
+    }
+    case 'fr_rhetoric_3d': {
+      const axes = pick([2, 3]);
+      const subParts = pick([2, 3]);
+      const totalBlocks = axes * subParts;
+      return wrapNumeric(
+        `Un plan de commentaire littéraire ou de dissertation comporte ${axes} grands axes, chacun divisé en ${subParts} sous-parties argumentées. Combien de paragraphes de développement structurés cela représente-t-il ?`,
+        `Multiplie ${axes} axes × ${subParts} sous-parties.`,
+        totalBlocks,
+        0,
+        `${axes} × ${subParts} = ${totalBlocks} paragraphes argumentés (hors introduction et conclusion).`,
+        'paragraphes',
+        0
+      );
+    }
+    case 'fr_philo_3d': {
+      const pair = pick([
+        { a: 'le Discours de la méthode de Descartes', yA: 1637, b: 'Du contrat social de Rousseau', yB: 1762 },
+        { a: 'Du contrat social de Rousseau', yA: 1762, b: 'la Critique de la raison pure de Kant', yB: 1781 },
+        { a: 'la Critique de la raison pure de Kant', yA: 1781, b: 'L’Être et le Néant de Sartre', yB: 1943 },
+        { a: 'L’Interprétation du rêve de Freud', yA: 1900, b: 'L’existentialisme est un humanisme de Sartre', yB: 1946 },
+      ]);
+      const diff = pair.yB - pair.yA;
+      return wrapNumeric(
+        `En histoire de la philosophie, combien d’années séparent ${pair.a} (${pair.yA}) de ${pair.b} (${pair.yB}) ?`,
+        `Calcule ${pair.yB} − ${pair.yA}.`,
+        diff,
+        0,
+        `${pair.yB} − ${pair.yA} = ${diff} ans.`,
+        'ans',
+        0
+      );
+    }
+
+    // ===== ANGLAIS (LV1) =====
+    case 'en_tense_3d': {
+      const startYear = randInt(2012, 2022);
+      const refYear = 2026;
+      const duration = refYear - startYear;
+      return wrapNumeric(
+        `En ${refYear}, un élève écrit au Present Perfect : « I have studied English since ${startYear}. » Pour reformuler avec FOR (« for ___ years »), quel nombre d’années faut-il écrire ?`,
+        `Calcule la durée : ${refYear} − ${startYear}.`,
+        duration,
+        0,
+        `De ${startYear} à ${refYear}, la durée vaut ${refYear} − ${startYear} = ${duration} years (« for ${duration} years »).`,
+        'years',
+        0
+      );
+    }
+    case 'en_syntax_3d': {
+      const words = pick([
+        { sentence: 'Where do you live in London?', count: 6 },
+        { sentence: 'English is spoken by millions of students.', count: 7 },
+        { sentence: 'She told us that the story was true.', count: 8 },
+        { sentence: 'This historic museum is more interesting than that gallery.', count: 9 },
+      ]);
+      return wrapNumeric(
+        `Analyse la structure de cette phrase anglaise : « ${words.sentence} ». Combien de mots contient-elle au total ?`,
+        `Compte chaque mot séparé par un espace.`,
+        words.count,
+        0,
+        `La phrase compte exactement ${words.count} mots.`,
+        'words',
+        0
+      );
+    }
+    case 'en_modals_3d': {
+      const modalItem = pick([
+        { expr: 'He must be at home (quasi-certitude)', pct: 95 },
+        { expr: 'You should revise tonight (conseil fort)', pct: 75 },
+        { expr: 'It may rain later (probabilité moyenne)', pct: 50 },
+        { expr: 'She might call us (faible éventualité)', pct: 30 },
+      ]);
+      const complement = 100 - modalItem.pct;
+      return wrapNumeric(
+        `Sur l’échelle de certitude des modaux anglais, si « ${modalItem.expr} » est évalué à ${modalItem.pct} % de certitude, quelle part d’incertitude restante (en %) cela laisse-t-il ?`,
+        `Calcule 100 − ${modalItem.pct}.`,
+        complement,
+        0,
+        `100 % − ${modalItem.pct} % = ${complement} % d’incertitude.`,
+        '%',
+        0
+      );
+    }
+    case 'en_vocab_3d': {
+      const timeItem = pick([
+        { label: 'a quarter past eight', min: 15 },
+        { label: 'twenty past nine', min: 20 },
+        { label: 'half past ten', min: 30 },
+        { label: 'twenty-five past seven', min: 25 },
+        { label: 'ten past six', min: 10 },
+      ]);
+      return wrapNumeric(
+        `En anglais, l’heure indiquée est « ${timeItem.label} ». Combien de minutes se sont écoulées après l’heure pleine ?`,
+        `« Quarter » = 15 min, « half » = 30 min.`,
+        timeItem.min,
+        0,
+        `« ${timeItem.label} » correspond à ${timeItem.min} minutes passées.`,
+        'min',
+        0
+      );
+    }
+    case 'en_culture_3d': {
+      const city = pick([
+        { name: 'Londres (UTC+0)', offset: -1 },
+        { name: 'New York (UTC-5)', offset: -6 },
+        { name: 'Chicago (UTC-6)', offset: -7 },
+        { name: 'Los Angeles (UTC-8)', offset: -9 },
+      ]);
+      const parisHour = pick([14, 15, 16, 18, 20]);
+      const localHour = parisHour + city.offset;
+      return wrapNumeric(
+        `En heure d’hiver (Paris = UTC+1), lorsqu’il est ${parisHour}h00 à Paris, quelle heure (format 24h, nombre entier) est-il à ${city.name} ?`,
+        `Applique un décalage de ${city.offset} heures par rapport à Paris.`,
+        localHour,
+        0,
+        `${parisHour}h + (${city.offset}h) = ${localHour}h00 à ${city.name}.`,
+        'h',
+        0
+      );
+    }
+    case 'en_essay_3d': {
+      const bodyParas = pick([2, 3]);
+      const wordsPerBody = pick([60, 70, 80]);
+      const introConcl = 60; // 30 intro + 30 conclusion
+      const totalWords = introConcl + bodyParas * wordsPerBody;
+      return wrapNumeric(
+        `Pour un essay d’anglais au Baccalauréat, tu rédiges une introduction + conclusion de ${introConcl} mots au total et ${bodyParas} paragraphes argumentés de ${wordsPerBody} mots chacun. Combien de mots compte ton essai ?`,
+        `Calcule ${introConcl} + (${bodyParas} × ${wordsPerBody}).`,
+        totalWords,
+        1,
+        `${introConcl} + ${bodyParas} × ${wordsPerBody} = ${totalWords} words.`,
+        'words',
         0
       );
     }

@@ -355,109 +355,214 @@ export function getParamMetadataForPreset(preset: string): ParamMetadata {
         maxC: 18,
         stepC: 0.5,
       };
-    case 'db_table_3d':
+    case 'svt_cell_3d':
       return {
-        labelA: 'Nombre de lignes (tuples)',
+        labelA: 'Mitochondries (production ATP)',
         minA: 2,
         maxA: 10,
         stepA: 1,
-        labelB: 'Nombre de colonnes (attributs)',
-        minB: 2,
-        maxB: 8,
+        labelB: 'Activité ribosomale / enzymatique',
+        minB: 1,
+        maxB: 4,
         stepB: 1,
-        labelC: 'Lignes sélectionnées (WHERE)',
-        minC: 1,
-        maxC: 8,
-        stepC: 1,
-      };
-    case 'db_keys_3d':
-      return {
-        labelA: 'Clés primaires PK (parent)',
-        minA: 2,
-        maxA: 7,
-        stepA: 1,
-        labelB: 'Clés étrangères FK (enfant)',
-        minB: 2,
-        maxB: 10,
-        stepB: 1,
-        labelC: 'Règle ON DELETE (1:RESTRICT 2:CASCADE)',
+        labelC: 'Type (1: Animale · 2: Végétale)',
         minC: 1,
         maxC: 2,
         stepC: 1,
       };
-    case 'db_query_3d':
+    case 'svt_dna_3d':
       return {
-        labelA: 'Lignes en entrée (FROM)',
-        minA: 4,
-        maxA: 20,
+        labelA: 'Paires de nucléotides',
+        minA: 6,
+        maxA: 16,
         stepA: 1,
-        labelB: 'Lignes retenues (WHERE)',
-        minB: 1,
-        maxB: 18,
+        labelB: 'Proportion Adénine %A',
+        minB: 15,
+        maxB: 35,
         stepB: 1,
-        labelC: 'Groupes (GROUP BY)',
+        labelC: 'État (1: Double hélice · 2: Réplication)',
         minC: 1,
-        maxC: 5,
+        maxC: 2,
         stepC: 1,
       };
-    case 'db_join_3d':
+    case 'svt_tectonics_3d':
       return {
-        labelA: 'Cardinalité Table A',
-        minA: 4,
-        maxA: 20,
-        stepA: 1,
-        labelB: 'Cardinalité Table B',
-        minB: 4,
-        maxB: 20,
+        labelA: 'Vitesse plaques (cm/an)',
+        minA: 1,
+        maxA: 10,
+        stepA: 0.5,
+        labelB: 'Durée (Ma) / Profondeur foyer (km)',
+        minB: 5,
+        maxB: 40,
         stepB: 1,
-        labelC: 'Type (1:INNER 2:LEFT 3:FULL)',
+        labelC: 'Contexte (1:Dorsale 2:Subduction 3:Strates)',
         minC: 1,
         maxC: 3,
         stepC: 1,
       };
-    case 'db_btree_3d':
+    case 'svt_ecosystem_3d':
       return {
-        labelA: 'Facteur de branchement b',
+        labelA: 'Niveaux trophiques',
         minA: 2,
-        maxA: 6,
+        maxA: 4,
         stepA: 1,
-        labelB: 'Profondeur visuelle h',
-        minB: 2,
-        maxB: 4,
-        stepB: 1,
-        labelC: 'Volume indexé N (lignes)',
-        minC: 100,
-        maxC: 10000,
-        stepC: 100,
-      };
-    case 'db_acid_3d':
-      return {
-        labelA: 'Requêtes dans la transaction',
-        minA: 1,
-        maxA: 6,
-        stepA: 1,
-        labelB: 'Issue (1:COMMIT 2:ROLLBACK)',
-        minB: 1,
-        maxB: 2,
-        stepB: 1,
-        labelC: 'Niveau d’isolation (1→3)',
+        labelB: 'Biomasse producteurs (kg)',
+        minB: 200,
+        maxB: 2000,
+        stepB: 100,
+        labelC: 'Vue (1: Pyramide · 2: Photosynthèse)',
         minC: 1,
-        maxC: 3,
+        maxC: 2,
         stepC: 1,
       };
-    case 'db_norm_3d':
+    case 'svt_organ_3d':
       return {
-        labelA: 'Forme normale (1:1NF 2:2NF 3:3NF)',
-        minA: 1,
-        maxA: 3,
-        stepA: 1,
-        labelB: 'Volume de lignes',
-        minB: 20,
-        maxB: 1000,
-        stepB: 20,
-        labelC: 'Tables décomposées',
+        labelA: 'FC (bpm) / Antigènes',
+        minA: 4,
+        maxA: 180,
+        stepA: 2,
+        labelB: 'VES (mL) / Efficacité (%)',
+        minB: 40,
+        maxB: 120,
+        stepB: 5,
+        labelC: 'Système (1: Cœur/Sang · 2: Immunité)',
+        minC: 1,
+        maxC: 2,
+        stepC: 1,
+      };
+    case 'svt_neuron_3d':
+      return {
+        labelA: 'Vitesse influx nerveux (m/s)',
+        minA: 20,
+        maxA: 120,
+        stepA: 5,
+        labelB: 'Longueur axone (m)',
+        minB: 0.4,
+        maxB: 2.0,
+        stepB: 0.1,
+        labelC: 'Fréquence potentiels d’action (×20 Hz)',
         minC: 1,
         maxC: 4,
+        stepC: 1,
+      };
+    case 'svt_climate_3d':
+      return {
+        labelA: 'CO₂ atmosphérique (ppm)',
+        minA: 200,
+        maxA: 600,
+        stepA: 10,
+        labelB: 'Albédo planétaire (%)',
+        minB: 10,
+        maxB: 60,
+        stepB: 1,
+        labelC: 'Inclinaison axe terrestre (°)',
+        minC: 0,
+        maxC: 30,
+        stepC: 0.2,
+      };
+    case 'hg_monument_3d':
+      return {
+        labelA: 'Niveaux / Colonnes / Tours',
+        minA: 3,
+        maxA: 8,
+        stepA: 1,
+        labelB: 'Hauteur monumentale (m)',
+        minB: 10,
+        maxB: 40,
+        stepB: 1,
+        labelC: 'Type (1:Pyramide 2:Temple 3:Château)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'hg_city_urban_3d':
+      return {
+        labelA: 'Tours du CBD (centre d’affaires)',
+        minA: 3,
+        maxA: 12,
+        stepA: 1,
+        labelB: 'Taux d’urbanisation (%)',
+        minB: 30,
+        maxB: 95,
+        stepB: 1,
+        labelC: 'Rang (1:Ville 2:Métropole 3:Mondiale)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'hg_globe_routes_3d':
+      return {
+        labelA: 'Routes maritimes actives',
+        minA: 2,
+        maxA: 10,
+        stepA: 1,
+        labelB: 'Vitesse moyenne navires (km/h)',
+        minB: 10,
+        maxB: 50,
+        stepB: 2,
+        labelC: 'Époque (1:Découvertes 2:Conteneurs/ZEE)',
+        minC: 1,
+        maxC: 2,
+        stepC: 1,
+      };
+    case 'hg_demography_3d':
+      return {
+        labelA: 'Taux de natalité (‰)',
+        minA: 8,
+        maxA: 45,
+        stepA: 1,
+        labelB: 'Taux de mortalité (‰)',
+        minB: 4,
+        maxB: 30,
+        stepB: 1,
+        labelC: 'Phase de transition démographique (1→4)',
+        minC: 1,
+        maxC: 4,
+        stepC: 1,
+      };
+    case 'hg_timeline_3d':
+      return {
+        labelA: 'Année repère (fin)',
+        minA: 1600,
+        maxA: 2025,
+        stepA: 1,
+        labelB: 'Année origine (début)',
+        minB: 1600,
+        maxB: 2000,
+        stepB: 1,
+        labelC: 'Période (1:Moderne 2:XIXᵉ 3:Contemp.)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'hg_industry_3d':
+      return {
+        labelA: 'Unités productives / R&D',
+        minA: 3,
+        maxA: 10,
+        stepA: 1,
+        labelB: 'Part tertiaire / Rendement (%)',
+        minB: 20,
+        maxB: 90,
+        stepB: 2,
+        labelC: 'Modèle (1:Usine XIXᵉ 2:Technopôle XXIᵉ)',
+        minC: 1,
+        maxC: 2,
+        stepC: 1,
+      };
+    case 'hg_geopolitics_3d':
+      return {
+        labelA: 'Pôles / États membres',
+        minA: 2,
+        maxA: 27,
+        stepA: 1,
+        labelB: 'Année géopolitique clé',
+        minB: 1945,
+        maxB: 2025,
+        stepB: 1,
+        labelC: 'Ordre (1:Bipolaire 2:UE 3:Multipolaire)',
+        minC: 1,
+        maxC: 3,
         stepC: 1,
       };
     default:
@@ -700,99 +805,217 @@ export function computeReadout(params: SceneParams): LiveMathReadout {
         formulaLive: `V_B = ${vB.toFixed(1)} mL · V_E = ${vE.toFixed(1)} mL · pKa = ${pKa.toFixed(1)}`,
       };
     }
-    case 'db_table_3d': {
-      const rows = Math.max(2, Math.round(a));
-      const cols = Math.max(2, Math.round(b));
-      const activeRows = Math.min(rows, Math.max(1, Math.round(c)));
-      const cells = rows * cols;
+    case 'svt_cell_3d': {
+      const mito = Math.max(2, Math.round(a));
+      const ribo = Math.max(1, Math.round(b));
+      const isPlant = Math.round(c) >= 2;
+      const atpPerSec = mito * 32;
       return {
-        primaryLabel: 'Structure relationnelle',
-        primaryValue: `${rows} tuples × ${cols} attributs`,
-        secondaryLabel: 'Cellules / Sélection',
-        secondaryValue: `${cells} cellules · ${activeRows} retenue(s)`,
-        formulaLive: `SELECT * FROM table LIMIT ${activeRows};  -- ${rows}×${cols} = ${cells}`,
+        primaryLabel: isPlant ? 'Cellule végétale (chloroplastes)' : 'Cellule animale (eucaryote)',
+        primaryValue: `${mito} mitochondries · ~${atpPerSec} ATP/cycle`,
+        secondaryLabel: 'Synthèse protéique',
+        secondaryValue: `${ribo * 6} ribosomes actifs · Noyau ADN`,
+        formulaLive: isPlant
+          ? 'Paroi + Vacuole + Chloroplastes : 6 CO₂ + 6 H₂O → C₆H₁₂O₆ + 6 O₂'
+          : `Respiration aérobie : ${mito} × 32 = ${atpPerSec} ATP / cycle`,
       };
     }
-    case 'db_keys_3d': {
-      const parents = Math.max(2, Math.round(a));
-      const children = Math.max(2, Math.round(b));
-      const cascade = Math.round(c) >= 2;
+    case 'svt_dna_3d': {
+      const pairs = Math.max(6, Math.round(a));
+      const pctA = Math.max(15, Math.min(35, Math.round(b)));
+      const pctG = 50 - pctA;
+      const isRep = Math.round(c) >= 2;
       return {
-        primaryLabel: 'Cardinalité PK → FK',
-        primaryValue: `${parents} PK → ${children} FK (1:N)`,
-        secondaryLabel: 'Intégrité référentielle',
-        secondaryValue: cascade ? 'ON DELETE CASCADE' : 'ON DELETE RESTRICT',
-        formulaLive: `FOREIGN KEY (user_id) REFERENCES users(id) ${cascade ? 'ON DELETE CASCADE' : 'ON DELETE RESTRICT'}`,
+        primaryLabel: isRep ? 'Réplication semi-conservative' : 'Double hélice d’ADN',
+        primaryValue: `A=T=${pctA}% · G=C=${pctG}%`,
+        secondaryLabel: 'Liaisons hydrogène (2·AT + 3·GC)',
+        secondaryValue: `${pairs} pb · ~${Math.round(pairs * (2 * (pctA / 50) + 3 * (pctG / 50)))} liaisons H`,
+        formulaLive: `A(${pctA}%) = T(${pctA}%)  ·  G(${pctG}%) = C(${pctG}%)  (Chargaff)`,
       };
     }
-    case 'db_query_3d': {
-      const inputRows = Math.max(4, Math.round(a));
-      const keptRows = Math.min(inputRows, Math.max(1, Math.round(b)));
-      const groups = Math.max(1, Math.min(keptRows, Math.round(c)));
-      const selectivity = Math.round((keptRows / inputRows) * 100);
-      const avgPerGroup = (keptRows / groups).toFixed(1);
-      return {
-        primaryLabel: 'Pipeline WHERE → GROUP BY',
-        primaryValue: `${keptRows} / ${inputRows} lignes (${selectivity}%)`,
-        secondaryLabel: 'Agrégation COUNT(*)',
-        secondaryValue: `${groups} groupe(s) · ~${avgPerGroup} lignes/grp`,
-        formulaLive: `SELECT grp, COUNT(*) FROM t WHERE ... GROUP BY grp; -- ${keptRows} lignes`,
-      };
-    }
-    case 'db_join_3d': {
-      const cardA = Math.max(4, Math.round(a));
-      const cardB = Math.max(4, Math.round(b));
+    case 'svt_tectonics_3d': {
+      const speed = Math.max(1, a);
+      const timeMa = Math.max(5, Math.round(b));
       const mode = Math.max(1, Math.min(3, Math.round(c)));
-      const overlap = Math.max(1, Math.min(cardA, cardB, Math.round(Math.min(cardA, cardB) * 0.6)));
-      const resultCount =
-        mode === 1 ? overlap : mode === 2 ? cardA : cardA + cardB - overlap;
-      const modeName = mode === 1 ? 'INNER JOIN' : mode === 2 ? 'LEFT JOIN' : 'FULL OUTER JOIN';
+      const driftKm = Math.round(speed * 10 * timeMa);
+      const modeLabel =
+        mode === 1 ? 'Dorsale océanique (Divergence)' : mode === 2 ? 'Zone de subduction & volcanisme' : 'Érosion & bassin sédimentaire';
       return {
-        primaryLabel: `Résultat ${modeName}`,
-        primaryValue: `${resultCount} ligne(s) retournée(s)`,
-        secondaryLabel: 'Ensembles A, B et A ∩ B',
-        secondaryValue: `|A|=${cardA} · |B|=${cardB} · |A∩B|=${overlap}`,
-        formulaLive: `A ${modeName} B ON a.id = b.a_id  →  ${resultCount} tuples`,
+        primaryLabel: modeLabel,
+        primaryValue: mode === 3 ? `Strates : ${(timeMa * 0.2).toFixed(1)} m / 100 ka` : `Déplacement : ${driftKm} km`,
+        secondaryLabel: mode === 2 ? 'Profondeur foyer / magmatisme' : 'Vitesse tectonique',
+        secondaryValue: mode === 2 ? `Foyer ${timeMa} km · v = ${speed.toFixed(1)} cm/an` : `v = ${speed.toFixed(1)} cm/an sur ${timeMa} Ma`,
+        formulaLive: `d = ${speed.toFixed(1)} cm/an × ${timeMa} Ma = ${driftKm} km`,
       };
     }
-    case 'db_btree_3d': {
-      const branch = Math.max(2, Math.round(a));
-      const rows = Math.max(100, Math.round(c));
-      const hops = Math.max(1, Math.ceil(Math.log(rows) / Math.log(branch)));
-      const speedup = Math.max(1, Math.round(rows / hops));
+    case 'svt_ecosystem_3d': {
+      const levels = Math.max(2, Math.min(4, Math.round(a)));
+      const bio0 = Math.max(200, Math.round(b));
+      const isPhoto = Math.round(c) >= 2;
+      const topBio = bio0 / Math.pow(10, levels - 1);
       return {
-        primaryLabel: 'Coût Index B-Tree O(log_b N)',
-        primaryValue: `${hops} accès nœud(s) (b=${branch})`,
-        secondaryLabel: 'Gain vs Seq Scan O(N)',
-        secondaryValue: `×${speedup} plus rapide (${rows} lignes)`,
-        formulaLive: `⌈log_${branch}(${rows})⌉ = ${hops} vs Seq Scan = ${rows}`,
+        primaryLabel: isPhoto ? 'Flux photosynthétique (O₂ / CO₂)' : `Pyramide trophique (${levels} niveaux)`,
+        primaryValue: isPhoto ? `${Math.round(bio0 * 0.6)} g O₂/j libérés` : `Sommet : ${topBio.toFixed(1)} kg`,
+        secondaryLabel: 'Règle des 10 % (Lindeman)',
+        secondaryValue: `Producteurs : ${bio0} kg → Herbivores : ${(bio0 * 0.1).toFixed(0)} kg`,
+        formulaLive: `B_n = B_0 × 0,10^(${levels - 1}) = ${topBio.toFixed(1)} kg`,
       };
     }
-    case 'db_acid_3d': {
-      const ops = Math.max(1, Math.round(a));
-      const isCommit = Math.round(b) <= 1;
-      const isoIdx = Math.max(1, Math.min(3, Math.round(c)));
-      const isoName =
-        isoIdx === 1 ? 'READ COMMITTED' : isoIdx === 2 ? 'REPEATABLE READ' : 'SERIALIZABLE';
+    case 'svt_organ_3d': {
+      const isImm = Math.round(c) >= 2;
+      if (isImm) {
+        const antigens = Math.max(4, Math.min(18, Math.round(a)));
+        const eff = Math.min(100, Math.max(40, Math.round(b)));
+        const neutralized = Math.round((antigens * eff) / 100);
+        return {
+          primaryLabel: 'Complexe immun (Anticorps en Y)',
+          primaryValue: `${neutralized} / ${antigens} antigènes neutralisés`,
+          secondaryLabel: 'Réponse adaptative (Lymphocytes B)',
+          secondaryValue: `Affinité spécifique : ${eff} %`,
+          formulaLive: `Antigène + Anticorps spécifique → Complexe immun → Phagocytose`,
+        };
+      }
+      const fc = Math.max(40, Math.min(180, Math.round(a)));
+      const ves = Math.max(40, Math.min(120, Math.round(b)));
+      const qcL = (fc * ves) / 1000;
       return {
-        primaryLabel: isCommit ? 'Transaction validée (COMMIT)' : 'Transaction annulée (ROLLBACK)',
-        primaryValue: `${ops} opération(s) atomique(s)`,
-        secondaryLabel: 'Niveau d’isolation ACID',
-        secondaryValue: isoName,
-        formulaLive: `BEGIN; (${ops} ops) → ${isCommit ? 'COMMIT;' : 'ROLLBACK;'}  [${isoName}]`,
+        primaryLabel: 'Débit cardiaque (Double circulation)',
+        primaryValue: `Qc = ${qcL.toFixed(2)} L/min`,
+        secondaryLabel: 'Paramètres cardiaques',
+        secondaryValue: `FC = ${fc} bpm · VES = ${ves} mL`,
+        formulaLive: `Qc = ${fc} × ${ves} = ${fc * ves} mL/min = ${qcL.toFixed(2)} L/min`,
       };
     }
-    case 'db_norm_3d': {
-      const nf = Math.max(1, Math.min(3, Math.round(a)));
-      const rows = Math.max(20, Math.round(b));
-      const tables = nf === 1 ? 1 : nf === 2 ? 2 : Math.max(3, Math.round(c));
-      const savedPct = nf === 1 ? 18 : nf === 2 ? 52 : 84;
+    case 'svt_neuron_3d': {
+      const speed = Math.max(20, Math.round(a));
+      const dist = Math.max(0.4, b);
+      const freq = Math.max(1, Math.round(c)) * 20;
+      const ms = (dist / speed) * 1000;
       return {
-        primaryLabel: `Forme normale active : ${nf}NF`,
-        primaryValue: `${tables} table(s) relationnelle(s)`,
-        secondaryLabel: 'Réduction de redondance',
-        secondaryValue: `−${savedPct} % sur ${rows} enregistrements`,
-        formulaLive: `${nf}NF : atomicité${nf >= 2 ? ' + dépen. pleine' : ''}${nf >= 3 ? ' + sans transitivité' : ''}`,
+        primaryLabel: 'Conduction saltatoire (Axone)',
+        primaryValue: `Δt = ${ms.toFixed(1)} ms (v = ${speed} m/s)`,
+        secondaryLabel: 'Codage en fréquence de PA',
+        secondaryValue: `${freq} Hz · Amplitude constante 100 mV`,
+        formulaLive: `t = ${dist.toFixed(1)} m / ${speed} m/s = ${ms.toFixed(1)} ms · f = ${freq} Hz`,
+      };
+    }
+    case 'svt_climate_3d': {
+      const co2 = Math.max(200, Math.round(a));
+      const albedo = Math.max(10, Math.min(60, Math.round(b)));
+      const tilt = Math.max(0, Math.min(30, c));
+      const pAbs = Math.round(340 * (1 - albedo / 100));
+      const forcing = 5.35 * Math.log(co2 / 280);
+      const tMean = 15 + forcing * 0.75 + (30 - albedo) * 0.35;
+      return {
+        primaryLabel: 'Bilan radiatif terrestre',
+        primaryValue: `P_abs = ${pAbs} W/m² · T ≈ ${tMean.toFixed(1)} °C`,
+        secondaryLabel: 'Forçage CO₂ & Inclinaison',
+        secondaryValue: `ΔF = ${forcing >= 0 ? '+' : ''}${forcing.toFixed(2)} W/m² · Axe ${tilt.toFixed(1)}°`,
+        formulaLive: `P_abs = (1 − ${(albedo / 100).toFixed(2)}) × 340 = ${pAbs} W/m² · CO₂=${co2} ppm`,
+      };
+    }
+    case 'hg_monument_3d': {
+      const units = Math.max(3, Math.min(8, Math.round(a)));
+      const heightM = Math.max(10, Math.round(b));
+      const mode = Math.max(1, Math.min(3, Math.round(c)));
+      const archLabel =
+        mode === 1 ? 'Pyramide / Ziggourat antique' : mode === 2 ? 'Temple civique grec' : 'Forteresse & cité médiévale';
+      const baseArea = Math.round(heightM * heightM * (mode === 1 ? 1.8 : 1.1));
+      return {
+        primaryLabel: archLabel,
+        primaryValue: `H = ${heightM} m · ${units} ${mode === 1 ? 'degrés' : mode === 2 ? 'colonnes' : 'tours'}`,
+        secondaryLabel: 'Emprise au sol estimée',
+        secondaryValue: `~${baseArea} m² · Axe sacré / défensif`,
+        formulaLive: `${archLabel} · H = ${heightM} m · Emprise ≈ ${baseArea} m²`,
+      };
+    }
+    case 'hg_city_urban_3d': {
+      const towers = Math.max(3, Math.min(12, Math.round(a)));
+      const urbanPct = Math.max(30, Math.min(95, Math.round(b)));
+      const tier = Math.max(1, Math.min(3, Math.round(c)));
+      const tierLabel = tier === 1 ? 'Ville moyenne' : tier === 2 ? 'Métropole régionale' : 'Ville mondiale (Archipel)';
+      const density = Math.round(urbanPct * 85 * tier);
+      return {
+        primaryLabel: tierLabel,
+        primaryValue: `Urbanisation : ${urbanPct} % · ${towers} tours CBD`,
+        secondaryLabel: 'Densité métropolitaine',
+        secondaryValue: `~${density.toLocaleString('fr-FR')} hab./km²`,
+        formulaLive: `Densité ≈ ${density} hab./km² · Taux urbain = ${urbanPct} %`,
+      };
+    }
+    case 'hg_globe_routes_3d': {
+      const routes = Math.max(2, Math.min(10, Math.round(a)));
+      const speedKmH = Math.max(10, Math.round(b));
+      const isModern = Math.round(c) >= 2;
+      const distKm = isModern ? 18500 : 6500;
+      const days = distKm / (speedKmH * 24);
+      return {
+        primaryLabel: isModern ? 'Façades maritimes & ZEE (200 milles)' : 'Grandes Découvertes maritimes',
+        primaryValue: `${routes} routes · ${speedKmH} km/h`,
+        secondaryLabel: isModern ? 'Transit Asie–Europe (18 500 km)' : 'Traversée Atlantique (6 500 km)',
+        secondaryValue: `≈ ${days.toFixed(1)} jours en mer`,
+        formulaLive: `t = ${distKm} km / (${speedKmH} km/h × 24) ≈ ${days.toFixed(1)} j`,
+      };
+    }
+    case 'hg_demography_3d': {
+      const natal = Math.max(8, Math.round(a));
+      const mortal = Math.max(4, Math.round(b));
+      const phase = Math.max(1, Math.min(4, Math.round(c)));
+      const accNat = natal - mortal;
+      const phaseNames = [
+        'Phase 1 : Régime traditionnel',
+        'Phase 2 : Explosion démographique',
+        'Phase 3 : Baisse de la natalité',
+        'Phase 4 : Régime post-transitionnel',
+      ];
+      return {
+        primaryLabel: phaseNames[phase - 1],
+        primaryValue: `Accroissement : ${accNat >= 0 ? '+' : ''}${accNat} ‰`,
+        secondaryLabel: 'Natalité / Mortalité',
+        secondaryValue: `N = ${natal} ‰ · M = ${mortal} ‰`,
+        formulaLive: `TAN = ${natal} ‰ − ${mortal} ‰ = ${accNat >= 0 ? '+' : ''}${accNat} ‰`,
+      };
+    }
+    case 'hg_timeline_3d': {
+      const yEnd = Math.round(a);
+      const yStart = Math.round(b);
+      const span = Math.abs(yEnd - yStart);
+      const century = Math.floor((Math.max(1, yEnd) - 1) / 100) + 1;
+      const era = Math.round(c) === 1 ? 'Temps modernes' : Math.round(c) === 2 ? 'XIXᵉ – 1ʳᵉ Guerre mondiale' : 'Monde contemporain';
+      return {
+        primaryLabel: `${era} · ${century}ᵉ siècle`,
+        primaryValue: `${Math.min(yStart, yEnd)} → ${Math.max(yStart, yEnd)}`,
+        secondaryLabel: 'Écart chronologique',
+        secondaryValue: `${span} ans (${(span / 10).toFixed(1)} décennies)`,
+        formulaLive: `Δt = |${yEnd} − ${yStart}| = ${span} ans · Repère : ${yEnd}`,
+      };
+    }
+    case 'hg_industry_3d': {
+      const units = Math.max(3, Math.min(10, Math.round(a)));
+      const tertiaryPct = Math.max(20, Math.min(90, Math.round(b)));
+      const isModern = Math.round(c) >= 2;
+      const secPct = Math.max(5, Math.round((100 - tertiaryPct) * 0.72));
+      const primPct = Math.max(1, 100 - tertiaryPct - secPct);
+      return {
+        primaryLabel: isModern ? 'Technopôle & ZIP mondialisée' : 'Bassin industriel XIXᵉ (Vapeur)',
+        primaryValue: `${units} pôles · Tertiaire ${tertiaryPct} %`,
+        secondaryLabel: 'Répartition sectorielle',
+        secondaryValue: `Prim. ${primPct}% · Sec. ${secPct}% · Tert. ${tertiaryPct}%`,
+        formulaLive: `${primPct}% + ${secPct}% + ${tertiaryPct}% = 100 %`,
+      };
+    }
+    case 'hg_geopolitics_3d': {
+      const poles = Math.max(2, Math.min(27, Math.round(a)));
+      const year = Math.round(b);
+      const mode = Math.max(1, Math.min(3, Math.round(c)));
+      const label =
+        mode === 1 ? 'Ordre bipolaire (Guerre froide)' : mode === 2 ? 'Union européenne (Intégration)' : 'Monde multipolaire (XXIᵉ s.)';
+      return {
+        primaryLabel: label,
+        primaryValue: mode === 2 ? `${poles} États membres · ${year}` : `${poles} pôles de puissance · ${year}`,
+        secondaryLabel: 'Équilibre géopolitique',
+        secondaryValue: mode === 1 ? 'Blocs Est / Ouest · Dissuasion' : mode === 2 ? 'Marché unique & institutions' : 'Puissances régionales & ONU',
+        formulaLive: `${label} · Repère ${year} · ${poles} acteurs majeurs`,
       };
     }
     default:
@@ -1244,11 +1467,6 @@ export class MathSceneEngine {
       color: 0xcbd5e1,
       roughness: 0.32,
       metalness: 0.85,
-    });
-    const ceramicMat = new THREE.MeshStandardMaterial({
-      color: 0x94a3b8,
-      roughness: 0.35,
-      metalness: 0.12,
     });
     const darkSlateMat = new THREE.MeshStandardMaterial({
       color: 0x334155,
@@ -2338,497 +2556,1291 @@ export class MathSceneEngine {
         break;
       }
 
-      case 'db_table_3d': {
-        // 3D relational table matrix: header bar + PK column (brass) + highlighted WHERE rows (accent)
-        const rows = Math.max(2, Math.min(9, Math.round(a)));
-        const cols = Math.max(2, Math.min(7, Math.round(b)));
-        const activeRows = Math.min(rows, Math.max(1, Math.round(c)));
-        const cellW = 0.56;
-        const cellD = 0.42;
-        const gap = 0.08 + explode * 0.1;
-        const totalW = cols * (cellW + gap);
-        const totalD = (rows + 1) * (cellD + gap);
+      case 'svt_cell_3d': {
+        // Composite eukaryotic cell cutaway: cell wall (if plant), translucent membrane dome, double-membrane nucleus, mitochondria, chloroplasts, ribosomes
+        const mitoCount = Math.max(2, Math.min(10, Math.round(a)));
+        const riboGroups = Math.max(1, Math.min(4, Math.round(b)));
+        const isPlant = Math.round(c) >= 2;
+        const cellR = 1.9;
 
-        // Sleek schema plinth
-        const plinth = new THREE.Mesh(
-          new THREE.BoxGeometry(totalW + 0.35, 0.14, totalD + 0.35),
-          darkSlateMat
-        );
-        plinth.position.set(0, 0.09, 0);
-        plinth.receiveShadow = true;
-        this.modelGroup.add(plinth);
-
-        const cellGeo = new THREE.BoxGeometry(cellW, 0.24, cellD);
-        const headerGeo = new THREE.BoxGeometry(cellW, 0.34, cellD);
-
-        for (let col = 0; col < cols; col++) {
-          const x = (col - (cols - 1) / 2) * (cellW + gap);
-          const zHeader = (-rows / 2) * (cellD + gap);
-          const hdr = new THREE.Mesh(headerGeo, col === 0 ? warmBrassMat : darkSlateMat);
-          hdr.position.set(x, 0.36 + explode * 0.25, zHeader);
-          hdr.castShadow = true;
-          this.modelGroup.add(hdr);
-
-          for (let r = 0; r < rows; r++) {
-            const z = (r + 1 - rows / 2) * (cellD + gap);
-            const isSelected = r < activeRows;
-            const isPk = col === 0;
-            const mat = isSelected ? (isPk ? warmBrassMat : accentMat) : ceramicMat;
-            const tile = new THREE.Mesh(cellGeo, mat);
-            const baseY = 0.3 + (isSelected ? 0.16 : 0) + explode * (isSelected ? 0.35 : 0.05);
-            tile.position.set(x, baseY, z);
-            tile.castShadow = true;
-            tile.receiveShadow = true;
-            if (isSelected) {
-              this.animatedSubparts.push({
-                obj: tile,
-                baseY,
-                phase: r * 0.55 + col * 0.25,
-                amp: 0.035,
-                speed: 2.2,
-              });
-            }
-            this.modelGroup.add(tile);
-          }
-        }
-        break;
-      }
-
-      case 'db_keys_3d': {
-        // Two 3D relational tables connected by Primary Key -> Foreign Key golden Bezier bridges
-        const parents = Math.max(2, Math.min(7, Math.round(a)));
-        const children = Math.max(2, Math.min(9, Math.round(b)));
-        const isCascade = Math.round(c) >= 2;
-        const spreadX = 1.85 + explode * 0.65;
-
-        // Parent table monolith (left)
-        const parentH = Math.max(1.5, parents * 0.42 + 0.5);
-        const parentBox = new THREE.Mesh(new THREE.BoxGeometry(1.3, parentH, 1.05), glassMat);
-        parentBox.position.set(-spreadX, parentH / 2 + 0.12, 0);
-        parentBox.renderOrder = 2;
-        this.modelGroup.add(parentBox);
-
-        const parentBase = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.14, 1.18), darkSlateMat);
-        parentBase.position.set(-spreadX, 0.09, 0);
-        this.modelGroup.add(parentBase);
-
-        // Child table monolith (right)
-        const childH = Math.max(1.5, children * 0.34 + 0.5);
-        const childBox = new THREE.Mesh(new THREE.BoxGeometry(1.3, childH, 1.05), glassMat);
-        childBox.position.set(spreadX, childH / 2 + 0.12, 0);
-        childBox.renderOrder = 2;
-        this.modelGroup.add(childBox);
-
-        const childBase = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.14, 1.18), darkSlateMat);
-        childBase.position.set(spreadX, 0.09, 0);
-        this.modelGroup.add(childBase);
-
-        const pkCoords: THREE.Vector3[] = [];
-        const pkGeo = new THREE.BoxGeometry(0.95, 0.18, 0.62);
-        for (let i = 0; i < parents; i++) {
-          const y = 0.42 + i * ((parentH - 0.55) / Math.max(1, parents - 1));
-          const pkMesh = new THREE.Mesh(pkGeo, warmBrassMat);
-          pkMesh.position.set(-spreadX, y, 0);
-          pkMesh.castShadow = true;
-          this.modelGroup.add(pkMesh);
-          pkCoords.push(new THREE.Vector3(-spreadX + 0.5, y, 0));
-        }
-
-        const fkGeo = new THREE.BoxGeometry(0.95, 0.16, 0.62);
-        const linkMat = new THREE.MeshStandardMaterial({
-          color: isCascade ? 0x10b981 : accent.getHex(),
-          emissive: isCascade ? 0x059669 : accent.getHex(),
-          emissiveIntensity: 0.35,
-          roughness: 0.3,
-          metalness: 0.5,
-        });
-
-        for (let j = 0; j < children; j++) {
-          const y = 0.38 + j * ((childH - 0.5) / Math.max(1, children - 1));
-          const fkMesh = new THREE.Mesh(fkGeo, accentMat);
-          fkMesh.position.set(spreadX, y, 0);
-          fkMesh.castShadow = true;
-          this.modelGroup.add(fkMesh);
-
-          const targetPk = pkCoords[j % pkCoords.length];
-          const start = new THREE.Vector3(spreadX - 0.5, y, 0);
-          const mid = new THREE.Vector3(
-            0,
-            (targetPk.y + y) * 0.5 + 0.45 + (j % 3) * 0.18,
-            ((j % 2 === 0 ? 1 : -1) * 0.32)
-          );
-          const curve = new THREE.QuadraticBezierCurve3(targetPk, mid, start);
-          const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 22, 0.028, 8, false), linkMat);
-          this.modelGroup.add(tube);
-        }
-
-        // Orbiting referential integrity sentinel orb
-        const sentinel = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), warmBrassMat);
-        this.orbitSubparts.push({
-          obj: sentinel,
-          radiusX: spreadX * 0.55,
-          radiusZ: 0.75,
-          speed: 1.5,
-          phase: 0,
-          centerY: 2.1,
-          tiltX: 0.25,
-          tiltZ: 0,
-        });
-        this.modelGroup.add(sentinel);
-        break;
-      }
-
-      case 'db_query_3d': {
-        // 3D SQL pipeline: FROM input records -> WHERE glass prism filter -> GROUP BY aggregated bars
-        const inputRows = Math.max(4, Math.min(18, Math.round(a)));
-        const keptRows = Math.min(inputRows, Math.max(1, Math.round(b)));
-        const groups = Math.max(1, Math.min(5, Math.round(c)));
-        const shift = explode * 0.55;
-
-        // Left: input records grid
-        const inCols = 3;
-        const blockGeo = new THREE.BoxGeometry(0.32, 0.22, 0.32);
-        for (let i = 0; i < inputRows; i++) {
-          const r = Math.floor(i / inCols);
-          const col = i % inCols;
-          const passes = i < keptRows;
-          const mesh = new THREE.Mesh(blockGeo, passes ? accentMat : ceramicMat);
-          const baseY = 0.26 + r * 0.28;
-          mesh.position.set(-2.3 - shift + (col - 1) * 0.42, baseY, 0);
-          mesh.castShadow = true;
-          if (passes) {
-            this.animatedSubparts.push({ obj: mesh, baseY, phase: i * 0.35, amp: 0.03 });
-          }
-          this.modelGroup.add(mesh);
-        }
-
-        // Center: WHERE filter glass prism + brass frame
-        const prism = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 2.2, 3), glassMat);
-        prism.position.set(0, 1.25, 0);
-        prism.rotation.y = Math.PI / 6;
-        prism.renderOrder = 2;
-        this.modelGroup.add(prism);
-
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.96, 0.04, 12, 36), warmBrassMat);
-        ring.rotation.x = Math.PI / 2;
-        ring.position.set(0, 2.36 + shift * 0.3, 0);
-        this.modelGroup.add(ring);
-
-        // Pipeline directional arrows
-        this.modelGroup.add(
-          createVectorArrowGroup(new THREE.Vector3(-1.45, 1.15, 0), new THREE.Vector3(-0.7, 1.15, 0), 0xf59e0b, 0.045),
-          createVectorArrowGroup(new THREE.Vector3(0.7, 1.15, 0), new THREE.Vector3(1.45, 1.15, 0), 0x10b981, 0.045)
-        );
-
-        // Right: GROUP BY aggregated bars
-        const basePerGroup = Math.floor(keptRows / groups);
-        const remainder = keptRows % groups;
-        for (let g = 0; g < groups; g++) {
-          const cnt = basePerGroup + (g < remainder ? 1 : 0);
-          const h = Math.max(0.32, cnt * 0.34);
-          const z = (g - (groups - 1) / 2) * 0.62;
-          const bar = new THREE.Mesh(new THREE.BoxGeometry(0.46, h, 0.42), accentMat);
-          bar.position.set(2.2 + shift, 0.12 + h / 2, z);
-          bar.castShadow = true;
-          bar.receiveShadow = true;
-          this.modelGroup.add(bar);
-
-          const cap = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 16), warmBrassMat);
-          cap.position.set(2.2 + shift, 0.3 + h, z);
-          this.animatedSubparts.push({ obj: cap, baseY: cap.position.y, phase: g * 0.7, amp: 0.05 });
-          this.modelGroup.add(cap);
-        }
-        break;
-      }
-
-      case 'db_join_3d': {
-        // 3D Venn cylinders for INNER / LEFT / FULL OUTER JOIN with live intersection lens
-        const cardA = Math.max(4, Math.min(20, Math.round(a)));
-        const cardB = Math.max(4, Math.min(20, Math.round(b)));
-        const mode = Math.max(1, Math.min(3, Math.round(c))); // 1=INNER, 2=LEFT, 3=FULL
-
-        const rA = 0.95 + (cardA / 20) * 0.65;
-        const rB = 0.95 + (cardB / 20) * 0.65;
-        const dist = (rA + rB) * 0.56 + explode * 0.55;
-
-        const leftActive = mode === 2 || mode === 3;
-        const rightActive = mode === 3;
-
-        const leftMat = new THREE.MeshPhysicalMaterial({
-          color: leftActive ? accent.getHex() : 0x64748b,
-          roughness: 0.22,
-          metalness: 0.1,
+        const membraneMat = new THREE.MeshPhysicalMaterial({
+          color: isPlant ? 0x34d399 : 0x38bdf8,
+          roughness: 0.15,
+          metalness: 0.05,
           transparent: true,
-          opacity: leftActive ? 0.62 : 0.26,
+          opacity: 0.24,
+          depthWrite: false,
+          side: THREE.DoubleSide,
         });
-        const rightMat = new THREE.MeshPhysicalMaterial({
-          color: rightActive ? 0x0ea5e9 : 0x64748b,
-          roughness: 0.22,
+        const cytoBaseMat = new THREE.MeshStandardMaterial({
+          color: isPlant ? 0xd1fae5 : 0xe0f2fe,
+          roughness: 0.7,
+          metalness: 0.05,
+        });
+        const nucleusMat = new THREE.MeshPhysicalMaterial({
+          color: 0x6366f1,
+          roughness: 0.28,
+          metalness: 0.15,
+          clearcoat: 0.6,
+        });
+        const mitoMat = new THREE.MeshStandardMaterial({
+          color: 0xf97316,
+          roughness: 0.42,
           metalness: 0.1,
-          transparent: true,
-          opacity: rightActive ? 0.62 : 0.26,
+        });
+        const chloroMat = new THREE.MeshStandardMaterial({
+          color: 0x16a34a,
+          roughness: 0.35,
+          metalness: 0.12,
         });
 
-        const cylA = new THREE.Mesh(new THREE.CylinderGeometry(rA, rA, 0.55, 40), leftMat);
-        cylA.position.set(-dist / 2, 0.42, 0);
-        cylA.castShadow = true;
-        this.modelGroup.add(cylA);
+        // Grounded basal half-section of cytoplasm
+        const baseGeo = isPlant
+          ? new THREE.CylinderGeometry(cellR * 1.05, cellR * 1.05, 0.36, 6)
+          : new THREE.SphereGeometry(cellR, 36, 20, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5);
+        const baseMesh = new THREE.Mesh(baseGeo, cytoBaseMat);
+        baseMesh.position.y = isPlant ? 0.22 : cellR * 0.55;
+        baseMesh.receiveShadow = true;
+        this.modelGroup.add(baseMesh);
 
-        const cylB = new THREE.Mesh(new THREE.CylinderGeometry(rB, rB, 0.55, 40), rightMat);
-        cylB.position.set(dist / 2, 0.42, 0);
-        cylB.castShadow = true;
-        this.modelGroup.add(cylB);
-
-        // Glowing golden intersection core representing A ∩ B matched rows
-        const overlapRadius = Math.max(0.28, Math.min(rA, rB) * 0.48);
-        const intersectionCore = new THREE.Mesh(
-          new THREE.CylinderGeometry(overlapRadius, overlapRadius, 0.92, 32),
-          warmBrassMat
+        // Cutaway membrane dome (upper hemisphere translucent so organelles shine inside)
+        const dome = new THREE.Mesh(
+          isPlant
+            ? new THREE.CylinderGeometry(cellR * 1.08, cellR * 1.08, 1.45, 6, 1, true)
+            : new THREE.SphereGeometry(cellR * 1.01, 36, 24, 0, Math.PI * 2, 0, Math.PI * 0.52),
+          membraneMat
         );
-        intersectionCore.position.set(0, 0.65 + explode * 0.35, 0);
-        intersectionCore.castShadow = true;
-        this.animatedSubparts.push({
-          obj: intersectionCore,
-          baseY: intersectionCore.position.y,
-          phase: 0,
-          amp: 0.05,
-        });
-        this.modelGroup.add(intersectionCore);
+        dome.position.y = isPlant ? 0.96 + explode * 0.35 : cellR * 0.55 + explode * 0.35;
+        dome.renderOrder = 3;
+        this.modelGroup.add(dome);
 
-        // Floating matched tuple orbs above active sets
-        const orbGeo = new THREE.SphereGeometry(0.1, 14, 14);
-        const matchOrbs = Math.min(6, Math.max(2, Math.round(Math.min(cardA, cardB) / 3)));
-        for (let i = 0; i < matchOrbs; i++) {
-          const angle = (i / matchOrbs) * Math.PI * 2;
-          const orb = new THREE.Mesh(orbGeo, accentMat);
-          const baseY = 1.55 + (i % 2) * 0.22;
-          orb.position.set(Math.cos(angle) * overlapRadius * 0.75, baseY, Math.sin(angle) * overlapRadius * 0.75);
-          this.animatedSubparts.push({ obj: orb, baseY, phase: i * 0.8, amp: 0.07 });
-          this.modelGroup.add(orb);
+        // Rigid hexagonal cell wall rim + central vacuole for plant cells
+        if (isPlant) {
+          const wallRim = new THREE.Mesh(
+            new THREE.TorusGeometry(cellR * 1.05, 0.09, 12, 6),
+            new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.65, metalness: 0.08 })
+          );
+          wallRim.rotation.x = Math.PI / 2;
+          wallRim.position.y = 0.4;
+          this.modelGroup.add(wallRim);
+
+          const vacuole = new THREE.Mesh(
+            new THREE.SphereGeometry(0.68, 24, 24),
+            glassMat
+          );
+          vacuole.scale.set(1.2, 0.72, 0.9);
+          vacuole.position.set(0.75, 0.88 + explode * 0.2, -0.35);
+          vacuole.renderOrder = 2;
+          this.modelGroup.add(vacuole);
         }
 
-        // Base plinth ring markers
-        const rimA = new THREE.Mesh(new THREE.TorusGeometry(rA, 0.032, 10, 48), leftActive ? accentMat : darkSlateMat);
-        rimA.rotation.x = Math.PI / 2;
-        rimA.position.set(-dist / 2, 0.7, 0);
-        const rimB = new THREE.Mesh(new THREE.TorusGeometry(rB, 0.032, 10, 48), rightActive ? accentMat : darkSlateMat);
-        rimB.rotation.x = Math.PI / 2;
-        rimB.position.set(dist / 2, 0.7, 0);
-        this.modelGroup.add(rimA, rimB);
-        break;
-      }
+        // Nucleus + nucleolus + nuclear envelope ring
+        const nucGroup = new THREE.Group();
+        nucGroup.position.set(isPlant ? -0.58 : 0, 1.05 + explode * 0.35, 0.15);
+        const nucShell = new THREE.Mesh(new THREE.SphereGeometry(0.55, 28, 28), nucleusMat);
+        nucShell.castShadow = true;
+        nucGroup.add(nucShell);
+        const nucHalo = new THREE.Mesh(new THREE.TorusGeometry(0.64, 0.035, 10, 32), warmBrassMat);
+        nucHalo.rotation.x = Math.PI * 0.42;
+        nucGroup.add(nucHalo);
+        this.animatedSubparts.push({ obj: nucGroup, baseY: nucGroup.position.y, phase: 0, amp: 0.04 });
+        this.modelGroup.add(nucGroup);
 
-      case 'db_btree_3d': {
-        // 3D balanced B-Tree search hierarchy: Root -> Internal nodes -> Leaf pages + active O(log_b N) path
-        const branch = Math.max(2, Math.min(4, Math.round(a)));
-        const depth = Math.max(2, Math.min(3, Math.round(b)));
-        const yRoot = 3.1 + explode * 0.45;
-        const yMid = 1.75 + explode * 0.2;
-        const yLeaf = 0.45;
+        // Mitochondria (capsule organelles with gold cristae bands)
+        const mitoGeo = new THREE.CapsuleGeometry(0.14, 0.34, 8, 16);
+        const cristaGeo = new THREE.TorusGeometry(0.145, 0.02, 8, 16);
+        for (let i = 0; i < mitoCount; i++) {
+          const ang = (i / mitoCount) * Math.PI * 2;
+          const r = 1.15 + (i % 2) * 0.28;
+          const mg = new THREE.Group();
+          const mBody = new THREE.Mesh(mitoGeo, mitoMat);
+          mBody.rotation.z = Math.PI / 2;
+          mBody.castShadow = true;
+          mg.add(mBody);
+          const cr = new THREE.Mesh(cristaGeo, warmBrassMat);
+          cr.rotation.y = Math.PI / 2;
+          mg.add(cr);
+          mg.position.set(Math.cos(ang) * r, 0.65 + (i % 3) * 0.22 + explode * 0.25, Math.sin(ang) * r);
+          mg.rotation.y = -ang;
+          this.animatedSubparts.push({ obj: mg, baseY: mg.position.y, phase: i * 0.7, amp: 0.05 });
+          this.modelGroup.add(mg);
+        }
 
-        const rootPos = new THREE.Vector3(0, yRoot, 0);
-        const rootMesh = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.34, 0.56), warmBrassMat);
-        rootMesh.position.copy(rootPos);
-        rootMesh.castShadow = true;
-        this.modelGroup.add(rootMesh);
-
-        const activeBranchIdx = Math.floor(branch / 2);
-        const activeLeafSubIdx = 0;
-
-        for (let i = 0; i < branch; i++) {
-          const xMid = (i - (branch - 1) / 2) * 1.45;
-          const midPos = new THREE.Vector3(xMid, yMid, 0);
-          const isPathMid = i === activeBranchIdx;
-
-          const midNode = new THREE.Mesh(
-            new THREE.BoxGeometry(0.76, 0.28, 0.46),
-            isPathMid ? accentMat : ceramicMat
-          );
-          midNode.position.copy(midPos);
-          midNode.castShadow = true;
-          this.modelGroup.add(midNode);
-
-          // Edge Root -> Mid
-          const rootEdge = new THREE.TubeGeometry(
-            new THREE.LineCurve3(rootPos, midPos),
-            6,
-            isPathMid ? 0.042 : 0.022,
-            8,
-            false
-          );
-          this.modelGroup.add(new THREE.Mesh(rootEdge, isPathMid ? warmBrassMat : brushedMetalMat));
-
-          if (depth >= 3) {
-            const leavesPerMid = Math.min(3, branch);
-            for (let j = 0; j < leavesPerMid; j++) {
-              const zLeaf = (j - (leavesPerMid - 1) / 2) * 0.92;
-              const xLeaf = xMid + (j - (leavesPerMid - 1) / 2) * 0.25;
-              const leafPos = new THREE.Vector3(xLeaf, yLeaf, zLeaf);
-              const isTargetLeaf = isPathMid && j === activeLeafSubIdx;
-
-              const leafNode = new THREE.Mesh(
-                new THREE.BoxGeometry(0.52, 0.22, 0.42),
-                isTargetLeaf ? warmBrassMat : isPathMid ? accentMat : darkSlateMat
-              );
-              leafNode.position.copy(leafPos);
-              leafNode.castShadow = true;
-              this.modelGroup.add(leafNode);
-
-              const leafEdge = new THREE.TubeGeometry(
-                new THREE.LineCurve3(midPos, leafPos),
-                6,
-                isTargetLeaf ? 0.04 : 0.018,
-                8,
-                false
-              );
-              this.modelGroup.add(new THREE.Mesh(leafEdge, isTargetLeaf ? warmBrassMat : brushedMetalMat));
-
-              if (isTargetLeaf) {
-                const probe = new THREE.Mesh(new THREE.SphereGeometry(0.16, 18, 18), warmBrassMat);
-                probe.position.set(leafPos.x, leafPos.y + 0.42, leafPos.z);
-                this.animatedSubparts.push({ obj: probe, baseY: probe.position.y, phase: 0, amp: 0.14, speed: 3.2 });
-                this.modelGroup.add(probe);
-              }
-            }
+        // Chloroplasts (stacked green discs in plant cells)
+        if (isPlant) {
+          const chGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.11, 20);
+          for (let i = 0; i < 5; i++) {
+            const ang = (i / 5) * Math.PI * 2 + 0.4;
+            const chMesh = new THREE.Mesh(chGeo, chloroMat);
+            chMesh.position.set(Math.cos(ang) * 1.38, 1.2 + explode * 0.4, Math.sin(ang) * 1.38);
+            chMesh.rotation.z = 0.25;
+            chMesh.castShadow = true;
+            this.animatedSubparts.push({ obj: chMesh, baseY: chMesh.position.y, phase: i * 1.1, amp: 0.06 });
+            this.modelGroup.add(chMesh);
           }
         }
-        break;
-      }
 
-      case 'db_acid_3d': {
-        // 4 monumental ACID architectural pillars + central vault + orbiting transaction operations
-        const ops = Math.max(1, Math.min(6, Math.round(a)));
-        const isCommit = Math.round(b) <= 1;
-        const isoLevel = Math.max(1, Math.min(3, Math.round(c)));
-        const statusHex = isCommit ? 0x10b981 : 0xef4444;
-
-        const statusMat = new THREE.MeshStandardMaterial({
-          color: statusHex,
-          emissive: statusHex,
-          emissiveIntensity: 0.42,
-          roughness: 0.25,
-          metalness: 0.4,
-        });
-
-        const baseRadius = 1.65 + explode * 0.4;
-        const plinth = new THREE.Mesh(new THREE.CylinderGeometry(baseRadius + 0.45, baseRadius + 0.55, 0.16, 40), darkSlateMat);
-        plinth.position.y = 0.08;
-        plinth.receiveShadow = true;
-        this.modelGroup.add(plinth);
-
-        // 4 ACID Pillars (A, C, I, D)
-        const pillarH = 1.85 + isoLevel * 0.28;
-        const pillarOffsets = [
-          [-baseRadius * 0.72, -baseRadius * 0.72],
-          [baseRadius * 0.72, -baseRadius * 0.72],
-          [baseRadius * 0.72, baseRadius * 0.72],
-          [-baseRadius * 0.72, baseRadius * 0.72],
-        ];
-        pillarOffsets.forEach(([px, pz], idx) => {
-          const col = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, pillarH, 20), ceramicMat);
-          col.position.set(px, 0.16 + pillarH / 2, pz);
-          col.castShadow = true;
-          this.modelGroup.add(col);
-
-          const cap = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.18, 0.56), statusMat);
-          cap.position.set(px, 0.24 + pillarH + explode * 0.2, pz);
-          this.animatedSubparts.push({ obj: cap, baseY: cap.position.y, phase: idx * 0.9, amp: 0.03 });
-          this.modelGroup.add(cap);
-        });
-
-        // Translucent isolation dome / core transaction vault
-        const vault = new THREE.Mesh(new THREE.OctahedronGeometry(0.62, 0), isCommit ? accentMat : statusMat);
-        vault.position.set(0, 1.35 + explode * 0.3, 0);
-        vault.castShadow = true;
-        this.animatedSubparts.push({ obj: vault, baseY: vault.position.y, phase: 0, amp: 0.08, speed: 2.0 });
-        this.modelGroup.add(vault);
-
-        const shield = new THREE.Mesh(new THREE.SphereGeometry(0.98 + isoLevel * 0.08, 28, 28), glassMat);
-        shield.position.set(0, 1.35, 0);
-        shield.renderOrder = 2;
-        this.modelGroup.add(shield);
-
-        // Orbiting SQL operation orbs
-        const opGeo = new THREE.SphereGeometry(0.14, 16, 16);
-        for (let i = 0; i < ops; i++) {
-          const opOrb = new THREE.Mesh(opGeo, i % 2 === 0 ? warmBrassMat : statusMat);
+        // Orbiting ribosomes / ATP particles
+        const riboGeo = new THREE.SphereGeometry(0.065, 10, 10);
+        for (let i = 0; i < riboGroups * 3; i++) {
+          const ribo = new THREE.Mesh(riboGeo, i % 2 === 0 ? accentMat : warmBrassMat);
+          this.modelGroup.add(ribo);
           this.orbitSubparts.push({
-            obj: opOrb,
-            radiusX: baseRadius * 0.95,
-            radiusZ: baseRadius * 0.95,
-            speed: isCommit ? 1.45 : -0.95,
-            phase: (i / ops) * Math.PI * 2,
-            centerY: 1.35,
-            tiltX: 0.18,
-            tiltZ: 0.12,
+            obj: ribo,
+            radiusX: 0.9 + (i % 3) * 0.28,
+            radiusZ: 0.85 + (i % 2) * 0.3,
+            centerY: 0.95 + (i % 3) * 0.25,
+            speed: 0.7 + (i % 4) * 0.22,
+            phase: (i / (riboGroups * 3)) * Math.PI * 2,
+            tiltX: 0.18 * (i % 2 === 0 ? 1 : -1),
+            tiltZ: 0.1,
           });
-          this.modelGroup.add(opOrb);
         }
         break;
       }
 
-      case 'db_norm_3d': {
-        // 3D schema decomposition: monolithic redundant slab (1NF) -> 2NF -> 3 cleanly linked 3NF tables
-        const nf = Math.max(1, Math.min(3, Math.round(a)));
-        const sep = (nf - 1) * 0.95 + explode * 0.55;
+      case 'svt_dna_3d': {
+        // Composite DNA double helix: twin sugar-phosphate TubeGeometry backbones + complementary A-T / G-C base-pair rungs
+        const pairs = Math.max(6, Math.min(16, Math.round(a)));
+        const pctA = Math.max(15, Math.min(35, Math.round(b)));
+        const isRep = Math.round(c) >= 2;
+        const totalH = 3.8;
+        const radius = 0.72;
+        const turns = pairs * 0.14;
 
-        const islandGeo = new THREE.BoxGeometry(1.35, 0.3, 1.05);
-        const layerGeo = new THREE.BoxGeometry(1.18, 0.16, 0.88);
+        const strand1Pts: THREE.Vector3[] = [];
+        const strand2Pts: THREE.Vector3[] = [];
+        const steps = 64;
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const y = 0.25 + t * totalH;
+          const angle = t * Math.PI * 2 * turns;
+          const forkSpread = isRep && t > 0.62 ? (t - 0.62) * 2.1 : 0;
+          const rNow = radius + forkSpread + explode * 0.25;
+          strand1Pts.push(new THREE.Vector3(Math.cos(angle) * rNow, y, Math.sin(angle) * rNow));
+          strand2Pts.push(new THREE.Vector3(Math.cos(angle + Math.PI) * rNow, y, Math.sin(angle + Math.PI) * rNow));
+        }
 
-        if (nf === 1) {
-          // Single heavy redundant monolith with stacked duplicate bands
-          const base = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.24, 1.45), darkSlateMat);
-          base.position.set(0, 0.16, 0);
-          this.modelGroup.add(base);
-          for (let i = 0; i < 6; i++) {
-            const band = new THREE.Mesh(
-              new THREE.BoxGeometry(2.35, 0.22, 1.2),
-              i % 2 === 0 ? warmBrassMat : ceramicMat
-            );
-            band.position.set(0, 0.44 + i * (0.28 + explode * 0.1), 0);
-            band.castShadow = true;
-            this.modelGroup.add(band);
+        const backbone1 = new THREE.Mesh(
+          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(strand1Pts), 72, 0.075, 12, false),
+          accentMat
+        );
+        backbone1.castShadow = true;
+        this.modelGroup.add(backbone1);
+
+        const backbone2 = new THREE.Mesh(
+          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(strand2Pts), 72, 0.075, 12, false),
+          brushedMetalMat
+        );
+        backbone2.castShadow = true;
+        this.modelGroup.add(backbone2);
+
+        const matA = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.35, metalness: 0.1 });
+        const matT = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.35, metalness: 0.1 });
+        const matG = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.35, metalness: 0.1 });
+        const matC = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.35, metalness: 0.1 });
+
+        const atCutoff = Math.round((pctA / 50) * pairs);
+        for (let i = 0; i < pairs; i++) {
+          const t = (i + 0.5) / pairs;
+          const y = 0.25 + t * totalH;
+          const angle = t * Math.PI * 2 * turns;
+          const forkSpread = isRep && t > 0.62 ? (t - 0.62) * 2.1 : 0;
+          const rNow = radius + forkSpread + explode * 0.25;
+          const isAT = ((i * 7 + 3) % pairs) < atCutoff;
+          const p1 = new THREE.Vector3(Math.cos(angle) * rNow, y, Math.sin(angle) * rNow);
+          const p2 = new THREE.Vector3(Math.cos(angle + Math.PI) * rNow, y, Math.sin(angle + Math.PI) * rNow);
+          const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+
+          // Split rung if in replication fork
+          const gapRatio = isRep && t > 0.62 ? 0.42 : 0.96;
+          const end1 = new THREE.Vector3().lerpVectors(p1, mid, gapRatio);
+          const end2 = new THREE.Vector3().lerpVectors(p2, mid, gapRatio);
+
+          const rung1 = new THREE.Mesh(
+            new THREE.TubeGeometry(new THREE.LineCurve3(p1, end1), 4, 0.048, 8, false),
+            isAT ? matA : matG
+          );
+          const rung2 = new THREE.Mesh(
+            new THREE.TubeGeometry(new THREE.LineCurve3(p2, end2), 4, 0.048, 8, false),
+            isAT ? matT : matC
+          );
+          this.modelGroup.add(rung1, rung2);
+
+          // Phosphate bead nodes
+          const bead = new THREE.Mesh(new THREE.SphereGeometry(0.095, 10, 10), warmBrassMat);
+          bead.position.copy(p1);
+          this.modelGroup.add(bead);
+        }
+
+        // Grounded pedestal base
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.18, 0.16, 32), darkSlateMat);
+        base.position.y = 0.08;
+        base.receiveShadow = true;
+        this.modelGroup.add(base);
+        break;
+      }
+
+      case 'svt_tectonics_3d': {
+        // 3D geological cross-section: mantle asthenosphere + tectonic plates (1: Ridge Divergence, 2: Subduction + Volcano, 3: Sedimentary Strata)
+        const speed = Math.max(1, a);
+        const mode = Math.max(1, Math.min(3, Math.round(c)));
+
+        const magmaMat = new THREE.MeshStandardMaterial({
+          color: 0xea580c,
+          emissive: 0xdc2626,
+          emissiveIntensity: 0.45,
+          roughness: 0.5,
+          metalness: 0.1,
+        });
+        const oceanPlateMat = new THREE.MeshStandardMaterial({
+          color: 0x334155,
+          roughness: 0.72,
+          metalness: 0.15,
+        });
+        const contPlateMat = new THREE.MeshStandardMaterial({
+          color: 0x854d0e,
+          roughness: 0.85,
+          metalness: 0.05,
+        });
+        const waterMat = new THREE.MeshPhysicalMaterial({
+          color: 0x0284c7,
+          roughness: 0.12,
+          metalness: 0.05,
+          transparent: true,
+          opacity: 0.42,
+          depthWrite: false,
+        });
+
+        // Asthenosphere / mantle block grounded on Y=0
+        const mantle = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.85, 2.6), magmaMat);
+        mantle.position.set(0, 0.425, 0);
+        mantle.receiveShadow = true;
+        this.modelGroup.add(mantle);
+
+        if (mode === 1) {
+          // Divergence at mid-ocean ridge
+          const gap = 0.25 + (speed / 10) * 0.55 + explode * 0.35;
+          const leftPlate = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.42, 2.5), oceanPlateMat);
+          leftPlate.position.set(-1.05 - gap * 0.5, 1.06, 0);
+          leftPlate.castShadow = true;
+          const rightPlate = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.42, 2.5), oceanPlateMat);
+          rightPlate.position.set(1.05 + gap * 0.5, 1.06, 0);
+          rightPlate.castShadow = true;
+          this.modelGroup.add(leftPlate, rightPlate);
+
+          // Rising magma ridge pillow
+          const ridge = new THREE.Mesh(new THREE.CylinderGeometry(0.18, gap * 0.7 + 0.25, 0.65, 16), magmaMat);
+          ridge.position.set(0, 1.05, 0);
+          this.animatedSubparts.push({ obj: ridge, baseY: ridge.position.y, phase: 0, amp: 0.05 });
+          this.modelGroup.add(ridge);
+
+          // Translucent ocean layer
+          const sea = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.36, 2.55), waterMat);
+          sea.position.set(0, 1.48, 0);
+          sea.renderOrder = 2;
+          this.modelGroup.add(sea);
+        } else if (mode === 2) {
+          // Subduction slab plunging under continental plate + stratified volcanic cone
+          const slab = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.32, 2.45), oceanPlateMat);
+          slab.position.set(-1.05, 0.92, 0);
+          slab.rotation.z = -0.34;
+          slab.castShadow = true;
+          this.modelGroup.add(slab);
+
+          const cont = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.58, 2.5), contPlateMat);
+          cont.position.set(1.15, 1.14 + explode * 0.2, 0);
+          cont.castShadow = true;
+          this.modelGroup.add(cont);
+
+          // Volcanic cone + magma conduit + glowing crater
+          const volcano = new THREE.Mesh(
+            new THREE.ConeGeometry(0.78, 1.15, 24, 1, false),
+            new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.88, metalness: 0.05 })
+          );
+          volcano.position.set(1.2, 1.98 + explode * 0.25, 0);
+          volcano.castShadow = true;
+          this.modelGroup.add(volcano);
+
+          const plume = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 16), magmaMat);
+          plume.position.set(1.2, 2.62 + explode * 0.3, 0);
+          this.animatedSubparts.push({ obj: plume, baseY: plume.position.y, phase: 0.5, amp: 0.09 });
+          this.modelGroup.add(plume);
+
+          // Seismic focus rings along subduction plane
+          for (let i = 0; i < 3; i++) {
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(0.18 + i * 0.1, 0.025, 8, 24), warmBrassMat);
+            ring.position.set(-0.2 + i * 0.35, 0.85 - i * 0.14, 1.28);
+            this.modelGroup.add(ring);
           }
         } else {
-          const islands: Array<{ pos: THREE.Vector3; rows: number; mat: THREE.Material }> =
-            nf === 2
-              ? [
-                  { pos: new THREE.Vector3(-sep, 0.2, 0), rows: 4, mat: accentMat },
-                  { pos: new THREE.Vector3(sep, 0.2, 0), rows: 3, mat: warmBrassMat },
-                ]
-              : [
-                  { pos: new THREE.Vector3(-sep * 1.15, 0.2, 0.55), rows: 3, mat: accentMat },
-                  { pos: new THREE.Vector3(0, 0.2, -0.85 - explode * 0.3), rows: 3, mat: warmBrassMat },
-                  { pos: new THREE.Vector3(sep * 1.15, 0.2, 0.55), rows: 3, mat: accentMat },
-                ];
+          // Sedimentary strata + river erosion channel
+          const strataColors = [0xd6d3d1, 0xd97706, 0x92400e, 0x65a30d];
+          for (let s = 0; s < 4; s++) {
+            const layer = new THREE.Mesh(
+              new THREE.BoxGeometry(4.4 - s * 0.18, 0.26, 2.4),
+              new THREE.MeshStandardMaterial({ color: strataColors[s], roughness: 0.82, metalness: 0.04 })
+            );
+            layer.position.set(0, 0.98 + s * (0.28 + explode * 0.15), 0);
+            layer.castShadow = true;
+            layer.receiveShadow = true;
+            this.modelGroup.add(layer);
+          }
+          const river = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 2.46), waterMat);
+          river.position.set(0, 2.02 + explode * 0.45, 0);
+          this.modelGroup.add(river);
+        }
+        break;
+      }
 
-          islands.forEach((isl, idx) => {
-            const deck = new THREE.Mesh(islandGeo, darkSlateMat);
-            deck.position.copy(isl.pos);
-            deck.receiveShadow = true;
-            this.modelGroup.add(deck);
+      case 'svt_ecosystem_3d': {
+        // Composite 3D trophic biomass pyramid (Lindeman 10% tiers) + composite low-poly trees & solar flux
+        const levels = Math.max(2, Math.min(4, Math.round(a)));
+        const isPhoto = Math.round(c) >= 2;
+        const tierColors = [0x15803d, 0x16a34a, 0xd97706, 0xdc2626];
 
-            for (let r = 0; r < isl.rows; r++) {
-              const rowTile = new THREE.Mesh(layerGeo, r === 0 ? warmBrassMat : isl.mat);
-              const baseY = isl.pos.y + 0.28 + r * (0.24 + explode * 0.08);
-              rowTile.position.set(isl.pos.x, baseY, isl.pos.z);
-              rowTile.castShadow = true;
-              this.animatedSubparts.push({ obj: rowTile, baseY, phase: idx * 1.1 + r * 0.4, amp: 0.025 });
-              this.modelGroup.add(rowTile);
+        // Grounded soil plinth (decomposers)
+        const soil = new THREE.Mesh(
+          new THREE.BoxGeometry(3.8, 0.22, 3.8),
+          new THREE.MeshStandardMaterial({ color: 0x573b24, roughness: 0.9, metalness: 0.02 })
+        );
+        soil.position.y = 0.11;
+        soil.receiveShadow = true;
+        this.modelGroup.add(soil);
+
+        for (let lv = 0; lv < levels; lv++) {
+          const w = 3.2 - lv * 0.72;
+          const h = 0.48;
+          const tier = new THREE.Mesh(
+            new THREE.BoxGeometry(w, h, w),
+            new THREE.MeshStandardMaterial({ color: tierColors[lv], roughness: 0.48, metalness: 0.08 })
+          );
+          tier.position.y = 0.46 + lv * (h + 0.08 + explode * 0.28);
+          tier.castShadow = true;
+          tier.receiveShadow = true;
+          this.modelGroup.add(tier);
+        }
+
+        // Composite trees (trunk + layered foliage crown) on producer base
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85, metalness: 0.02 });
+        const leafMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.55, metalness: 0.05 });
+        const treeCoords = [
+          [-1.35, -1.35],
+          [1.35, -1.35],
+          [-1.35, 1.35],
+          [1.35, 1.35],
+        ];
+        for (let i = 0; i < treeCoords.length; i++) {
+          const [tx, tz] = treeCoords[i];
+          const tg = new THREE.Group();
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.42, 8), trunkMat);
+          trunk.position.y = 0.21;
+          const crown1 = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.48, 8), leafMat);
+          crown1.position.y = 0.54;
+          const crown2 = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.38, 8), leafMat);
+          crown2.position.y = 0.78;
+          tg.add(trunk, crown1, crown2);
+          tg.position.set(tx, 0.7, tz);
+          this.modelGroup.add(tg);
+        }
+
+        // Solar energy orb + orbiting O2/CO2 exchange particles
+        const sun = new THREE.Mesh(
+          new THREE.SphereGeometry(0.32, 20, 20),
+          new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 0.75 })
+        );
+        sun.position.set(0, 3.05 + explode * 0.4, 0);
+        this.animatedSubparts.push({ obj: sun, baseY: sun.position.y, phase: 0, amp: 0.08 });
+        this.modelGroup.add(sun);
+
+        const particleCount = isPhoto ? 10 : 6;
+        const pGeo = new THREE.SphereGeometry(0.075, 10, 10);
+        const o2Mat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.4 });
+        for (let i = 0; i < particleCount; i++) {
+          const orb = new THREE.Mesh(pGeo, i % 2 === 0 ? o2Mat : warmBrassMat);
+          this.modelGroup.add(orb);
+          this.orbitSubparts.push({
+            obj: orb,
+            radiusX: 1.65,
+            radiusZ: 1.65,
+            centerY: 1.45 + (i % 3) * 0.45,
+            speed: isPhoto ? 1.25 : 0.85,
+            phase: (i / particleCount) * Math.PI * 2,
+            tiltX: 0.25,
+            tiltZ: -0.15,
+          });
+        }
+        break;
+      }
+
+      case 'svt_organ_3d': {
+        // Dual biological system: (c=1) Double heart-lung circulation loop; (c=2) Y-shaped antibodies docking onto pathogen antigens
+        const isImm = Math.round(c) >= 2;
+        if (isImm) {
+          // Pathogen sphere + spiked antigens + Y-shaped antibodies docking around it
+          const count = Math.max(4, Math.min(10, Math.round(a)));
+          const eff = Math.min(100, Math.max(40, Math.round(b))) / 100;
+          const pathogenMat = new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.45, metalness: 0.1 });
+          const spikeMat = new THREE.MeshStandardMaterial({ color: 0xfb7185, roughness: 0.35, metalness: 0.2 });
+          const abMat = new THREE.MeshPhysicalMaterial({ color: 0x2563eb, roughness: 0.25, metalness: 0.2, clearcoat: 0.7 });
+
+          const body = new THREE.Mesh(new THREE.IcosahedronGeometry(0.88, 2), pathogenMat);
+          body.position.set(0, 1.45, 0);
+          body.castShadow = true;
+          this.modelGroup.add(body);
+
+          for (let i = 0; i < count; i++) {
+            const phi = Math.acos(1 - (2 * (i + 0.5)) / count);
+            const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+            const dir = new THREE.Vector3(
+              Math.sin(phi) * Math.cos(theta),
+              Math.cos(phi),
+              Math.sin(phi) * Math.sin(theta)
+            );
+            const spike = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.34, 10), spikeMat);
+            spike.position.copy(dir).multiplyScalar(1.02).add(new THREE.Vector3(0, 1.45, 0));
+            spike.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+            this.modelGroup.add(spike);
+
+            // Docked Y-shaped antibody
+            const abGroup = new THREE.Group();
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.35, 8), abMat);
+            stem.position.y = 0.25;
+            const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.28, 8), abMat);
+            armL.position.set(-0.1, 0.04, 0);
+            armL.rotation.z = 0.55;
+            const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.28, 8), abMat);
+            armR.position.set(0.1, 0.04, 0);
+            armR.rotation.z = -0.55;
+            abGroup.add(stem, armL, armR);
+            const dockDist = 1.28 + (1 - eff) * 0.75 + explode * 0.5;
+            abGroup.position.copy(dir).multiplyScalar(dockDist).add(new THREE.Vector3(0, 1.45, 0));
+            abGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+            this.animatedSubparts.push({ obj: abGroup, baseY: abGroup.position.y, phase: i * 0.6, amp: 0.04 });
+            this.modelGroup.add(abGroup);
+          }
+        } else {
+          // Double cardio-pulmonary circulation loop: heart (left O2 red + right CO2 blue) + pulmonary & systemic vessels
+          const fc = Math.max(40, Math.min(180, a));
+          const oxyMat = new THREE.MeshPhysicalMaterial({ color: 0xdc2626, roughness: 0.28, metalness: 0.1, clearcoat: 0.5 });
+          const deoxyMat = new THREE.MeshPhysicalMaterial({ color: 0x2563eb, roughness: 0.28, metalness: 0.1, clearcoat: 0.5 });
+
+          const heartGroup = new THREE.Group();
+          heartGroup.position.set(0, 1.35, 0);
+          const leftChamber = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.45, 10, 16), oxyMat);
+          leftChamber.position.set(0.24 + explode * 0.18, 0, 0);
+          const rightChamber = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.45, 10, 16), deoxyMat);
+          rightChamber.position.set(-0.24 - explode * 0.18, 0, 0);
+          heartGroup.add(leftChamber, rightChamber);
+          this.animatedSubparts.push({
+            obj: heartGroup,
+            baseY: heartGroup.position.y,
+            phase: 0,
+            speed: Math.max(1.5, fc / 30),
+            amp: 0.07,
+          });
+          this.modelGroup.add(heartGroup);
+
+          // Systemic (right) and Pulmonary (left) closed loops
+          const oxyLoop = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.08, 12, 48), oxyMat);
+          oxyLoop.position.set(1.1, 1.35, 0);
+          const deoxyLoop = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.08, 12, 48), deoxyMat);
+          deoxyLoop.position.set(-1.0, 1.55, 0);
+          this.modelGroup.add(oxyLoop, deoxyLoop);
+
+          // Red blood cells orbiting along circulation
+          const rbcGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.04, 14);
+          for (let i = 0; i < 6; i++) {
+            const cell = new THREE.Mesh(rbcGeo, i < 3 ? oxyMat : deoxyMat);
+            this.modelGroup.add(cell);
+            this.orbitSubparts.push({
+              obj: cell,
+              radiusX: i < 3 ? 1.85 : 1.55,
+              radiusZ: 0.65,
+              centerY: 1.35,
+              speed: (fc / 55) * (i < 3 ? 1 : -1),
+              phase: (i / 3) * Math.PI * 2,
+              tiltX: 0.15,
+              tiltZ: 0.1,
+            });
+          }
+        }
+        break;
+      }
+
+      case 'svt_neuron_3d': {
+        // Composite multipolar neuron: soma + dendrites + myelinated axon + synaptic terminal + neurotransmitter vesicles
+        const speed = Math.max(20, a);
+        const freqLevel = Math.max(1, Math.min(4, Math.round(c)));
+
+        const somaMat = new THREE.MeshPhysicalMaterial({ color: 0x6366f1, roughness: 0.3, metalness: 0.15, clearcoat: 0.6 });
+        const myelinMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.38, metalness: 0.08 });
+        const pulseMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 0.85 });
+
+        // Soma cell body
+        const soma = new THREE.Mesh(new THREE.IcosahedronGeometry(0.56, 2), somaMat);
+        soma.position.set(-1.95, 1.4, 0);
+        soma.castShadow = true;
+        this.modelGroup.add(soma);
+
+        // Branching dendrites radiating from soma
+        for (let d = 0; d < 5; d++) {
+          const ang = (d / 5) * Math.PI * 2;
+          const dCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(-1.95, 1.4, 0),
+            new THREE.Vector3(-2.45, 1.4 + Math.sin(ang) * 0.55, Math.cos(ang) * 0.55),
+            new THREE.Vector3(-2.85, 1.4 + Math.sin(ang) * 0.9, Math.cos(ang) * 0.9),
+          ]);
+          const dend = new THREE.Mesh(new THREE.TubeGeometry(dCurve, 14, 0.045, 8, false), somaMat);
+          this.modelGroup.add(dend);
+        }
+
+        // Core axon tube
+        const axonCurve = new THREE.LineCurve3(new THREE.Vector3(-1.45, 1.4, 0), new THREE.Vector3(1.65, 1.4, 0));
+        const axon = new THREE.Mesh(new THREE.TubeGeometry(axonCurve, 24, 0.065, 12, false), accentMat);
+        this.modelGroup.add(axon);
+
+        // Myelinated Schwann cell sheaths separated by Nodes of Ranvier
+        for (let m = 0; m < 4; m++) {
+          const sheath = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 0.42, 8, 16), myelinMat);
+          sheath.rotation.z = Math.PI / 2;
+          sheath.position.set(-1.05 + m * 0.78, 1.4 + explode * (m % 2 === 0 ? 0.25 : -0.2), 0);
+          sheath.castShadow = true;
+          this.modelGroup.add(sheath);
+        }
+
+        // Synaptic terminal bulb + post-synaptic membrane + neurotransmitter vesicles
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.32, 18, 18), somaMat);
+        bulb.position.set(1.75, 1.4, 0);
+        const postSyn = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.15, 1.15), brushedMetalMat);
+        postSyn.position.set(2.35 + explode * 0.35, 1.4, 0);
+        this.modelGroup.add(bulb, postSyn);
+
+        // Neurotransmitter vesicles pulsing across the cleft + action potential impulses
+        for (let v = 0; v < freqLevel + 2; v++) {
+          const ves = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 12), pulseMat);
+          ves.position.set(2.05, 1.15 + v * 0.14, (v % 2 === 0 ? 1 : -1) * 0.16);
+          this.animatedSubparts.push({
+            obj: ves,
+            baseY: ves.position.y,
+            phase: v * 0.8,
+            speed: 2.0 + speed / 40,
+            amp: 0.08,
+          });
+          this.modelGroup.add(ves);
+        }
+        break;
+      }
+
+      case 'svt_climate_3d': {
+        // Composite Earth climate model: tilted Earth sphere (23.4°) + polar ice caps + CO2 greenhouse atmosphere shell + solar/IR beams
+        const co2 = Math.max(200, Math.min(600, a));
+        const albedo = Math.max(10, Math.min(60, b));
+        const tiltRad = (Math.max(0, Math.min(30, c)) * Math.PI) / 180;
+
+        const earthGroup = new THREE.Group();
+        earthGroup.position.set(0, 1.55, 0);
+        earthGroup.rotation.z = -tiltRad;
+
+        const oceanGlobe = new THREE.Mesh(
+          new THREE.SphereGeometry(1.12, 36, 36),
+          new THREE.MeshPhysicalMaterial({ color: 0x0284c7, roughness: 0.25, metalness: 0.12, clearcoat: 0.65 })
+        );
+        oceanGlobe.castShadow = true;
+        earthGroup.add(oceanGlobe);
+
+        // Continental relief patches
+        const landMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.78, metalness: 0.04 });
+        const landPositions = [
+          [0.85, 0.32, 0.55],
+          [-0.78, 0.45, 0.52],
+          [0.2, -0.3, -1.0],
+          [-0.6, -0.4, -0.75],
+        ];
+        for (const [lx, ly, lz] of landPositions) {
+          const patch = new THREE.Mesh(new THREE.IcosahedronGeometry(0.36, 1), landMat);
+          patch.position.set(lx, ly, lz);
+          patch.scale.set(1.2, 0.75, 1.1);
+          earthGroup.add(patch);
+        }
+
+        // Polar ice caps scaling with albedo
+        const iceScale = 0.55 + (albedo / 60) * 0.65;
+        const iceMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25, metalness: 0.05 });
+        const northCap = new THREE.Mesh(new THREE.CylinderGeometry(0.32 * iceScale, 0.58 * iceScale, 0.16, 20), iceMat);
+        northCap.position.y = 1.07;
+        const southCap = new THREE.Mesh(new THREE.CylinderGeometry(0.58 * iceScale, 0.32 * iceScale, 0.16, 20), iceMat);
+        southCap.position.y = -1.07;
+        earthGroup.add(northCap, southCap);
+
+        // Rotation axis rod
+        const axisRod = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 3.1, 10), warmBrassMat);
+        earthGroup.add(axisRod);
+
+        // Greenhouse atmosphere shell (opacity & hue shift with CO2 ppm)
+        const ghIntensity = (co2 - 200) / 400;
+        const atmoColor = new THREE.Color().setHSL(0.55 - ghIntensity * 0.45, 0.85, 0.58);
+        const atmo = new THREE.Mesh(
+          new THREE.SphereGeometry(1.34 + explode * 0.28, 32, 32),
+          new THREE.MeshPhysicalMaterial({
+            color: atmoColor,
+            roughness: 0.15,
+            metalness: 0.05,
+            transparent: true,
+            opacity: 0.14 + ghIntensity * 0.24,
+            depthWrite: false,
+          })
+        );
+        atmo.renderOrder = 3;
+        earthGroup.add(atmo);
+        this.modelGroup.add(earthGroup);
+
+        // Incoming solar rays (yellow) + reflected albedo rays
+        const solarMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 0.7 });
+        for (let r = -1; r <= 1; r++) {
+          const ray = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 8), solarMat);
+          ray.rotation.z = Math.PI / 2;
+          ray.position.set(-2.35, 1.55 + r * 0.52, 0);
+          this.modelGroup.add(ray);
+        }
+        break;
+      }
+
+      case 'hg_monument_3d': {
+        const units = Math.max(3, Math.min(8, Math.round(a)));
+        const heightScale = 0.75 + ((Math.max(10, Math.min(40, b)) - 10) / 30) * 0.65;
+        const mode = Math.max(1, Math.min(3, Math.round(c)));
+
+        const sandstoneMat = new THREE.MeshStandardMaterial({ color: 0xd6b588, roughness: 0.82, metalness: 0.04 });
+        const marbleMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.36, metalness: 0.08 });
+        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.78, metalness: 0.08 });
+        const roofSlateMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.55, metalness: 0.25 });
+
+        if (mode === 1) {
+          // Stepped Pyramid / Ziggurat with monumental central staircase and gilded capstone
+          let curY = 0;
+          const stepH = (0.34 * heightScale) / Math.max(1, units / 5);
+          for (let t = 0; t < units; t++) {
+            const frac = 1 - t / (units + 0.6);
+            const w = 3.4 * frac;
+            const tierMesh = new THREE.Mesh(new THREE.BoxGeometry(w, stepH, w), sandstoneMat);
+            tierMesh.position.y = curY + stepH / 2 + t * explode * 0.14;
+            tierMesh.castShadow = true;
+            tierMesh.receiveShadow = true;
+            this.modelGroup.add(tierMesh);
+            curY += stepH;
+          }
+          // Gilded pyramidion capstone
+          const cap = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.52 * heightScale, 4), warmBrassMat);
+          cap.rotation.y = Math.PI / 4;
+          cap.position.y = curY + 0.26 * heightScale + units * explode * 0.14;
+          cap.castShadow = true;
+          this.modelGroup.add(cap);
+
+          // Central ceremonial ramp staircase
+          const ramp = new THREE.Mesh(new THREE.BoxGeometry(0.46, curY * 0.88, 1.9), accentMat);
+          ramp.position.set(0, curY * 0.42, 1.05);
+          ramp.rotation.x = -0.68;
+          ramp.castShadow = true;
+          this.modelGroup.add(ramp);
+        } else if (mode === 2) {
+          // Classical Greek Temple (Parthenon / Agora) with stylobate, fluted colonnade, entablature & pediment
+          for (let s = 0; s < 3; s++) {
+            const step = new THREE.Mesh(new THREE.BoxGeometry(3.8 - s * 0.22, 0.14, 2.7 - s * 0.18), marbleMat);
+            step.position.y = 0.07 + s * 0.14;
+            step.receiveShadow = true;
+            this.modelGroup.add(step);
+          }
+          const colH = 1.45 * heightScale;
+          const baseY = 0.42;
+          const frontXStart = -1.55;
+          const frontSpan = 3.1;
+          for (let i = 0; i < units; i++) {
+            const x = units > 1 ? frontXStart + (i / (units - 1)) * frontSpan : 0;
+            for (const zSign of [-1, 1]) {
+              const col = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.105, colH, 14), marbleMat);
+              col.position.set(x, baseY + colH / 2, zSign * 1.02);
+              col.castShadow = true;
+              this.modelGroup.add(col);
+              const capital = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.24), warmBrassMat);
+              capital.position.set(x, baseY + colH + 0.04, zSign * 1.02);
+              this.modelGroup.add(capital);
             }
+          }
+          // Inner cella sanctuary
+          const cella = new THREE.Mesh(new THREE.BoxGeometry(2.1, colH * 0.9, 1.2), sandstoneMat);
+          cella.position.set(0, baseY + (colH * 0.9) / 2, 0);
+          cella.castShadow = true;
+          this.modelGroup.add(cella);
+
+          // Entablature & triangular roof pediment
+          const roofY = baseY + colH + 0.18 + explode * 0.45;
+          const entab = new THREE.Mesh(new THREE.BoxGeometry(3.55, 0.24, 2.35), marbleMat);
+          entab.position.y = roofY;
+          entab.castShadow = true;
+          this.modelGroup.add(entab);
+
+          const roof = new THREE.Mesh(new THREE.CylinderGeometry(1.38, 1.38, 3.6, 3), accentMat);
+          roof.rotation.z = Math.PI / 2;
+          roof.scale.set(0.55, 1, 1);
+          roof.position.y = roofY + 0.48;
+          roof.castShadow = true;
+          this.modelGroup.add(roof);
+        } else {
+          // Medieval fortified castle with central keep (donjon), curtain walls & flanking towers
+          const wallH = 1.0 * heightScale;
+          const wallR = 1.65;
+          // Curtain walls
+          const wallGeoNS = new THREE.BoxGeometry(3.2, wallH, 0.22);
+          const wallGeoEW = new THREE.BoxGeometry(0.22, wallH, 3.2);
+          const wN = new THREE.Mesh(wallGeoNS, stoneMat);
+          wN.position.set(0, wallH / 2, -wallR);
+          const wS = new THREE.Mesh(wallGeoNS, stoneMat);
+          wS.position.set(0, wallH / 2, wallR);
+          const wE = new THREE.Mesh(wallGeoEW, stoneMat);
+          wE.position.set(wallR, wallH / 2, 0);
+          const wW = new THREE.Mesh(wallGeoEW, stoneMat);
+          wW.position.set(-wallR, wallH / 2, 0);
+          [wN, wS, wE, wW].forEach((m) => {
+            m.castShadow = true;
+            m.receiveShadow = true;
+            this.modelGroup.add(m);
           });
 
-          // Foreign-key relation bridges between normalized tables
-          for (let i = 0; i < islands.length - 1; i++) {
-            const p0 = islands[i].pos.clone().add(new THREE.Vector3(0, 0.55, 0));
-            const p1 = islands[i + 1].pos.clone().add(new THREE.Vector3(0, 0.55, 0));
-            const mid = p0.clone().add(p1).multiplyScalar(0.5);
-            mid.y += 0.65;
-            const bridge = new THREE.Mesh(
-              new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(p0, mid, p1), 24, 0.036, 8, false),
-              warmBrassMat
+          // Flanking cylindrical towers around perimeter
+          for (let i = 0; i < units; i++) {
+            const ang = (i / units) * Math.PI * 2 + Math.PI / 4;
+            const tx = Math.cos(ang) * (wallR + 0.22 + explode * 0.35);
+            const tz = Math.sin(ang) * (wallR + 0.22 + explode * 0.35);
+            const tH = wallH * 1.45;
+            const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.31, tH, 16), stoneMat);
+            tower.position.set(tx, tH / 2, tz);
+            tower.castShadow = true;
+            const spire = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.65, 16), roofSlateMat);
+            spire.position.set(tx, tH + 0.32, tz);
+            spire.castShadow = true;
+            this.modelGroup.add(tower, spire);
+          }
+
+          // Central Donjon Keep + banner
+          const keepH = 1.9 * heightScale;
+          const keep = new THREE.Mesh(new THREE.BoxGeometry(1.15, keepH, 1.15), marbleMat);
+          keep.position.set(0, keepH / 2, 0);
+          keep.castShadow = true;
+          const keepRoof = new THREE.Mesh(new THREE.ConeGeometry(0.88, 0.72, 4), accentMat);
+          keepRoof.rotation.y = Math.PI / 4;
+          keepRoof.position.set(0, keepH + 0.36 + explode * 0.3, 0);
+          this.modelGroup.add(keep, keepRoof);
+        }
+        break;
+      }
+
+      case 'hg_city_urban_3d': {
+        // Metropolitan skyline diorama: CBD glass skyscrapers, concentric transit rings, residential peri-urban belt & transit shuttles
+        const towers = Math.max(3, Math.min(12, Math.round(a)));
+        const urbanPct = Math.max(30, Math.min(95, b));
+        const tier = Math.max(1, Math.min(3, Math.round(c)));
+        const hMult = 0.65 + (urbanPct / 100) * 0.75 + (tier - 1) * 0.22;
+
+        const cityBase = new THREE.Mesh(new THREE.CylinderGeometry(2.85, 2.95, 0.12, 40), darkSlateMat);
+        cityBase.position.y = 0.06;
+        cityBase.receiveShadow = true;
+        this.modelGroup.add(cityBase);
+
+        const parkMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.85, metalness: 0.04 });
+        const glassTowerMat = new THREE.MeshPhysicalMaterial({
+          color: 0x38bdf8,
+          roughness: 0.16,
+          metalness: 0.65,
+          clearcoat: 0.85,
+        });
+        const concreteMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.65, metalness: 0.12 });
+
+        // Concentric peripheral ring roads (périphérique & rocade)
+        for (let r = 0; r < tier; r++) {
+          const ringR = 1.25 + r * 0.65;
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(ringR, 0.035, 10, 48), r === 0 ? warmBrassMat : brushedMetalMat);
+          ring.rotation.x = Math.PI / 2;
+          ring.position.y = 0.13;
+          this.modelGroup.add(ring);
+
+          // Orbiting metro/transit nodes along ring roads
+          const shuttle = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.09, 0.1), accentMat);
+          this.modelGroup.add(shuttle);
+          this.orbitSubparts.push({
+            obj: shuttle,
+            radiusX: ringR,
+            radiusZ: ringR,
+            centerY: 0.18,
+            speed: (r % 2 === 0 ? 1 : -1) * (0.9 + r * 0.35),
+            phase: r * 2.1,
+            tiltX: 0,
+            tiltZ: 0,
+          });
+        }
+
+        // CBD skyscraper cluster
+        for (let i = 0; i < towers; i++) {
+          const ang = (i / towers) * Math.PI * 2;
+          const rad = i === 0 ? 0 : 0.42 + (i % 3) * 0.28 + explode * 0.35;
+          const h = (i === 0 ? 2.1 : 0.85 + ((i * 37) % 10) * 0.11) * hMult;
+          const w = i === 0 ? 0.42 : 0.24 + (i % 2) * 0.08;
+          const mat = i % 3 === 0 ? accentMat : i % 3 === 1 ? glassTowerMat : concreteMat;
+          const bldg = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), mat);
+          bldg.position.set(Math.cos(ang) * rad, 0.12 + h / 2, Math.sin(ang) * rad);
+          bldg.castShadow = true;
+          bldg.receiveShadow = true;
+          this.modelGroup.add(bldg);
+
+          if (i < 3) {
+            const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.03, 0.42, 8), warmBrassMat);
+            spire.position.set(bldg.position.x, 0.12 + h + 0.21, bldg.position.z);
+            this.modelGroup.add(spire);
+          }
+        }
+
+        // Peri-urban residential & green belt patches
+        for (let p = 0; p < 8; p++) {
+          const ang = (p / 8) * Math.PI * 2 + 0.2;
+          const px = Math.cos(ang) * 2.25;
+          const pz = Math.sin(ang) * 2.25;
+          if (p % 2 === 0) {
+            const sub = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.28 + (urbanPct / 100) * 0.2, 0.28), concreteMat);
+            sub.position.set(px, 0.12 + sub.geometry.parameters.height / 2, pz);
+            sub.castShadow = true;
+            this.modelGroup.add(sub);
+          } else {
+            const park = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.3, 0.06, 12), parkMat);
+            park.position.set(px, 0.15, pz);
+            this.modelGroup.add(park);
+          }
+        }
+        break;
+      }
+
+      case 'hg_globe_routes_3d': {
+        // Composite geopolitical / maritime globe with brass meridian cradle, curved TubeGeometry shipping routes & orbiting ships
+        const routes = Math.max(2, Math.min(10, Math.round(a)));
+        const speedKmH = Math.max(10, Math.min(50, b));
+        const isModern = Math.round(c) >= 2;
+        const globeY = 1.62;
+        const R = 1.15;
+
+        // Brass meridian stand grounded on plinth
+        const standBase = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.82, 0.14, 24), warmBrassMat);
+        standBase.position.y = 0.07;
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.4, 14), warmBrassMat);
+        stem.position.y = 0.3;
+        const cradle = new THREE.Mesh(new THREE.TorusGeometry(R + 0.16, 0.04, 12, 48, Math.PI * 1.25), warmBrassMat);
+        cradle.position.y = globeY;
+        cradle.rotation.z = -Math.PI * 0.62;
+        this.modelGroup.add(standBase, stem, cradle);
+
+        // Ocean sphere + stylized continental masses
+        const ocean = new THREE.Mesh(
+          new THREE.SphereGeometry(R, 36, 36),
+          new THREE.MeshPhysicalMaterial({ color: 0x0369a1, roughness: 0.28, metalness: 0.14, clearcoat: 0.65 })
+        );
+        ocean.position.y = globeY;
+        ocean.castShadow = true;
+        this.modelGroup.add(ocean);
+
+        const continentMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.8, metalness: 0.05 });
+        const landCoords = [
+          [0.72, 0.42, 0.62],
+          [-0.78, 0.36, 0.56],
+          [0.12, -0.35, 0.96],
+          [0.85, -0.25, -0.58],
+          [-0.55, -0.45, -0.74],
+        ];
+        for (const [lx, ly, lz] of landCoords) {
+          const cont = new THREE.Mesh(new THREE.IcosahedronGeometry(0.38, 1), continentMat);
+          cont.position.set(lx, globeY + ly, lz);
+          cont.scale.set(1.2, 0.72, 1.05);
+          this.modelGroup.add(cont);
+        }
+
+        // Maritime trade route arcs (TubeGeometry) + orbiting vessels
+        const routeMat = new THREE.MeshStandardMaterial({
+          color: isModern ? 0xf59e0b : 0x38bdf8,
+          emissive: isModern ? 0xd97706 : 0x0284c7,
+          emissiveIntensity: 0.45,
+          roughness: 0.3,
+        });
+        for (let r = 0; r < routes; r++) {
+          const a1 = (r / routes) * Math.PI * 2;
+          const a2 = a1 + Math.PI * 0.78;
+          const lat1 = ((r % 3) - 1) * 0.45;
+          const lat2 = -lat1 * 0.6;
+          const p1 = new THREE.Vector3(
+            Math.cos(a1) * Math.cos(lat1) * R,
+            globeY + Math.sin(lat1) * R,
+            Math.sin(a1) * Math.cos(lat1) * R
+          );
+          const p2 = new THREE.Vector3(
+            Math.cos(a2) * Math.cos(lat2) * R,
+            globeY + Math.sin(lat2) * R,
+            Math.sin(a2) * Math.cos(lat2) * R
+          );
+          const mid = p1.clone().add(p2).multiplyScalar(0.5);
+          const radial = mid.clone().sub(new THREE.Vector3(0, globeY, 0)).normalize();
+          mid.copy(new THREE.Vector3(0, globeY, 0)).add(radial.multiplyScalar(R + 0.38 + explode * 0.25));
+          const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+          const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.024, 8, false), routeMat);
+          this.modelGroup.add(tube);
+
+          if (r < 4) {
+            const ship = new THREE.Mesh(
+              new THREE.BoxGeometry(0.16, 0.08, 0.08),
+              r % 2 === 0 ? accentMat : warmBrassMat
             );
-            this.modelGroup.add(bridge);
+            this.modelGroup.add(ship);
+            this.orbitSubparts.push({
+              obj: ship,
+              radiusX: R + 0.24 + (r % 2) * 0.12,
+              radiusZ: R + 0.24 + (r % 2) * 0.12,
+              centerY: globeY,
+              speed: (speedKmH / 28) * (r % 2 === 0 ? 1 : -0.85),
+              phase: a1,
+              tiltX: 0.35 * (r % 2 === 0 ? 1 : -1),
+              tiltZ: 0.25,
+            });
+          }
+        }
+
+        // Translucent Exclusive Economic Zone (ZEE) halo in modern mode
+        if (isModern) {
+          const zeeShell = new THREE.Mesh(
+            new THREE.SphereGeometry(R + 0.34 + explode * 0.22, 28, 28),
+            new THREE.MeshPhysicalMaterial({
+              color: 0x38bdf8,
+              roughness: 0.12,
+              metalness: 0.05,
+              transparent: true,
+              opacity: 0.16,
+              depthWrite: false,
+            })
+          );
+          zeeShell.position.y = globeY;
+          zeeShell.renderOrder = 3;
+          this.modelGroup.add(zeeShell);
+        }
+        break;
+      }
+
+      case 'hg_demography_3d': {
+        // 3D Mirrored Demographic Age Pyramid (Hommes vs Femmes across 8 age cohorts)
+        const natal = Math.max(8, Math.min(45, a));
+        const mortal = Math.max(4, Math.min(30, b));
+        const phase = Math.max(1, Math.min(4, Math.round(c)));
+
+        const basePlate = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.14, 1.35), darkSlateMat);
+        basePlate.position.y = 0.07;
+        basePlate.receiveShadow = true;
+        this.modelGroup.add(basePlate);
+
+        // Central spine column (Age 0 → 80+)
+        const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 2.75, 14), warmBrassMat);
+        spine.position.y = 1.48;
+        this.modelGroup.add(spine);
+
+        const maleMat = new THREE.MeshPhysicalMaterial({ color: 0x2563eb, roughness: 0.26, metalness: 0.22, clearcoat: 0.6 });
+        const femaleMat = new THREE.MeshPhysicalMaterial({ color: 0xe11d48, roughness: 0.26, metalness: 0.22, clearcoat: 0.6 });
+
+        const cohorts = 8;
+        const barH = 0.24;
+        for (let i = 0; i < cohorts; i++) {
+          const ageRatio = i / (cohorts - 1); // 0 = young, 1 = elderly
+          let widthFactor: number;
+          if (phase <= 2) {
+            // Triangular expansive pyramid
+            widthFactor = (natal / 40) * Math.pow(1 - ageRatio * (0.65 + mortal / 80), 1.15);
+          } else if (phase === 3) {
+            // Bell / stationary pyramid
+            widthFactor = 0.55 + (natal / 65) * Math.sin(ageRatio * Math.PI * 0.85 + 0.35) - ageRatio * 0.3;
+          } else {
+            // Urn / aging pyramid (narrow base, bulge at middle/older ages)
+            widthFactor = 0.36 + 0.58 * Math.exp(-Math.pow((ageRatio - 0.52) / 0.36, 2)) - (mortal / 120) * ageRatio;
+          }
+          const barW = Math.max(0.24, Math.min(1.85, widthFactor * 1.65));
+          const yPos = 0.28 + i * (barH + 0.06 + explode * 0.06);
+
+          const leftBar = new THREE.Mesh(new THREE.BoxGeometry(barW, barH, 0.58), maleMat);
+          leftBar.position.set(-0.08 - barW / 2 - explode * 0.15, yPos, 0);
+          leftBar.castShadow = true;
+
+          const rightBar = new THREE.Mesh(new THREE.BoxGeometry(barW * (1 + ageRatio * 0.08), barH, 0.58), femaleMat);
+          rightBar.position.set(0.08 + (barW * (1 + ageRatio * 0.08)) / 2 + explode * 0.15, yPos, 0);
+          rightBar.castShadow = true;
+
+          this.modelGroup.add(leftBar, rightBar);
+        }
+        break;
+      }
+
+      case 'hg_timeline_3d': {
+        // Elevated chronological viaduct bridge with 5 historical epoch obelisks and active golden milestone marker
+        const yEnd = Math.max(1600, Math.min(2025, a));
+        const yStart = Math.max(1600, Math.min(2000, b));
+        const era = Math.max(1, Math.min(3, Math.round(c)));
+
+        // Viaduct bridge deck
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.16, 1.1), darkSlateMat);
+        deck.position.y = 0.42;
+        deck.castShadow = true;
+        deck.receiveShadow = true;
+        this.modelGroup.add(deck);
+
+        // Bridge support piers grounded on y=0
+        for (let p = -2; p <= 2; p++) {
+          const pier = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.36, 0.95), brushedMetalMat);
+          pier.position.set(p * 1.05, 0.18, 0);
+          pier.castShadow = true;
+          this.modelGroup.add(pier);
+        }
+
+        // 5 historical epoch steles along the timeline
+        const spanNorm = Math.max(0, Math.min(1, (yEnd - 1600) / 425));
+        const startNorm = Math.max(0, Math.min(1, (yStart - 1600) / 425));
+        const eraColors = [0xd97706, 0x2563eb, 0x10b981];
+        const eraMat = new THREE.MeshPhysicalMaterial({
+          color: eraColors[era - 1],
+          roughness: 0.24,
+          metalness: 0.32,
+          clearcoat: 0.7,
+        });
+
+        for (let i = 0; i < 5; i++) {
+          const t = i / 4;
+          const x = -2.0 + t * 4.0;
+          const h = 0.65 + (i % 3) * 0.32;
+          const stele = new THREE.Mesh(new THREE.BoxGeometry(0.24, h, 0.24), i === era ? eraMat : brushedMetalMat);
+          stele.position.set(x, 0.5 + h / 2 + explode * 0.12 * i, -0.25);
+          stele.castShadow = true;
+          this.modelGroup.add(stele);
+        }
+
+        // Chronological span beam connecting yStart → yEnd
+        const x1 = -2.0 + Math.min(startNorm, spanNorm) * 4.0;
+        const x2 = -2.0 + Math.max(startNorm, spanNorm) * 4.0;
+        const beamLen = Math.max(0.25, x2 - x1);
+        const spanBeam = new THREE.Mesh(new THREE.BoxGeometry(beamLen, 0.1, 0.32), accentMat);
+        spanBeam.position.set((x1 + x2) / 2, 0.55, 0.22);
+        this.modelGroup.add(spanBeam);
+
+        // Active milestone obelisk + floating golden crystal
+        const markerX = -2.0 + spanNorm * 4.0;
+        const obelisk = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.18, 1.55, 4), warmBrassMat);
+        obelisk.rotation.y = Math.PI / 4;
+        obelisk.position.set(markerX, 0.5 + 0.78, 0.22);
+        obelisk.castShadow = true;
+        this.modelGroup.add(obelisk);
+
+        const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), eraMat);
+        crystal.position.set(markerX, 2.32 + explode * 0.3, 0.22);
+        this.animatedSubparts.push({ obj: crystal, baseY: crystal.position.y, phase: 0, speed: 2.2, amp: 0.1 });
+        this.modelGroup.add(crystal);
+        break;
+      }
+
+      case 'hg_industry_3d': {
+        // Composite industrial / productive spaces diorama: 19th-c steam factory vs 21st-c technopôle & port ZIP
+        const units = Math.max(3, Math.min(10, Math.round(a)));
+        const pct = Math.max(20, Math.min(90, b));
+        const isModern = Math.round(c) >= 2;
+
+        const pad = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.14, 3.0), darkSlateMat);
+        pad.position.y = 0.07;
+        pad.receiveShadow = true;
+        this.modelGroup.add(pad);
+
+        if (!isModern) {
+          // 19th-century steam factory hall, sawtooth roof, brick smokestacks & steam puffs
+          const brickMat = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.85, metalness: 0.05 });
+          const steamMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.9, transparent: true, opacity: 0.72 });
+
+          const hall = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.05, 1.65), brickMat);
+          hall.position.set(-0.45, 0.14 + 0.525, 0);
+          hall.castShadow = true;
+          this.modelGroup.add(hall);
+
+          // Sawtooth roofs
+          for (let r = 0; r < 3; r++) {
+            const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.66, 3), brushedMetalMat);
+            roof.rotation.x = Math.PI / 2;
+            roof.position.set(-1.3 + r * 0.85, 1.38 + explode * 0.25, 0);
+            roof.castShadow = true;
+            this.modelGroup.add(roof);
+          }
+
+          // Brick smokestacks scaled by units
+          const stacks = Math.min(5, Math.max(2, Math.round(units / 2)));
+          for (let s = 0; s < stacks; s++) {
+            const sx = 1.25 + (s % 2) * 0.55;
+            const sz = -0.75 + Math.floor(s / 2) * 0.65;
+            const sh = 1.65 + (pct / 100) * 0.65;
+            const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, sh, 14), brickMat);
+            chimney.position.set(sx, 0.14 + sh / 2, sz);
+            chimney.castShadow = true;
+            this.modelGroup.add(chimney);
+
+            const puff = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), steamMat);
+            puff.position.set(sx, 0.14 + sh + 0.25, sz);
+            this.animatedSubparts.push({ obj: puff, baseY: puff.position.y, phase: s * 1.1, speed: 1.8, amp: 0.14 });
+            this.modelGroup.add(puff);
+          }
+
+          // Brass steam flywheel
+          const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.07, 12, 28), warmBrassMat);
+          wheel.position.set(-1.82, 0.65, 0);
+          wheel.rotation.y = Math.PI / 2;
+          this.modelGroup.add(wheel);
+        } else {
+          // 21st-century Technopôle & ZIP: glass R&D labs, solar roof arrays, port crane & logistics hub
+          const labCount = Math.min(6, Math.max(3, Math.round(units * 0.7)));
+          const solarMat = new THREE.MeshPhysicalMaterial({ color: 0x0284c7, roughness: 0.15, metalness: 0.72, clearcoat: 0.9 });
+
+          for (let i = 0; i < labCount; i++) {
+            const col = i % 3;
+            const row = Math.floor(i / 3);
+            const lx = -1.35 + col * 1.15;
+            const lz = -0.65 + row * 1.25;
+            const lh = 0.55 + (pct / 100) * 0.55 + (i % 2) * 0.25;
+            const lab = new THREE.Mesh(new THREE.BoxGeometry(0.86, lh, 0.76), i % 2 === 0 ? glassMat : brushedMetalMat);
+            lab.position.set(lx, 0.14 + lh / 2, lz);
+            lab.castShadow = true;
+            this.modelGroup.add(lab);
+
+            const canopy = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.05, 0.7), solarMat);
+            canopy.position.set(lx, 0.14 + lh + 0.08 + explode * 0.2, lz);
+            this.modelGroup.add(canopy);
+          }
+
+          // Port gantry crane (ZIP maritime interface)
+          const gantryLeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.75, 0.1), accentMat);
+          gantryLeg1.position.set(1.65, 0.14 + 0.875, -0.75);
+          const gantryLeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.75, 0.1), accentMat);
+          gantryLeg2.position.set(1.65, 0.14 + 0.875, 0.75);
+          const gantryBoom = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.14, 2.2), warmBrassMat);
+          gantryBoom.position.set(1.65, 1.92, 0);
+          this.modelGroup.add(gantryLeg1, gantryLeg2, gantryBoom);
+        }
+        break;
+      }
+
+      case 'hg_geopolitics_3d': {
+        // Geopolitical power architecture: Bipolar Cold War, European Union constellation, or Multipolar world
+        const poles = Math.max(2, Math.min(27, Math.round(a)));
+        const mode = Math.max(1, Math.min(3, Math.round(c)));
+
+        const dais = new THREE.Mesh(new THREE.CylinderGeometry(2.55, 2.7, 0.14, 40), darkSlateMat);
+        dais.position.y = 0.07;
+        dais.receiveShadow = true;
+        this.modelGroup.add(dais);
+
+        if (mode === 1) {
+          // Bipolar Cold War: two opposing power monoliths separated by an illuminated dividing curtain
+          const westMat = new THREE.MeshPhysicalMaterial({ color: 0x2563eb, roughness: 0.22, metalness: 0.35, clearcoat: 0.8 });
+          const eastMat = new THREE.MeshPhysicalMaterial({ color: 0xdc2626, roughness: 0.22, metalness: 0.35, clearcoat: 0.8 });
+
+          const westBloc = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.74, 1.55, 20), westMat);
+          westBloc.position.set(-1.3 - explode * 0.3, 0.14 + 0.775, 0);
+          westBloc.castShadow = true;
+
+          const eastBloc = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.74, 1.55, 20), eastMat);
+          eastBloc.position.set(1.3 + explode * 0.3, 0.14 + 0.775, 0);
+          eastBloc.castShadow = true;
+
+          // Iron Curtain translucent barrier plane
+          const curtain = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, 2.1, 2.8),
+            new THREE.MeshPhysicalMaterial({
+              color: 0xf59e0b,
+              transparent: true,
+              opacity: 0.34,
+              roughness: 0.2,
+              depthWrite: false,
+            })
+          );
+          curtain.position.y = 1.2;
+          curtain.renderOrder = 3;
+
+          // Diplomatic/strategic arc over the divide
+          const arcCurve = new THREE.QuadraticBezierCurve3(
+            new THREE.Vector3(-1.3, 1.75, 0),
+            new THREE.Vector3(0, 2.85, 0),
+            new THREE.Vector3(1.3, 1.75, 0)
+          );
+          const arcMesh = new THREE.Mesh(new THREE.TubeGeometry(arcCurve, 24, 0.035, 8, false), warmBrassMat);
+          this.modelGroup.add(westBloc, eastBloc, curtain, arcMesh);
+        } else if (mode === 2) {
+          // European Union: cobalt institutional parliament rotunda + ring of 12 golden stars & member pillars
+          const euBlueMat = new THREE.MeshPhysicalMaterial({ color: 0x1d4ed8, roughness: 0.24, metalness: 0.3, clearcoat: 0.75 });
+          const rotunda = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.05, 0.9, 28), euBlueMat);
+          rotunda.position.y = 0.14 + 0.45;
+          rotunda.castShadow = true;
+          const dome = new THREE.Mesh(new THREE.SphereGeometry(0.92, 28, 18, 0, Math.PI * 2, 0, Math.PI / 2), glassMat);
+          dome.position.y = 1.04 + explode * 0.25;
+          this.modelGroup.add(rotunda, dome);
+
+          // Member state columns around the rotunda (capped visually to 18 for crisp clarity)
+          const shownMembers = Math.min(18, Math.max(6, Math.round(poles * 0.66)));
+          for (let m = 0; m < shownMembers; m++) {
+            const ang = (m / shownMembers) * Math.PI * 2;
+            const col = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.85, 10), brushedMetalMat);
+            col.position.set(Math.cos(ang) * 1.55, 0.14 + 0.425, Math.sin(ang) * 1.55);
+            col.castShadow = true;
+            this.modelGroup.add(col);
+          }
+
+          // Crown of 12 orbiting golden EU stars
+          for (let s = 0; s < 12; s++) {
+            const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), warmBrassMat);
+            this.modelGroup.add(star);
+            this.orbitSubparts.push({
+              obj: star,
+              radiusX: 1.95 + explode * 0.2,
+              radiusZ: 1.95 + explode * 0.2,
+              centerY: 1.75,
+              speed: 0.55,
+              phase: (s / 12) * Math.PI * 2,
+              tiltX: 0,
+              tiltZ: 0,
+            });
+          }
+        } else {
+          // Multipolar world: central global hub connected to N regional power poles by diplomatic corridors
+          const hub = new THREE.Mesh(
+            new THREE.SphereGeometry(0.68, 28, 28),
+            new THREE.MeshPhysicalMaterial({ color: 0x0284c7, roughness: 0.25, metalness: 0.2, clearcoat: 0.7 })
+          );
+          hub.position.y = 1.35;
+          hub.castShadow = true;
+          this.modelGroup.add(hub);
+
+          const shownPoles = Math.min(8, Math.max(3, poles));
+          for (let p = 0; p < shownPoles; p++) {
+            const ang = (p / shownPoles) * Math.PI * 2;
+            const rad = 1.85 + explode * 0.3;
+            const px = Math.cos(ang) * rad;
+            const pz = Math.sin(ang) * rad;
+            const pH = 0.65 + (p % 3) * 0.24;
+
+            const pedestal = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.24, 0.28, pH, 16),
+              p % 2 === 0 ? accentMat : warmBrassMat
+            );
+            pedestal.position.set(px, 0.14 + pH / 2, pz);
+            pedestal.castShadow = true;
+            this.modelGroup.add(pedestal);
+
+            const linkCurve = new THREE.QuadraticBezierCurve3(
+              new THREE.Vector3(px, 0.14 + pH, pz),
+              new THREE.Vector3(px * 0.5, 2.05, pz * 0.5),
+              new THREE.Vector3(0, 1.35, 0)
+            );
+            const link = new THREE.Mesh(new THREE.TubeGeometry(linkCurve, 18, 0.024, 8, false), brushedMetalMat);
+            this.modelGroup.add(link);
           }
         }
         break;

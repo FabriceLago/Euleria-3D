@@ -2,13 +2,20 @@ import React from 'react';
 import {
   Atom,
   Award,
+  BookOpen,
   Box,
   CheckCircle2,
   Compass,
   Database,
+  Dna,
+  Feather,
   FlaskConical,
+  Globe2,
+  GraduationCap,
+  Landmark,
+  Languages,
+  Leaf,
   MessageSquare,
-  Server,
   TrendingUp,
   Trophy,
 } from 'lucide-react';
@@ -34,12 +41,18 @@ interface LeaderboardViewProps {
 const BADGE_ICONS: Record<string, React.FC<{ className?: string }>> = {
   Atom,
   Award,
+  BookOpen,
   Box,
   CheckCircle2,
   Compass,
-  Database,
+  Dna,
+  Feather,
   FlaskConical,
-  Server,
+  Globe2,
+  GraduationCap,
+  Landmark,
+  Languages,
+  Leaf,
   TrendingUp,
   MessageSquare,
 };
@@ -183,11 +196,11 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
         <div className="lg:col-span-5 space-y-6">
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">
-              Récompenses virtuelles ({badges.filter((b) => b.earned).length}/{badges.length || 10})
+              Récompenses virtuelles ({badges.filter((b) => b.earned).length}/{badges.length || 16})
             </h2>
             {badges.length === 0 ? (
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Connectez-vous pour suivre le déblocage de vos 10 badges d’excellence en temps réel.
+                Connectez-vous pour suivre le déblocage de vos 16 badges d’excellence en temps réel.
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -262,10 +275,52 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
               <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20 flex items-center justify-between gap-2">
                 <div>
                   <div className="font-semibold text-slate-900 dark:text-white">
-                    3. Bases de données relationnelles & SQL (6ᵉ → Terminale)
+                    3. Sciences de la Vie et de la Terre — SVT (6ᵉ → Terminale)
                   </div>
                   <div className="text-slate-600 dark:text-slate-400">
-                    21 chapitres · 63 exercices · Tables, Jointures, 3NF, B-Tree & ACID
+                    21 chapitres · 63 exercices · Cellules 3D, ADN, Tectonique, Neurones & Climat
+                  </div>
+                </div>
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400 shrink-0">
+                  Actif
+                </span>
+              </div>
+
+              <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20 flex items-center justify-between gap-2">
+                <div>
+                  <div className="font-semibold text-slate-900 dark:text-white">
+                    4. Histoire-Géographie (6ᵉ → Terminale)
+                  </div>
+                  <div className="text-slate-600 dark:text-slate-400">
+                    21 chapitres · 63 exercices · Monuments 3D, Routes maritimes, Métropoles & Géopolitique
+                  </div>
+                </div>
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400 shrink-0">
+                  Actif
+                </span>
+              </div>
+
+              <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20 flex items-center justify-between gap-2">
+                <div>
+                  <div className="font-semibold text-slate-900 dark:text-white">
+                    5. Français, Littérature & Philosophie (6ᵉ → Terminale)
+                  </div>
+                  <div className="text-slate-600 dark:text-slate-400">
+                    21 chapitres · 63 exercices · Syntaxe 3D, Théâtre classique, Versification & Philosophie
+                  </div>
+                </div>
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400 shrink-0">
+                  Actif
+                </span>
+              </div>
+
+              <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20 flex items-center justify-between gap-2">
+                <div>
+                  <div className="font-semibold text-slate-900 dark:text-white">
+                    6. Anglais — LV1 (6ᵉ → Terminale)
+                  </div>
+                  <div className="text-slate-600 dark:text-slate-400">
+                    21 chapitres · 63 exercices · Temps verbaux 3D, Modaux, Culture UK/US & Essays B2
                   </div>
                 </div>
                 <span className="font-semibold text-emerald-700 dark:text-emerald-400 shrink-0">

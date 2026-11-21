@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Atom, Calculator, Database } from 'lucide-react';
+import { ArrowRight, Atom, Calculator, Dna, Feather, Landmark, Languages } from 'lucide-react';
 import { GRADE_LEVELS, SUBJECTS } from '../db/curriculumData.ts';
 import type { AccentColor, ChapterItem, GradeLevel, SubjectId, ThemeMode } from '../types/learning.ts';
 import { MathViewport3D } from './MathViewport3D.tsx';
@@ -57,14 +57,20 @@ export const Studio3DView: React.FC<Studio3DViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
             {SUBJECTS.map((subj) => {
               const Icon =
                 subj.id === 'physics_chemistry'
                   ? Atom
-                  : subj.id === 'databases_sql'
-                    ? Database
-                    : Calculator;
+                  : subj.id === 'svt'
+                    ? Dna
+                    : subj.id === 'history_geography'
+                      ? Landmark
+                      : subj.id === 'french_philosophy'
+                        ? Feather
+                        : subj.id === 'english_lv1'
+                          ? Languages
+                          : Calculator;
               const active = selectedSubject === subj.id;
               return (
                 <button

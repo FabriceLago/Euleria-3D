@@ -238,9 +238,15 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
                             <span className="truncate">
                               {sharedChap.subject === 'physics_chemistry'
                                 ? 'Phys.-Chim.'
-                                : sharedChap.subject === 'databases_sql'
-                                  ? 'SQL & BDD'
-                                  : 'Maths'}{' '}
+                                : sharedChap.subject === 'svt'
+                                  ? 'SVT'
+                                  : sharedChap.subject === 'history_geography'
+                                    ? 'Hist.-Géo'
+                                    : sharedChap.subject === 'french_philosophy'
+                                      ? 'Français'
+                                      : sharedChap.subject === 'english_lv1'
+                                        ? 'Anglais'
+                                        : 'Maths'}{' '}
                               · {sharedChap.gradeLevel} · {sharedChap.title}
                             </span>
                           </span>
@@ -275,9 +281,15 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
                     [
                     {c.subject === 'physics_chemistry'
                       ? 'Phys.-Chim.'
-                      : c.subject === 'databases_sql'
-                        ? 'SQL & BDD'
-                        : 'Maths'}
+                      : c.subject === 'svt'
+                        ? 'SVT'
+                        : c.subject === 'history_geography'
+                          ? 'Hist.-Géo'
+                          : c.subject === 'french_philosophy'
+                            ? 'Français'
+                            : c.subject === 'english_lv1'
+                              ? 'Anglais'
+                              : 'Maths'}
                     ] {c.gradeLevel} — {c.title}
                   </option>
                 ))}
