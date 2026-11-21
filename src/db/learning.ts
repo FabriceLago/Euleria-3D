@@ -984,8 +984,8 @@ export async function recordFlashcardReview(params: {
 
     // Prime de +5 XP pour une révision réussie (good/easy), limitée à 1 fois par carte toutes les 12h
     const twelveHoursAgo = now.getTime() - 12 * 60 * 60 * 1000;
-    const recentlyReviewed =
-      existing && existing.lastReviewedAt.getTime() > twelveHoursAgo && existing.repetitions >= 1;
+    // Sans condition sur repetitions : sinon "again" puis "good" redonne l'XP en boucle
+    const recentlyReviewed = existing && existing.lastReviewedAt.getTime() > twelveHoursAgo;
     const xpEarned =
       (params.rating === 'good' || params.rating === 'easy') && !recentlyReviewed ? 5 : 0;
 

@@ -111,19 +111,21 @@ export async function ensureSupabaseUserProfile(
     return mapUserRow(existing);
   }
 
+  // INSERT ... ON CONFLICT DO NOTHING : n'exige pas le droit UPDATE sur uid/email/avatar_url
+  await supabase.from('users').upsert(
+    {
+      uid: authUser.id,
+      email: authUser.email || `${authUser.id}@euleria.local`,
+      display_name: fallbackName.trim().slice(0, 40) || 'Élève',
+      avatar_url: avatarUrl && avatarUrl.startsWith('https://') ? avatarUrl.slice(0, 512) : null,
+    },
+    { onConflict: 'uid', ignoreDuplicates: true }
+  );
+
   const { data: inserted, error: upsertErr } = await supabase
     .from('users')
-    .upsert(
-      {
-        uid: authUser.id,
-        email: authUser.email || `${authUser.id}@euleria.local`,
-        display_name: fallbackName.trim().slice(0, 40) || 'Élève',
-        avatar_url: avatarUrl,
-        last_active_at: new Date().toISOString(),
-      },
-      { onConflict: 'uid' }
-    )
     .select('*')
+    .eq('uid', authUser.id)
     .single<DbUserRow>();
 
   if (upsertErr || !inserted) {
@@ -187,10 +189,8 @@ export async function upsertSupabaseChapterProgress(
   );
 
   if (Number.isFinite(newXp) && newXp >= 0) {
-    await supabase
-      .from('users')
-      .update({ xp: Math.round(newXp), last_active_at: nowIso })
-      .eq('id', userId);
+    // L'XP ne s'écrit plus en direct : RPC plafonnée côté base (voir supabase/schema.sql §6c)
+    await supabase.rpc('euleria_sync_xp', { new_xp: Math.round(newXp) });
   }
 }
 
@@ -208,9 +208,8 @@ export async function updateSupabasePreferences(
 ): Promise<UserProfile | null> {
   if (!supabase) return null;
 
-  const patch: Record<string, unknown> = {
-    last_active_at: new Date().toISOString(),
-  };
+  // last_active_at n'est plus modifiable par le client (il sert au rate-limit de l'XP)
+  const patch: Record<string, unknown> = {};
   if (typeof prefs.displayName === 'string' && prefs.displayName.trim()) {
     patch.display_name = prefs.displayName.trim().slice(0, 40);
   }

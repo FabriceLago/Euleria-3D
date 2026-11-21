@@ -190,10 +190,15 @@ async function finishDuelRoom(room: DuelRoomInternal) {
   const ranked = Array.from(room.participants.values()).sort((a, b) => b.score - a.score);
   const topScore = ranked[0]?.score ?? 0;
   let anyXpAwarded = false;
+  // Pas d'XP pour un duel en solo ou contre soi-même (plusieurs onglets du même compte)
+  const distinctUsers = new Set(ranked.map((p) => p.client.dbUserId).filter(Boolean)).size;
+  const awarded = new Set<number>();
 
   for (const p of ranked) {
-    if (p.correctCount > 0 && p.client.dbUserId) {
-      const reward = p.score === topScore && topScore > 0 ? 30 : 15;
+    if (distinctUsers >= 2 && p.correctCount > 0 && p.client.dbUserId && !awarded.has(p.client.dbUserId)) {
+      awarded.add(p.client.dbUserId);
+      const reward = capDailyXp(p.client.dbUserId, p.score === topScore && topScore > 0 ? 30 : 15);
+      if (reward === 0) continue;
       try {
         await awardDynamicQuizXp(p.client.dbUserId, reward);
         p.xpAwarded = reward;
@@ -331,7 +336,7 @@ const configuredOrigins = new Set<string>(
     .filter(Boolean)
 );
 
-function isOriginAllowed(origin: string, req: express.Request): boolean {
+function isOriginAllowed(origin: string, req: http.IncomingMessage): boolean {
   if (configuredOrigins.has(origin)) return true;
   try {
     const parsed = new URL(origin);
@@ -343,16 +348,8 @@ function isOriginAllowed(origin: string, req: express.Request): boolean {
     if (reqHost && parsed.host === reqHost) {
       return true;
     }
-    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
-      return true;
-    }
-    if (
-      parsed.protocol === 'https:' &&
-      (parsed.hostname.endsWith('.run.app') || parsed.hostname === 'run.app')
-    ) {
-      return true;
-    }
-    return false;
+    // localhost seulement en dev ; plus de joker *.run.app (tout le monde peut y héberger un site)
+    return !IS_PROD && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1');
   } catch {
     return false;
   }
@@ -398,6 +395,23 @@ function createRateLimiter(options: {
   };
 }
 
+// Plafond journalier d'XP "rejouable" (quiz dynamiques + duels) par utilisateur, anti-farm.
+// ponytail: en mémoire, remis à zéro au redémarrage ; passer en base si multi-instance.
+const DAILY_REPLAYABLE_XP_CAP = 1500;
+const dailyXpLedger = new Map<number, { day: string; xp: number }>();
+function capDailyXp(dbUserId: number, requested: number): number {
+  const day = new Date().toISOString().slice(0, 10);
+  let entry = dailyXpLedger.get(dbUserId);
+  if (!entry || entry.day !== day) {
+    if (dailyXpLedger.size > 50_000) dailyXpLedger.clear();
+    entry = { day, xp: 0 };
+    dailyXpLedger.set(dbUserId, entry);
+  }
+  const granted = Math.max(0, Math.min(Math.round(requested), DAILY_REPLAYABLE_XP_CAP - entry.xp));
+  entry.xp += granted;
+  return granted;
+}
+
 async function tryVerifyOptionalAuth(req: express.Request): Promise<{
   uid: string;
   email?: string;
@@ -429,8 +443,9 @@ function sendRouteError(res: express.Response, error: unknown, fallbackMessage: 
   if (error instanceof ValidationError) {
     return res.status(error.statusCode).json({ error: error.message });
   }
-  const msg = error instanceof Error ? error.message : fallbackMessage;
-  return res.status(500).json({ error: msg });
+  // Ne jamais renvoyer error.message au client (fuite de détails SQL/infra)
+  console.error(fallbackMessage, error);
+  return res.status(500).json({ error: fallbackMessage });
 }
 
 async function startServer() {
@@ -443,6 +458,9 @@ async function startServer() {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (IS_PROD) {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
     next();
   });
 
@@ -515,8 +533,7 @@ async function startServer() {
       const curriculum = await getFullCurriculum();
       res.json({ chapters: curriculum });
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Erreur serveur';
-      res.status(500).json({ error: msg });
+      sendRouteError(res, error, 'Erreur serveur');
     }
   });
 
@@ -526,8 +543,7 @@ async function startServer() {
       const rows = await getLeaderboard(25);
       res.json({ leaderboard: rows });
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Erreur serveur';
-      res.status(500).json({ error: msg });
+      sendRouteError(res, error, 'Erreur serveur');
     }
   });
 
@@ -560,8 +576,7 @@ async function startServer() {
       const dashboard = await getUserDashboardData(user.id);
       res.json({ user, ...dashboard });
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Erreur serveur';
-      res.status(500).json({ error: msg });
+      sendRouteError(res, error, 'Erreur serveur');
     }
   });
 
@@ -814,7 +829,10 @@ async function startServer() {
           authUser.name,
           authUser.picture
         );
-        const awarded = await awardDynamicQuizXp(dbUser.id, evaluation.xpBreakdown.totalXp);
+        const awarded = await awardDynamicQuizXp(
+          dbUser.id,
+          capDailyXp(dbUser.id, evaluation.xpBreakdown.totalXp)
+        );
         persisted = true;
         userXp = awarded.userXp;
         newlyUnlockedBadges = awarded.newlyUnlockedBadges;
@@ -964,11 +982,13 @@ async function startServer() {
       session.submitted = true;
 
       const serverElapsed = Math.max(1, Math.round((Date.now() - session.startedAt) / 1000));
+      // Le chrono serveur fait foi ; le client peut seulement déclarer moins (pause côté UI)
       const clientElapsed = Number(elapsedSeconds);
-      const durationSeconds =
-        Number.isFinite(clientElapsed) && clientElapsed > 0
-          ? Math.min(Math.round(clientElapsed), session.preset.timeLimitSec)
-          : Math.min(serverElapsed, session.preset.timeLimitSec);
+      const durationSeconds = Math.min(
+        serverElapsed,
+        session.preset.timeLimitSec,
+        Number.isFinite(clientElapsed) && clientElapsed > 0 ? Math.round(clientElapsed) : Infinity
+      );
 
       const validQuestionIds = new Set(session.questions.map((q) => q.id));
       const safeAnswers: Record<string, string> = {};
@@ -1057,8 +1077,7 @@ async function startServer() {
       const data = await getUserExamHistory(user.id, 20);
       res.json(data);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Erreur serveur';
-      res.status(500).json({ error: msg });
+      sendRouteError(res, error, 'Erreur serveur');
     }
   });
 
@@ -1077,8 +1096,7 @@ async function startServer() {
       const plan = await getUserStudyPlan(user.id);
       res.json(plan);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Erreur serveur';
-      res.status(500).json({ error: msg });
+      sendRouteError(res, error, 'Erreur serveur');
     }
   });
 
@@ -1133,8 +1151,7 @@ async function startServer() {
       }
       res.json(payload);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Erreur serveur';
-      res.status(500).json({ error: msg });
+      sendRouteError(res, error, 'Erreur serveur');
     }
   });
 
@@ -1264,9 +1281,32 @@ async function startServer() {
   const server = http.createServer(app);
 
   // Serveur WebSocket temps réel sur le même port 3000 (/ws), charge utile plafonnée à 16 Ko
-  const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 16 * 1024 });
+  const MAX_WS_CLIENTS = 2000;
+  const MAX_WS_PER_IP = 10;
+  const wsPerIp = new Map<string, number>();
+  const wss = new WebSocketServer({
+    server,
+    path: '/ws',
+    maxPayload: 16 * 1024,
+    // Bloque le Cross-Site WebSocket Hijacking depuis une origine étrangère
+    verifyClient: ({ origin, req }: { origin: string; req: http.IncomingMessage }) =>
+      !origin || isOriginAllowed(origin, req),
+  });
 
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws, req) => {
+    const ip = req.socket.remoteAddress || 'unknown';
+    const ipCount = wsPerIp.get(ip) || 0;
+    if (clients.size >= MAX_WS_CLIENTS || ipCount >= MAX_WS_PER_IP) {
+      ws.close(1013, 'Too many connections');
+      return;
+    }
+    wsPerIp.set(ip, ipCount + 1);
+    ws.on('close', () => {
+      const n = (wsPerIp.get(ip) || 1) - 1;
+      if (n <= 0) wsPerIp.delete(ip);
+      else wsPerIp.set(ip, n);
+    });
+
     const client: ConnectedClient = {
       clientId: crypto.randomUUID().slice(0, 8),
       ws,

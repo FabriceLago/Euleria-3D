@@ -256,3 +256,55 @@ DROP POLICY IF EXISTS "chat_messages_insert_own" ON public.chat_messages;
 CREATE POLICY "chat_messages_insert_own" ON public.chat_messages
   FOR INSERT TO authenticated
   WITH CHECK (user_id = public.current_euleria_user_id());
+
+-- 6. Durcissement sécurité (idempotent)
+-- 6a. Contraintes de domaine : bloque les valeurs forgées via l'API REST avec la clé anon
+ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_values_check;
+ALTER TABLE public.users ADD CONSTRAINT users_values_check CHECK (
+  char_length(display_name) BETWEEN 1 AND 40
+  AND grade_level IN ('6e', '5e', '4e', '3e', '2nde', '1ere', 'terminale')
+  AND theme_mode IN ('light', 'dark')
+  AND accent_color IN ('indigo', 'emerald', 'amber', 'sky')
+  AND layout_density IN ('comfortable', 'compact')
+  AND weekly_xp_goal BETWEEN 100 AND 5000
+  AND xp >= 0
+  AND (avatar_url IS NULL OR (avatar_url LIKE 'https://%' AND char_length(avatar_url) <= 512))
+);
+
+ALTER TABLE public.chat_messages DROP CONSTRAINT IF EXISTS chat_messages_content_len;
+ALTER TABLE public.chat_messages ADD CONSTRAINT chat_messages_content_len
+  CHECK (char_length(btrim(content)) BETWEEN 1 AND 1000);
+
+-- 6b. Privilèges par colonne : xp, streak_days, uid, email, avatar_url, last_active_at
+--     ne sont PLUS modifiables directement par le navigateur (RLS ne filtre que les lignes).
+REVOKE INSERT, UPDATE ON public.users FROM anon, authenticated;
+GRANT INSERT (uid, email, display_name, avatar_url) ON public.users TO authenticated;
+GRANT UPDATE (display_name, grade_level, theme_mode, accent_color, layout_density, show_3d_hints, weekly_xp_goal)
+  ON public.users TO authenticated;
+
+-- 6c. XP : unique voie d'écriture, plafonnée (+100 max) et limitée à 1 appel / 5 s.
+-- ponytail: en mode statique les réponses sont dans le bundle, l'XP reste déclaratif ;
+-- ce plafond borne la triche (~1200 XP/min max) — pour l'éliminer, valider côté serveur (server.ts).
+CREATE OR REPLACE FUNCTION public.euleria_sync_xp(new_xp INTEGER)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result INTEGER;
+BEGIN
+  UPDATE public.users
+     SET xp = LEAST(GREATEST(new_xp, xp), xp + 100),
+         last_active_at = NOW()
+   WHERE uid = auth.uid()::text
+     AND last_active_at < NOW() - INTERVAL '5 seconds'
+  RETURNING xp INTO result;
+  RETURN result;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.euleria_sync_xp(INTEGER) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.euleria_sync_xp(INTEGER) TO authenticated;
+REVOKE ALL ON FUNCTION public.current_euleria_user_id() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.current_euleria_user_id() TO authenticated;
