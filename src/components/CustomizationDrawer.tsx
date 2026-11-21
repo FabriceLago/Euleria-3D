@@ -8,6 +8,7 @@ import type {
   ThemeMode,
   UserProfile,
 } from '../types/learning.ts';
+import { PWAInstallButton } from './PWAInstallPrompt.tsx';
 
 interface CustomizationDrawerProps {
   open: boolean;
@@ -269,6 +270,13 @@ export const CustomizationDrawer: React.FC<CustomizationDrawerProps> = ({
                 className="w-4 h-4 accent-indigo-600"
               />
             </label>
+
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Application hors-ligne (PWA)
+              </div>
+              <PWAInstallButton variant="drawer" />
+            </div>
           </div>
         </div>
 

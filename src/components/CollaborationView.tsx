@@ -1,12 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, MessageSquare, Send, Users } from 'lucide-react';
+import { BookOpen, MessageSquare, Send, Swords, Users } from 'lucide-react';
 import type {
   AccentColor,
   ChapterItem,
   ChatMessageItem,
+  DuelLobbyItem,
+  DuelRoomState,
+  GradeLevel,
   StudyRoom,
+  SubjectId,
   UserProfile,
 } from '../types/learning.ts';
+import { LiveDuelView } from './LiveDuelView.tsx';
 
 interface CollaborationViewProps {
   rooms: StudyRoom[];
@@ -18,6 +23,21 @@ interface CollaborationViewProps {
   activePeers: Array<{ displayName: string; gradeLevel: string; roomSlug: string }>;
   profile: UserProfile | null;
   accentColor: AccentColor;
+  backendAvailable: boolean;
+  defaultGrade: GradeLevel;
+  duelLobby: DuelLobbyItem[];
+  activeDuel: DuelRoomState | null;
+  duelError: string | null;
+  onCreateDuel: (opts: {
+    subject: SubjectId | 'all';
+    gradeLevel: GradeLevel;
+    questionCount: number;
+  }) => void;
+  onJoinDuel: (code: string) => void;
+  onStartDuel: (code: string) => void;
+  onAnswerDuel: (code: string, questionId: string, answer: string) => void;
+  onLeaveDuel: () => void;
+  onRefreshLobby: () => void;
   onSignIn: () => void;
   apiFetch: (url: string, options?: RequestInit) => Promise<Response>;
   onOpenSharedChapter: (chapter: ChapterItem) => void;
@@ -41,16 +61,34 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
   activePeers,
   profile,
   accentColor,
+  backendAvailable,
+  defaultGrade,
+  duelLobby,
+  activeDuel,
+  duelError,
+  onCreateDuel,
+  onJoinDuel,
+  onStartDuel,
+  onAnswerDuel,
+  onLeaveDuel,
+  onRefreshLobby,
   onSignIn,
   apiFetch,
   onOpenSharedChapter,
   onMessageSentOptimistic,
 }) => {
+  const [subView, setSubView] = useState<'rooms' | 'duels'>('rooms');
   const [content, setContent] = useState('');
   const [sharedChapterId, setSharedChapterId] = useState<string>('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (activeDuel) {
+      setSubView('duels');
+    }
+  }, [activeDuel]);
 
   const chapterMap = useMemo(() => {
     const m = new Map<number, ChapterItem>();
@@ -100,20 +138,76 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <div className="pb-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="pb-5 border-b border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Collaboration entre pairs (6ᵉ à Terminale) · WebSocket temps réel
+            {subView === 'duels'
+              ? 'Défis synchronisés par WebSocket · Duels 1v1 & Mini-Tournois (jusqu’à 6 joueurs)'
+              : 'Collaboration entre pairs (6ᵉ à Terminale) · WebSocket temps réel'}
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Salons d’entraide et partage 3D
+            {subView === 'duels'
+              ? 'Duels & Tournois scientifiques en direct'
+              : 'Salons d’entraide et partage 3D'}
           </h1>
         </div>
-        <div className="text-xs font-mono tabular-nums text-slate-600 dark:text-slate-300">
-          {onlineCount} {onlineCount > 1 ? 'connexions actives' : 'connexion active'}
+        <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
+          <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+            <button
+              type="button"
+              onClick={() => setSubView('rooms')}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                subView === 'rooms'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Salons d’entraide</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSubView('duels');
+                onRefreshLobby();
+              }}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                subView === 'duels'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Swords className="w-3.5 h-3.5" />
+              <span>Duels & Tournois Live</span>
+              {duelLobby.length > 0 && (
+                <span className="font-mono tabular-nums text-[11px] text-indigo-600 dark:text-indigo-400">
+                  ({duelLobby.length})
+                </span>
+              )}
+            </button>
+          </div>
+          <div className="text-xs font-mono tabular-nums text-slate-600 dark:text-slate-300">
+            {onlineCount} {onlineCount > 1 ? 'connexions actives' : 'connexion active'}
+          </div>
         </div>
       </div>
 
+      {subView === 'duels' ? (
+        <LiveDuelView
+          backendAvailable={backendAvailable}
+          defaultGrade={defaultGrade}
+          accentColor={accentColor}
+          duelLobby={duelLobby}
+          activeDuel={activeDuel}
+          duelError={duelError}
+          onCreateDuel={onCreateDuel}
+          onJoinDuel={onJoinDuel}
+          onStartDuel={onStartDuel}
+          onAnswerDuel={onAnswerDuel}
+          onLeaveDuel={onLeaveDuel}
+          onRefreshLobby={onRefreshLobby}
+        />
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Salons & Pairs en ligne */}
         <div className="lg:col-span-4 space-y-5">
@@ -321,6 +415,7 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
           </form>
         </div>
       </div>
+      )}
     </div>
   );
 };

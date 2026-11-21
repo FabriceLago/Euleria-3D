@@ -36,10 +36,12 @@ import type {
   ChapterProgress,
   GradeLevel,
   LayoutDensity,
+  MistakeItem,
   PredictionMetrics,
   SubjectId,
   ThemeMode,
 } from '../types/learning.ts';
+import type { PrintableDocument } from '../utils/printExport.tsx';
 import { MathViewport3D } from './MathViewport3D.tsx';
 import { ChapterStudyDeck } from './ChapterStudyDeck.tsx';
 
@@ -68,6 +70,8 @@ interface ChapterWorkspaceProps {
   ) => void;
   onLaunchDynamicQuiz?: (chapterId: number) => void;
   onXpSynced?: (newTotalXp: number, newBadges: BadgeItem[]) => void;
+  onPrintDocument?: (doc: PrintableDocument) => void;
+  onMistakeRecorded?: (mistake: MistakeItem) => void;
 }
 
 const ACCENT_RING_MAP: Record<AccentColor, string> = {
@@ -98,6 +102,8 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
   onAttemptRecorded,
   onLaunchDynamicQuiz,
   onXpSynced,
+  onPrintDocument,
+  onMistakeRecorded,
 }) => {
   const subjectChapters = useMemo(
     () => chapters.filter((c) => (c.subject || 'mathematics') === selectedSubject),
@@ -227,6 +233,27 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
           xpEarned: isCorrect ? seedEx.xpValue : 0,
           prediction,
         });
+        if (!isCorrect && onMistakeRecorded) {
+          onMistakeRecorded({
+            key: `ex-${activeExercise.id}`,
+            exerciseId: activeExercise.id,
+            chapterId: activeChapter.id,
+            chapterTitle: activeChapter.title,
+            subject: activeChapter.subject || 'mathematics',
+            gradeLevel: activeChapter.gradeLevel,
+            exerciseType: activeExercise.exerciseType,
+            prompt: activeExercise.prompt,
+            hint: activeExercise.hint,
+            options: activeExercise.options,
+            explanation: seedEx.explanation,
+            correctAnswer: seedEx.correctAnswer,
+            lastSubmittedAnswer: answerInput.trim(),
+            wrongCount: 1,
+            lastWrongAt: new Date().toISOString(),
+            resolved: false,
+            source: 'exercise',
+          });
+        }
         onAttemptRecorded(localProgress, 0, []);
       }
       setSubmitting(false);
@@ -262,6 +289,27 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
         prediction: data.prediction,
         newBadges: data.newlyUnlockedBadges,
       });
+
+      if (!data.isCorrect && onMistakeRecorded) {
+        onMistakeRecorded({
+          key: `ex-${activeExercise.id}`,
+          exerciseId: activeExercise.id,
+          chapterId: activeChapter.id,
+          chapterTitle: activeChapter.title,
+          subject: activeChapter.subject || 'mathematics',
+          gradeLevel: activeChapter.gradeLevel,
+          exerciseType: activeExercise.exerciseType,
+          prompt: activeExercise.prompt,
+          hint: activeExercise.hint,
+          options: activeExercise.options,
+          explanation: data.explanation || '',
+          lastSubmittedAnswer: answerInput.trim(),
+          wrongCount: 1,
+          lastWrongAt: new Date().toISOString(),
+          resolved: false,
+          source: 'exercise',
+        });
+      }
 
       if (data.progress) {
         onAttemptRecorded(data.progress, data.userXp, data.newlyUnlockedBadges || []);
@@ -453,6 +501,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
             onRequireSignIn={onRequireSignIn}
             apiFetch={apiFetch}
             onXpSynced={onXpSynced}
+            onPrintDocument={onPrintDocument}
           />
         </div>
 

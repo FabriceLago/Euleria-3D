@@ -37,21 +37,26 @@ import type {
   BadgeItem,
   ChapterItem,
   GradeLevel,
+  MistakeItem,
   SubjectId,
   UserProfile,
 } from '../types/learning.ts';
+import type { PrintableDocument } from '../utils/printExport.tsx';
 import { MockExamView } from './MockExamView.tsx';
+import { GrandOralView } from './GrandOralView.tsx';
 
 interface DynamicQuizViewProps {
   chapters: ChapterItem[];
   initialChapterIds?: number[];
-  initialWorkspaceMode?: 'quiz' | 'exam';
+  initialWorkspaceMode?: 'quiz' | 'exam' | 'grand_oral';
   profile: UserProfile | null;
   accentColor: AccentColor;
   backendAvailable: boolean;
   onSignIn: () => Promise<boolean>;
   apiFetch: (url: string, options?: RequestInit) => Promise<Response>;
   onXpSynced: (newTotalXp: number, newBadges: BadgeItem[]) => void;
+  onPrintDocument?: (doc: PrintableDocument) => void;
+  onMistakeRecorded?: (mistake: MistakeItem) => void;
 }
 
 interface QuestionResultRecord {
@@ -106,8 +111,12 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
   onSignIn,
   apiFetch,
   onXpSynced,
+  onPrintDocument,
+  onMistakeRecorded,
 }) => {
-  const [workspaceMode, setWorkspaceMode] = useState<'quiz' | 'exam'>(initialWorkspaceMode);
+  const [workspaceMode, setWorkspaceMode] = useState<'quiz' | 'exam' | 'grand_oral'>(
+    initialWorkspaceMode
+  );
   const [filterSubject, setFilterSubject] = useState<'all' | SubjectId>('all');
   const [filterGrade, setFilterGrade] = useState<'all' | GradeLevel>('all');
   const [selectedIds, setSelectedIds] = useState<number[]>(() =>
@@ -338,6 +347,28 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
         setBestStreak((b) => Math.max(b, data.currentStreak ?? 0));
         setSessionXp((xp) => xp + (data.xpBreakdown?.totalXp ?? 0));
 
+        if (!data.isCorrect && onMistakeRecorded) {
+          onMistakeRecorded({
+            key: `quiz-${activeQuestion.chapterId}-${activeQuestion.id}`,
+            exerciseId: null,
+            chapterId: activeQuestion.chapterId,
+            chapterTitle: activeQuestion.chapterTitle,
+            subject: activeQuestion.subject,
+            gradeLevel: activeQuestion.gradeLevel as GradeLevel,
+            exerciseType: activeQuestion.options ? 'quiz' : 'practice',
+            prompt: activeQuestion.prompt,
+            hint: activeQuestion.hint,
+            options: activeQuestion.options,
+            explanation: data.explanation || '',
+            correctAnswer: data.correctAnswer,
+            lastSubmittedAnswer: answerInput.trim(),
+            wrongCount: 1,
+            lastWrongAt: new Date().toISOString(),
+            resolved: false,
+            source: 'quiz',
+          });
+        }
+
         if (data.persisted && typeof data.userXp === 'number') {
           onXpSynced(data.userXp, data.newlyUnlockedBadges || []);
         }
@@ -371,6 +402,28 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
         setStreak(evalRes.nextStreak);
         setBestStreak((b) => Math.max(b, evalRes.nextStreak));
         setSessionXp((xp) => xp + evalRes.xpBreakdown.totalXp);
+
+        if (!evalRes.isCorrect && onMistakeRecorded) {
+          onMistakeRecorded({
+            key: `quiz-${activeQuestion.chapterId}-${activeQuestion.id}`,
+            exerciseId: null,
+            chapterId: activeQuestion.chapterId,
+            chapterTitle: activeQuestion.chapterTitle,
+            subject: activeQuestion.subject,
+            gradeLevel: activeQuestion.gradeLevel as GradeLevel,
+            exerciseType: activeQuestion.options ? 'quiz' : 'practice',
+            prompt: activeQuestion.prompt,
+            hint: activeQuestion.hint,
+            options: activeQuestion.options,
+            explanation: fullQ.explanation,
+            correctAnswer: fullQ.correctAnswer,
+            lastSubmittedAnswer: answerInput.trim(),
+            wrongCount: 1,
+            lastWrongAt: new Date().toISOString(),
+            resolved: false,
+            source: 'quiz',
+          });
+        }
       }
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Erreur réseau.');
@@ -412,17 +465,21 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
             {workspaceMode === 'exam'
               ? 'Épreuves blanches chronométrées · Note sur 20, Mention officielle & bilan par matière'
-              : 'Générateur paramétrique · Rétroaction immédiate & calcul automatique d’XP'}
+              : workspaceMode === 'grand_oral'
+                ? 'Lycée (1ʳᵉ & Terminale) · Simulateur 10 + 10 min, grille officielle /20 & spécialités NSI / SES'
+                : 'Générateur paramétrique · Rétroaction immédiate & calcul automatique d’XP'}
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             {workspaceMode === 'exam'
               ? 'Examens blancs (Brevet & Bac)'
-              : 'Quiz dynamiques sur mesure'}
+              : workspaceMode === 'grand_oral'
+                ? 'Grand Oral & Spécialités (NSI · SES)'
+                : 'Quiz dynamiques sur mesure'}
           </h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-          <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+          <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
             <button
               type="button"
               onClick={() => setWorkspaceMode('quiz')}
@@ -444,6 +501,17 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
               }`}
             >
               Examens blancs
+            </button>
+            <button
+              type="button"
+              onClick={() => setWorkspaceMode('grand_oral')}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                workspaceMode === 'grand_oral'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Grand Oral & Spécialités
             </button>
           </div>
 
@@ -469,6 +537,11 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
           onSignIn={onSignIn}
           apiFetch={apiFetch}
           onXpSynced={onXpSynced}
+        />
+      ) : workspaceMode === 'grand_oral' ? (
+        <GrandOralView
+          accentColor={accentColor}
+          onPrintDocument={(doc) => onPrintDocument?.(doc)}
         />
       ) : (
         <>

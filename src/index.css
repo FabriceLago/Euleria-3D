@@ -27,3 +27,29 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+#euleria-print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #euleria-app-shell {
+    display: none !important;
+  }
+
+  #euleria-print-root {
+    display: block !important;
+  }
+}

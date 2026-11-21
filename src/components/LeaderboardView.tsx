@@ -29,10 +29,13 @@ import type {
   ChapterProgress,
   GradeLevel,
   LeaderboardEntry,
+  MistakeItem,
   PredictionMetrics,
   UserProfile,
 } from '../types/learning.ts';
+import type { PrintableDocument } from '../utils/printExport.tsx';
 import { StudyPlanView } from './StudyPlanView.tsx';
+import { MistakesNotebookView } from './MistakesNotebookView.tsx';
 
 interface LeaderboardViewProps {
   leaderboard: LeaderboardEntry[];
@@ -45,12 +48,16 @@ interface LeaderboardViewProps {
   backendAvailable: boolean;
   totalChaptersCount: number;
   overallPrediction: PredictionMetrics | null;
+  sessionMistakes: MistakeItem[];
   onSignIn: () => void;
   apiFetch: (url: string, options?: RequestInit) => Promise<Response>;
   onOpenChapter: (chapter: ChapterItem) => void;
   onLaunchDynamicQuiz: (chapterId: number) => void;
   onOpenMockExams: () => void;
   onUpdateWeeklyGoal: (goalXp: number) => Promise<void>;
+  onMarkSessionMistakeResolved: (key: string) => void;
+  onAttemptRecorded: (prog: ChapterProgress, newXp: number, newBadges?: BadgeItem[]) => void;
+  onPrintDocument: (doc: PrintableDocument) => void;
 }
 
 const BADGE_ICONS: Record<string, React.FC<{ className?: string }>> = {
@@ -85,15 +92,20 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   backendAvailable,
   totalChaptersCount,
   overallPrediction,
+  sessionMistakes,
   onSignIn,
   apiFetch,
   onOpenChapter,
   onLaunchDynamicQuiz,
   onOpenMockExams,
   onUpdateWeeklyGoal,
+  onMarkSessionMistakeResolved,
+  onAttemptRecorded,
+  onPrintDocument,
 }) => {
-  const [activeSubView, setActiveSubView] = useState<'plan' | 'ranking'>('plan');
+  const [activeSubView, setActiveSubView] = useState<'plan' | 'mistakes' | 'ranking'>('plan');
   const completedCount = progress.filter((p) => p.status === 'completed').length;
+  const unresolvedSessionCount = sessionMistakes.filter((m) => !m.resolved).length;
   const gradeLabelMap = new Map<string, string>(GRADE_LEVELS.map((g) => [g.id, g.label]));
 
   return (
@@ -103,17 +115,21 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
             {activeSubView === 'plan'
               ? 'Tableau de bord personnalisé · Objectifs hebdomadaires, SM-2 & chapitres prioritaires'
-              : 'Gamification · Synchronisation temps réel PostgreSQL & WebSocket'}
+              : activeSubView === 'mistakes'
+                ? 'Carnet d’erreurs intelligent · Pièges récurrents & remédiation ciblée'
+                : 'Gamification · Synchronisation temps réel PostgreSQL & WebSocket'}
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             {activeSubView === 'plan'
               ? 'Plan de révision personnalisé'
-              : 'Classement, récompenses & prédiction'}
+              : activeSubView === 'mistakes'
+                ? 'Carnet d’erreurs — Mes pièges à éviter'
+                : 'Classement, récompenses & prédiction'}
           </h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-          <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+          <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
             <button
               type="button"
               onClick={() => setActiveSubView('plan')}
@@ -124,6 +140,22 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
               }`}
             >
               Plan de révision
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSubView('mistakes')}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activeSubView === 'mistakes'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>Carnet d’erreurs</span>
+              {unresolvedSessionCount > 0 && (
+                <span className="font-mono tabular-nums text-[11px] text-amber-600 dark:text-amber-400">
+                  ({unresolvedSessionCount})
+                </span>
+              )}
             </button>
             <button
               type="button"
@@ -163,6 +195,20 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           onLaunchDynamicQuiz={onLaunchDynamicQuiz}
           onOpenMockExams={onOpenMockExams}
           onUpdateWeeklyGoal={onUpdateWeeklyGoal}
+          onPrintDocument={onPrintDocument}
+        />
+      ) : activeSubView === 'mistakes' ? (
+        <MistakesNotebookView
+          chapters={chapters}
+          profile={profile}
+          accentColor={accentColor}
+          backendAvailable={backendAvailable}
+          sessionMistakes={sessionMistakes}
+          onSignIn={onSignIn}
+          apiFetch={apiFetch}
+          onOpenChapter={onOpenChapter}
+          onMarkSessionMistakeResolved={onMarkSessionMistakeResolved}
+          onAttemptRecorded={onAttemptRecorded}
         />
       ) : (
         <>

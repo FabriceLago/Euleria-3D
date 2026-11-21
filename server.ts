@@ -22,6 +22,7 @@ import {
   getStudyRoomsWithMessages,
   getUserDashboardData,
   getUserExamHistory,
+  getUserMistakesNotebook,
   getUserStudyPlan,
   recordExamSession,
   recordExerciseAttempt,
@@ -36,6 +37,7 @@ import {
   type QuizDifficulty,
   type QuizMode,
 } from './src/services/dynamicQuizEngine.ts';
+import { evaluateExerciseAnswer } from './src/services/predictionEngine.ts';
 import {
   buildMockExamQuestions,
   getExamPresetBySlug,
@@ -49,7 +51,7 @@ import {
   computeSm2NextState,
   type FlashcardRating,
 } from './src/services/flashcardEngine.ts';
-import type { ChapterItem, GradeLevel } from './src/types/learning.ts';
+import type { ChapterItem, GradeLevel, SubjectId } from './src/types/learning.ts';
 
 const PORT = Number(process.env.PORT) || 3000;
 const DIST_DIR = path.resolve(process.cwd(), 'dist');
@@ -59,14 +61,231 @@ const IS_PROD =
   (!RUNNING_UNDER_TSX && fs.existsSync(path.join(DIST_DIR, 'index.html')));
 
 interface ConnectedClient {
+  clientId: string;
   ws: WebSocket;
   userUid: string | null;
+  dbUserId: number | null;
   displayName: string;
   gradeLevel: string;
   roomSlug: string;
+  duelCode: string | null;
+}
+
+interface DuelParticipantInternal {
+  client: ConnectedClient;
+  score: number;
+  correctCount: number;
+  answeredCurrent: boolean;
+  xpAwarded: number;
+}
+
+interface DuelRoomInternal {
+  code: string;
+  hostClientId: string;
+  subject: SubjectId | 'all';
+  gradeLevel: GradeLevel;
+  status: 'waiting' | 'active' | 'finished';
+  questions: GeneratedQuizQuestion[];
+  currentIndex: number;
+  questionTimeLimitMs: number;
+  questionStartedAt: number | null;
+  participants: Map<string, DuelParticipantInternal>;
+  lastRoundReveal: {
+    questionId: string;
+    prompt: string;
+    correctAnswer: string;
+    explanation: string;
+  } | null;
+  roundTimer: ReturnType<typeof setTimeout> | null;
+  createdAt: number;
 }
 
 const clients = new Set<ConnectedClient>();
+const duelRooms = new Map<string, DuelRoomInternal>();
+
+function sendToClient(client: ConnectedClient, event: string, payload: unknown) {
+  if (client.ws.readyState === WebSocket.OPEN) {
+    client.ws.send(JSON.stringify({ event, payload }));
+  }
+}
+
+function getDuelLobbyPayload() {
+  return Array.from(duelRooms.values())
+    .filter((room) => room.status !== 'finished' && room.participants.size > 0)
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 15)
+    .map((room) => {
+      const host = room.participants.get(room.hostClientId);
+      return {
+        code: room.code,
+        hostName: host?.client.displayName || 'Hôte',
+        subject: room.subject,
+        gradeLevel: room.gradeLevel,
+        status: room.status,
+        playerCount: room.participants.size,
+        maxPlayers: 6,
+        questionCount: room.questions.length,
+      };
+    });
+}
+
+function broadcastDuelLobby() {
+  broadcastEvent('duel:lobby', { rooms: getDuelLobbyPayload() });
+}
+
+function broadcastDuelState(room: DuelRoomInternal) {
+  const activeQ =
+    room.status === 'active' && room.currentIndex < room.questions.length
+      ? room.questions[room.currentIndex]
+      : null;
+
+  const participants = Array.from(room.participants.values())
+    .map((p) => ({
+      clientId: p.client.clientId,
+      displayName: p.client.displayName,
+      gradeLevel: p.client.gradeLevel,
+      score: p.score,
+      correctCount: p.correctCount,
+      answeredCurrent: p.answeredCurrent,
+      isHost: p.client.clientId === room.hostClientId,
+      xpAwarded: p.xpAwarded,
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  for (const p of room.participants.values()) {
+    sendToClient(p.client, 'duel:state', {
+      code: room.code,
+      subject: room.subject,
+      gradeLevel: room.gradeLevel,
+      status: room.status,
+      currentIndex: room.currentIndex,
+      totalQuestions: room.questions.length,
+      questionTimeLimitMs: room.questionTimeLimitMs,
+      questionStartedAt: room.questionStartedAt,
+      currentQuestion: activeQ
+        ? {
+            id: activeQ.id,
+            chapterTitle: activeQ.chapterTitle,
+            gradeLevel: activeQ.gradeLevel,
+            exerciseType: activeQ.exerciseType,
+            prompt: activeQ.prompt,
+            options: activeQ.options,
+          }
+        : null,
+      participants,
+      myClientId: p.client.clientId,
+      lastRoundReveal: room.lastRoundReveal,
+    });
+  }
+}
+
+async function finishDuelRoom(room: DuelRoomInternal) {
+  if (room.roundTimer) {
+    clearTimeout(room.roundTimer);
+    room.roundTimer = null;
+  }
+  room.status = 'finished';
+  room.questionStartedAt = null;
+
+  const ranked = Array.from(room.participants.values()).sort((a, b) => b.score - a.score);
+  const topScore = ranked[0]?.score ?? 0;
+  let anyXpAwarded = false;
+
+  for (const p of ranked) {
+    if (p.correctCount > 0 && p.client.dbUserId) {
+      const reward = p.score === topScore && topScore > 0 ? 30 : 15;
+      try {
+        await awardDynamicQuizXp(p.client.dbUserId, reward);
+        p.xpAwarded = reward;
+        anyXpAwarded = true;
+      } catch {
+        // Non-blocking XP reward
+      }
+    }
+  }
+
+  broadcastDuelState(room);
+  broadcastDuelLobby();
+
+  if (anyXpAwarded) {
+    try {
+      const leaderboard = await getLeaderboard(25);
+      broadcastEvent('leaderboard:updated', { leaderboard });
+    } catch {
+      // Ignore transient broadcast error
+    }
+  }
+}
+
+function advanceDuelRound(room: DuelRoomInternal) {
+  if (room.roundTimer) {
+    clearTimeout(room.roundTimer);
+    room.roundTimer = null;
+  }
+  if (room.status !== 'active') return;
+
+  const prevQ = room.questions[room.currentIndex];
+  if (prevQ) {
+    room.lastRoundReveal = {
+      questionId: prevQ.id,
+      prompt: prevQ.prompt,
+      correctAnswer: prevQ.correctAnswer,
+      explanation: prevQ.explanation,
+    };
+  }
+
+  const nextIdx = room.currentIndex + 1;
+  if (nextIdx >= room.questions.length) {
+    void finishDuelRoom(room);
+    return;
+  }
+
+  room.currentIndex = nextIdx;
+  room.questionStartedAt = Date.now();
+  for (const p of room.participants.values()) {
+    p.answeredCurrent = false;
+  }
+
+  broadcastDuelState(room);
+
+  room.roundTimer = setTimeout(() => {
+    advanceDuelRound(room);
+  }, room.questionTimeLimitMs);
+}
+
+function removeClientFromDuel(client: ConnectedClient) {
+  if (!client.duelCode) return;
+  const code = client.duelCode;
+  client.duelCode = null;
+  const room = duelRooms.get(code);
+  if (!room) return;
+
+  room.participants.delete(client.clientId);
+  if (room.participants.size === 0) {
+    if (room.roundTimer) clearTimeout(room.roundTimer);
+    duelRooms.delete(code);
+    broadcastDuelLobby();
+    return;
+  }
+
+  if (room.hostClientId === client.clientId) {
+    const nextHost = room.participants.values().next().value;
+    if (nextHost) room.hostClientId = nextHost.client.clientId;
+  }
+
+  broadcastDuelState(room);
+  broadcastDuelLobby();
+}
+
+function pruneStaleDuels() {
+  const cutoff = Date.now() - 30 * 60 * 1000;
+  for (const [code, room] of duelRooms.entries()) {
+    if (room.createdAt < cutoff || room.participants.size === 0) {
+      if (room.roundTimer) clearTimeout(room.roundTimer);
+      duelRooms.delete(code);
+    }
+  }
+}
 
 function broadcastEvent(event: string, payload: unknown, filterRoomSlug?: string) {
   const serialized = JSON.stringify({ event, payload });
@@ -863,6 +1082,25 @@ async function startServer() {
     }
   });
 
+  // Carnet d'erreurs intelligent ("Mes pièges à éviter")
+  app.get('/api/me/mistakes', requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Utilisateur non authentifié.' });
+      }
+      const user = await getOrCreateUser(
+        req.user.uid,
+        req.user.email || `${req.user.uid}@euleria.local`,
+        req.user.name,
+        req.user.picture
+      );
+      const notebook = await getUserMistakesNotebook(user.id);
+      res.json(notebook);
+    } catch (error: unknown) {
+      sendRouteError(res, error, 'Impossible de charger le carnet d’erreurs.');
+    }
+  });
+
   // Fiche de révision & Flashcards SM-2 d'un chapitre (avec état personnel si connecté)
   app.get('/api/chapters/:id/flashcards', async (req, res) => {
     try {
@@ -1030,15 +1268,19 @@ async function startServer() {
 
   wss.on('connection', (ws) => {
     const client: ConnectedClient = {
+      clientId: crypto.randomUUID().slice(0, 8),
       ws,
       userUid: null,
-      displayName: 'Visiteur',
+      dbUserId: null,
+      displayName: `Élève-${Math.floor(100 + Math.random() * 900)}`,
       gradeLevel: '6e',
       roomSlug: 'entraide-college',
+      duelCode: null,
     };
     let msgTimestamps: number[] = [];
     clients.add(client);
     broadcastPresence();
+    sendToClient(client, 'duel:lobby', { rooms: getDuelLobbyPayload() });
 
     ws.on('message', async (raw) => {
       const now = Date.now();
@@ -1068,9 +1310,14 @@ async function startServer() {
               decoded.picture
             );
             client.userUid = dbUser.uid;
+            client.dbUserId = dbUser.id;
             client.displayName = dbUser.displayName;
             client.gradeLevel = dbUser.gradeLevel;
             broadcastPresence();
+            if (client.duelCode) {
+              const activeRoom = duelRooms.get(client.duelCode);
+              if (activeRoom) broadcastDuelState(activeRoom);
+            }
           } catch (authErr: unknown) {
             const code =
               typeof authErr === 'object' && authErr !== null && 'code' in authErr
@@ -1078,6 +1325,7 @@ async function startServer() {
                 : '';
 
             client.userUid = null;
+            client.dbUserId = null;
             if (code === 'auth/id-token-expired') {
               if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ event: 'auth:expired' }));
@@ -1103,6 +1351,177 @@ async function startServer() {
         ) {
           client.roomSlug = data.roomSlug.trim();
           broadcastPresence();
+        } else if (data.type === 'duel:list') {
+          pruneStaleDuels();
+          sendToClient(client, 'duel:lobby', { rooms: getDuelLobbyPayload() });
+        } else if (data.type === 'duel:create') {
+          pruneStaleDuels();
+          if (duelRooms.size >= 50) {
+            sendToClient(client, 'duel:error', { message: 'Trop de duels actifs. Réessayez dans un instant.' });
+            return;
+          }
+          removeClientFromDuel(client);
+
+          const validSubjects = new Set<string>([
+            'all',
+            'mathematics',
+            'physics_chemistry',
+            'svt',
+            'history_geography',
+            'french_philosophy',
+            'english_lv1',
+          ]);
+          const validGrades: GradeLevel[] = ['6e', '5e', '4e', '3e', '2nde', '1ere', 'terminale'];
+          const reqSubject: SubjectId | 'all' =
+            typeof data.subject === 'string' && validSubjects.has(data.subject)
+              ? (data.subject as SubjectId | 'all')
+              : 'all';
+          const reqGrade: GradeLevel =
+            typeof data.gradeLevel === 'string' && validGrades.includes(data.gradeLevel as GradeLevel)
+              ? (data.gradeLevel as GradeLevel)
+              : ((validGrades.includes(client.gradeLevel as GradeLevel) ? client.gradeLevel : '3e') as GradeLevel);
+          const reqCount = Math.max(3, Math.min(8, Number(data.questionCount) || 5));
+
+          const allChapters = (await getFullCurriculum()) as ChapterItem[];
+          let pool = allChapters.filter(
+            (c) => c.gradeLevel === reqGrade && (reqSubject === 'all' || c.subject === reqSubject)
+          );
+          if (pool.length === 0) {
+            pool = allChapters.filter((c) => c.gradeLevel === reqGrade);
+          }
+          const chapterIds = pool.map((c) => c.id);
+          const exMap = await getChapterExercisesForGenerator(chapterIds);
+          const questions = generateDynamicQuiz(pool, allChapters, exMap, {
+            questionCount: reqCount,
+            difficulty: 'standard',
+            mode: 'qcm',
+          });
+
+          const code = `EUL-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+          const room: DuelRoomInternal = {
+            code,
+            hostClientId: client.clientId,
+            subject: reqSubject,
+            gradeLevel: reqGrade,
+            status: 'waiting',
+            questions,
+            currentIndex: 0,
+            questionTimeLimitMs: 25_000,
+            questionStartedAt: null,
+            participants: new Map([
+              [
+                client.clientId,
+                {
+                  client,
+                  score: 0,
+                  correctCount: 0,
+                  answeredCurrent: false,
+                  xpAwarded: 0,
+                },
+              ],
+            ]),
+            lastRoundReveal: null,
+            roundTimer: null,
+            createdAt: Date.now(),
+          };
+
+          duelRooms.set(code, room);
+          client.duelCode = code;
+          broadcastDuelState(room);
+          broadcastDuelLobby();
+        } else if (data.type === 'duel:join' && typeof data.code === 'string') {
+          const cleanCode = data.code.trim().toUpperCase().slice(0, 12);
+          const room = duelRooms.get(cleanCode);
+          if (!room) {
+            sendToClient(client, 'duel:error', { message: 'Code de duel introuvable.' });
+            return;
+          }
+          if (room.status !== 'waiting' && !room.participants.has(client.clientId)) {
+            sendToClient(client, 'duel:error', { message: 'Ce duel a déjà commencé.' });
+            return;
+          }
+          if (room.participants.size >= 6 && !room.participants.has(client.clientId)) {
+            sendToClient(client, 'duel:error', { message: 'Ce duel est complet (6 participants max).' });
+            return;
+          }
+          if (client.duelCode && client.duelCode !== cleanCode) {
+            removeClientFromDuel(client);
+          }
+          if (!room.participants.has(client.clientId)) {
+            room.participants.set(client.clientId, {
+              client,
+              score: 0,
+              correctCount: 0,
+              answeredCurrent: false,
+              xpAwarded: 0,
+            });
+          }
+          client.duelCode = cleanCode;
+          broadcastDuelState(room);
+          broadcastDuelLobby();
+        } else if (data.type === 'duel:start' && typeof data.code === 'string') {
+          const cleanCode = data.code.trim().toUpperCase();
+          const room = duelRooms.get(cleanCode);
+          if (!room || room.hostClientId !== client.clientId) return;
+          if (room.status !== 'waiting') return;
+
+          room.status = 'active';
+          room.currentIndex = 0;
+          room.questionStartedAt = Date.now();
+          room.lastRoundReveal = null;
+          for (const p of room.participants.values()) {
+            p.score = 0;
+            p.correctCount = 0;
+            p.answeredCurrent = false;
+            p.xpAwarded = 0;
+          }
+          broadcastDuelState(room);
+          broadcastDuelLobby();
+
+          room.roundTimer = setTimeout(() => {
+            advanceDuelRound(room);
+          }, room.questionTimeLimitMs);
+        } else if (
+          data.type === 'duel:answer' &&
+          typeof data.code === 'string' &&
+          typeof data.questionId === 'string' &&
+          typeof data.answer === 'string'
+        ) {
+          const room = duelRooms.get(data.code.trim().toUpperCase());
+          if (!room || room.status !== 'active') return;
+          const participant = room.participants.get(client.clientId);
+          if (!participant || participant.answeredCurrent) return;
+          const activeQ = room.questions[room.currentIndex];
+          if (!activeQ || activeQ.id !== data.questionId) return;
+
+          const cleanAns = data.answer.trim().slice(0, 256);
+          const isCorrect = evaluateExerciseAnswer(
+            activeQ.exerciseType,
+            cleanAns,
+            activeQ.correctAnswer,
+            activeQ.numericTolerance ?? 0.05
+          );
+          participant.answeredCurrent = true;
+          if (isCorrect) {
+            const elapsed = room.questionStartedAt ? Date.now() - room.questionStartedAt : 15_000;
+            const remainingRatio = Math.max(
+              0,
+              Math.min(1, (room.questionTimeLimitMs - elapsed) / room.questionTimeLimitMs)
+            );
+            const speedBonus = Math.round(remainingRatio * 50);
+            participant.score += 100 + speedBonus;
+            participant.correctCount += 1;
+          }
+
+          const allAnswered = Array.from(room.participants.values()).every((p) => p.answeredCurrent);
+          if (allAnswered) {
+            advanceDuelRound(room);
+          } else {
+            broadcastDuelState(room);
+          }
+        } else if (data.type === 'duel:leave') {
+          removeClientFromDuel(client);
+          sendToClient(client, 'duel:left', {});
         }
       } catch (err) {
         console.error('WebSocket message error:', err);
@@ -1110,6 +1529,7 @@ async function startServer() {
     });
 
     ws.on('close', () => {
+      removeClientFromDuel(client);
       clients.delete(client);
       broadcastPresence();
     });

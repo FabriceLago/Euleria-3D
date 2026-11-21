@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   Flame,
   Layers,
+  Printer,
   Sparkles,
   Target,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ import type {
   SubjectId,
   UserProfile,
 } from '../types/learning.ts';
+import type { PrintableDocument } from '../utils/printExport.tsx';
 
 interface StudyPlanViewProps {
   chapters: ChapterItem[];
@@ -32,6 +34,7 @@ interface StudyPlanViewProps {
   onLaunchDynamicQuiz: (chapterId: number) => void;
   onOpenMockExams: () => void;
   onUpdateWeeklyGoal: (goalXp: number) => Promise<void>;
+  onPrintDocument?: (doc: PrintableDocument) => void;
 }
 
 const ACCENT_BTN_MAP: Record<AccentColor, string> = {
@@ -133,6 +136,7 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
   onLaunchDynamicQuiz,
   onOpenMockExams,
   onUpdateWeeklyGoal,
+  onPrintDocument,
 }) => {
   const [plan, setPlan] = useState<StudyPlanData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -242,16 +246,35 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
                 Exercices, examens blancs et flashcards SM-2 cumulés sur les 7 derniers jours.
               </p>
             </div>
-            <div className="text-right">
-              <div className="text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-                {activePlan.weeklyXpEarned}{' '}
-                <span className="text-sm font-medium text-slate-400">
-                  / {activePlan.weeklyXpGoal} XP
-                </span>
-              </div>
-              <div className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
-                {goalPct}% atteint · {activePlan.weeklyActionsCount} activité
-                {activePlan.weeklyActionsCount > 1 ? 's' : ''}
+            <div className="flex items-start gap-3">
+              {onPrintDocument && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onPrintDocument({
+                      kind: 'progress-bulletin',
+                      plan: activePlan,
+                      profile,
+                      generatedAt: new Date().toLocaleDateString('fr-FR'),
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Bulletin PDF</span>
+                </button>
+              )}
+              <div className="text-right">
+                <div className="text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
+                  {activePlan.weeklyXpEarned}{' '}
+                  <span className="text-sm font-medium text-slate-400">
+                    / {activePlan.weeklyXpGoal} XP
+                  </span>
+                </div>
+                <div className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                  {goalPct}% atteint · {activePlan.weeklyActionsCount} activité
+                  {activePlan.weeklyActionsCount > 1 ? 's' : ''}
+                </div>
               </div>
             </div>
           </div>

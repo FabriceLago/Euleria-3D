@@ -10,9 +10,10 @@ import {
   FileText,
   HelpCircle,
   Layers,
+  Printer,
   RotateCcw,
 } from 'lucide-react';
-import { ALL_SEED_CHAPTERS } from '../db/curriculumData.ts';
+import { ALL_SEED_CHAPTERS, SUBJECTS } from '../db/curriculumData.ts';
 import {
   buildChapterFlashcards,
   buildChapterStudySheet,
@@ -24,6 +25,7 @@ import {
   type FlashcardRating,
 } from '../services/flashcardEngine.ts';
 import type { AccentColor, BadgeItem, ChapterItem } from '../types/learning.ts';
+import type { PrintableDocument } from '../utils/printExport.tsx';
 
 interface ChapterStudyDeckProps {
   chapter: ChapterItem;
@@ -34,6 +36,7 @@ interface ChapterStudyDeckProps {
   onRequireSignIn: () => Promise<boolean>;
   apiFetch: (url: string, options?: RequestInit) => Promise<Response>;
   onXpSynced?: (newTotalXp: number, newBadges: BadgeItem[]) => void;
+  onPrintDocument?: (doc: PrintableDocument) => void;
 }
 
 const ACCENT_BTN_MAP: Record<AccentColor, string> = {
@@ -101,6 +104,7 @@ export const ChapterStudyDeck: React.FC<ChapterStudyDeckProps> = ({
   onRequireSignIn,
   apiFetch,
   onXpSynced,
+  onPrintDocument,
 }) => {
   const [activeTab, setActiveTab] = useState<'course' | 'sheet' | 'flashcards'>('course');
   const [studySheet, setStudySheet] = useState<ChapterStudySheet | null>(null);
@@ -341,23 +345,45 @@ export const ChapterStudyDeck: React.FC<ChapterStudyDeckProps> = ({
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   Fiche de révision express · {studySheet.chapterTitle} ({studySheet.gradeLevel})
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCopySheet}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap cursor-pointer"
-                >
-                  {copiedSheet ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>Fiche copiée</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copier la fiche</span>
-                    </>
+                <div className="flex items-center gap-2">
+                  {onPrintDocument && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const subjLabel =
+                          SUBJECTS.find((s) => s.id === (chapter.subject || 'mathematics'))
+                            ?.label || 'Mathématiques';
+                        onPrintDocument({
+                          kind: 'study-sheet',
+                          sheet: studySheet,
+                          subjectLabel: subjLabel,
+                          generatedAt: new Date().toLocaleDateString('fr-FR'),
+                        });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap cursor-pointer"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Imprimer / PDF</span>
+                    </button>
                   )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleCopySheet}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap cursor-pointer"
+                  >
+                    {copiedSheet ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Fiche copiée</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copier la fiche</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Bloc L'essentiel + Formule */}

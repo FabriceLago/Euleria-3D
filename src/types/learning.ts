@@ -177,3 +177,84 @@ export interface ChatMessageItem {
   authorAvatar: string | null;
   authorXp: number;
 }
+
+export interface MistakeItem {
+  key: string;
+  exerciseId: number | null;
+  chapterId: number;
+  chapterTitle: string;
+  subject: SubjectId;
+  gradeLevel: GradeLevel;
+  exerciseType: 'quiz' | 'practice';
+  prompt: string;
+  hint: string;
+  options: string[] | null;
+  explanation: string;
+  correctAnswer?: string;
+  lastSubmittedAnswer: string;
+  wrongCount: number;
+  lastWrongAt: string;
+  resolved: boolean;
+  source: 'exercise' | 'quiz' | 'exam';
+}
+
+export interface MistakesNotebookData {
+  unresolved: MistakeItem[];
+  resolved: MistakeItem[];
+  stats: {
+    totalTracked: number;
+    unresolvedCount: number;
+    resolvedCount: number;
+  };
+}
+
+export interface DuelLobbyItem {
+  code: string;
+  hostName: string;
+  subject: SubjectId | 'all';
+  gradeLevel: GradeLevel;
+  status: 'waiting' | 'active' | 'finished';
+  playerCount: number;
+  maxPlayers: number;
+  questionCount: number;
+}
+
+export interface DuelParticipantPublic {
+  clientId: string;
+  displayName: string;
+  gradeLevel: string;
+  score: number;
+  correctCount: number;
+  answeredCurrent: boolean;
+  isHost: boolean;
+  xpAwarded: number;
+}
+
+export interface DuelQuestionPublic {
+  id: string;
+  chapterTitle: string;
+  gradeLevel: string;
+  exerciseType: 'quiz' | 'practice';
+  prompt: string;
+  options: string[] | null;
+}
+
+export interface DuelRoomState {
+  code: string;
+  subject: SubjectId | 'all';
+  gradeLevel: GradeLevel;
+  status: 'waiting' | 'active' | 'finished';
+  currentIndex: number;
+  totalQuestions: number;
+  questionTimeLimitMs: number;
+  questionStartedAt: number | null;
+  currentQuestion: DuelQuestionPublic | null;
+  participants: DuelParticipantPublic[];
+  myClientId: string;
+  lastRoundReveal: {
+    questionId: string;
+    prompt: string;
+    correctAnswer: string;
+    explanation: string;
+  } | null;
+}

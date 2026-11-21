@@ -1361,3 +1361,152 @@ export async function getUserStudyPlan(userId: number) {
     throw new Error('Impossible de générer le tableau de bord de révision.', { cause: error });
   }
 }
+
+export async function getUserMistakesNotebook(userId: number) {
+  try {
+    await ensureCurriculumSeeded();
+
+    const rows = await db
+      .select({
+        attemptId: quizAttempts.id,
+        exerciseId: quizAttempts.exerciseId,
+        chapterId: quizAttempts.chapterId,
+        submittedAnswer: quizAttempts.submittedAnswer,
+        isCorrect: quizAttempts.isCorrect,
+        createdAt: quizAttempts.createdAt,
+        exerciseType: exercises.exerciseType,
+        prompt: exercises.prompt,
+        hint: exercises.hint,
+        optionsJson: exercises.optionsJson,
+        explanation: exercises.explanation,
+        chapterTitle: chapters.title,
+        subject: chapters.subject,
+        gradeLevel: chapters.gradeLevel,
+      })
+      .from(quizAttempts)
+      .innerJoin(exercises, eq(quizAttempts.exerciseId, exercises.id))
+      .innerJoin(chapters, eq(quizAttempts.chapterId, chapters.id))
+      .where(eq(quizAttempts.userId, userId))
+      .orderBy(desc(quizAttempts.createdAt))
+      .limit(400);
+
+    const byExercise = new Map<
+      number,
+      {
+        exerciseId: number;
+        chapterId: number;
+        chapterTitle: string;
+        subject: string;
+        gradeLevel: string;
+        exerciseType: 'quiz' | 'practice';
+        prompt: string;
+        hint: string;
+        options: string[] | null;
+        explanation: string;
+        lastSubmittedAnswer: string;
+        wrongCount: number;
+        lastWrongAt: Date | null;
+        lastCorrectAt: Date | null;
+      }
+    >();
+
+    for (const row of rows) {
+      let entry = byExercise.get(row.exerciseId);
+      if (!entry) {
+        entry = {
+          exerciseId: row.exerciseId,
+          chapterId: row.chapterId,
+          chapterTitle: row.chapterTitle,
+          subject: row.subject || 'mathematics',
+          gradeLevel: row.gradeLevel,
+          exerciseType: row.exerciseType === 'quiz' ? 'quiz' : 'practice',
+          prompt: row.prompt,
+          hint: row.hint,
+          options: row.optionsJson ? (JSON.parse(row.optionsJson) as string[]) : null,
+          explanation: row.explanation,
+          lastSubmittedAnswer: row.submittedAnswer,
+          wrongCount: 0,
+          lastWrongAt: null,
+          lastCorrectAt: null,
+        };
+        byExercise.set(row.exerciseId, entry);
+      }
+
+      if (!row.isCorrect) {
+        entry.wrongCount += 1;
+        if (!entry.lastWrongAt || row.createdAt.getTime() > entry.lastWrongAt.getTime()) {
+          entry.lastWrongAt = row.createdAt;
+          entry.lastSubmittedAnswer = row.submittedAnswer;
+        }
+      } else if (!entry.lastCorrectAt || row.createdAt.getTime() > entry.lastCorrectAt.getTime()) {
+        entry.lastCorrectAt = row.createdAt;
+      }
+    }
+
+    const unresolved: Array<{
+      key: string;
+      exerciseId: number;
+      chapterId: number;
+      chapterTitle: string;
+      subject: string;
+      gradeLevel: string;
+      exerciseType: 'quiz' | 'practice';
+      prompt: string;
+      hint: string;
+      options: string[] | null;
+      explanation: string;
+      lastSubmittedAnswer: string;
+      wrongCount: number;
+      lastWrongAt: string;
+      resolved: boolean;
+      source: 'exercise';
+    }> = [];
+
+    const resolved: typeof unresolved = [];
+
+    for (const item of byExercise.values()) {
+      if (item.wrongCount === 0 || !item.lastWrongAt) continue;
+      const isResolved =
+        item.lastCorrectAt !== null && item.lastCorrectAt.getTime() > item.lastWrongAt.getTime();
+      const formatted = {
+        key: `ex-${item.exerciseId}`,
+        exerciseId: item.exerciseId,
+        chapterId: item.chapterId,
+        chapterTitle: item.chapterTitle,
+        subject: item.subject,
+        gradeLevel: item.gradeLevel,
+        exerciseType: item.exerciseType,
+        prompt: item.prompt,
+        hint: item.hint,
+        options: item.options,
+        explanation: item.explanation,
+        lastSubmittedAnswer: item.lastSubmittedAnswer,
+        wrongCount: item.wrongCount,
+        lastWrongAt: item.lastWrongAt.toISOString(),
+        resolved: isResolved,
+        source: 'exercise' as const,
+      };
+      if (isResolved) {
+        resolved.push(formatted);
+      } else {
+        unresolved.push(formatted);
+      }
+    }
+
+    unresolved.sort((a, b) => new Date(b.lastWrongAt).getTime() - new Date(a.lastWrongAt).getTime());
+    resolved.sort((a, b) => new Date(b.lastWrongAt).getTime() - new Date(a.lastWrongAt).getTime());
+
+    return {
+      unresolved,
+      resolved: resolved.slice(0, 30),
+      stats: {
+        totalTracked: unresolved.length + resolved.length,
+        unresolvedCount: unresolved.length,
+        resolvedCount: resolved.length,
+      },
+    };
+  } catch (error) {
+    console.error('Database error in getUserMistakesNotebook:', error);
+    throw new Error('Impossible de charger le carnet d’erreurs.', { cause: error });
+  }
+}

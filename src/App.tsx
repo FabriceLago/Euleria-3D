@@ -1,25 +1,39 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { AppSection, TopBar } from './components/TopBar.tsx';
 import { ChapterWorkspace } from './components/ChapterWorkspace.tsx';
-import { DynamicQuizView } from './components/DynamicQuizView.tsx';
-import { Studio3DView } from './components/Studio3DView.tsx';
-import { LeaderboardView } from './components/LeaderboardView.tsx';
-import { CollaborationView } from './components/CollaborationView.tsx';
 import { CustomizationDrawer } from './components/CustomizationDrawer.tsx';
+import { OfflineIndicator, PWAInstallButton } from './components/PWAInstallPrompt.tsx';
+import { PrintDocumentPortal, type PrintableDocument } from './utils/printExport.tsx';
 import { apiUrl, wsUrl } from './lib/api.ts';
 import { ALL_SEED_CHAPTERS, ALL_SEED_ROOMS } from './db/curriculumData.ts';
 import type {
   AccentColor,
   ChapterItem,
   ChatMessageItem,
+  DuelLobbyItem,
+  DuelRoomState,
   GradeLevel,
   LayoutDensity,
   LeaderboardEntry,
+  MistakeItem,
   StudyRoom,
   SubjectId,
   ThemeMode,
 } from './types/learning.ts';
+
+const DynamicQuizView = lazy(() =>
+  import('./components/DynamicQuizView.tsx').then((m) => ({ default: m.DynamicQuizView }))
+);
+const Studio3DView = lazy(() =>
+  import('./components/Studio3DView.tsx').then((m) => ({ default: m.Studio3DView }))
+);
+const LeaderboardView = lazy(() =>
+  import('./components/LeaderboardView.tsx').then((m) => ({ default: m.LeaderboardView }))
+);
+const CollaborationView = lazy(() =>
+  import('./components/CollaborationView.tsx').then((m) => ({ default: m.CollaborationView }))
+);
 
 function buildLocalCurriculum(): ChapterItem[] {
   let exIdCounter = 1;
@@ -84,7 +98,18 @@ const PlatformShell: React.FC = () => {
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel>('6e');
   const [selectedChapterId, setSelectedChapterId] = useState<number | null>(null);
   const [quizSeedChapterIds, setQuizSeedChapterIds] = useState<number[] | undefined>(undefined);
-  const [quizWorkspaceMode, setQuizWorkspaceMode] = useState<'quiz' | 'exam'>('quiz');
+  const [quizWorkspaceMode, setQuizWorkspaceMode] = useState<'quiz' | 'exam' | 'grand_oral'>('quiz');
+
+  // Impression PDF propre (iframe-safe via PrintDocumentPortal)
+  const [printableDoc, setPrintableDoc] = useState<PrintableDocument | null>(null);
+
+  // Carnet d'erreurs local (complète l'historique Cloud SQL pour les quiz et invités)
+  const [sessionMistakes, setSessionMistakes] = useState<MistakeItem[]>([]);
+
+  // Duels & Tournois Live WebSocket
+  const [duelLobby, setDuelLobby] = useState<DuelLobbyItem[]>([]);
+  const [activeDuel, setActiveDuel] = useState<DuelRoomState | null>(null);
+  const [duelError, setDuelError] = useState<string | null>(null);
 
   // Données temps réel depuis Cloud SQL PostgreSQL
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
@@ -224,6 +249,7 @@ const PlatformShell: React.FC = () => {
 
       ws.onopen = async () => {
         ws.send(JSON.stringify({ type: 'room:join', roomSlug: activeRoomRef.current }));
+        ws.send(JSON.stringify({ type: 'duel:list' }));
         const freshToken = await getFreshIdToken(false);
         if (!closedByUnmount && freshToken && ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: 'auth', token: freshToken }));
@@ -254,6 +280,16 @@ const PlatformShell: React.FC = () => {
                 return [...prev, incoming];
               });
             }
+          } else if (msg.event === 'duel:lobby' && Array.isArray(msg.payload?.rooms)) {
+            setDuelLobby(msg.payload.rooms as DuelLobbyItem[]);
+          } else if (msg.event === 'duel:state' && msg.payload) {
+            setActiveDuel(msg.payload as DuelRoomState);
+            setDuelError(null);
+          } else if (msg.event === 'duel:error' && msg.payload?.message) {
+            setDuelError(String(msg.payload.message));
+          } else if (msg.event === 'duel:left') {
+            setActiveDuel(null);
+            setDuelError(null);
           }
         } catch {
           // Ignore malformed frame
@@ -322,8 +358,98 @@ const PlatformShell: React.FC = () => {
     });
   };
 
+  const handlePrintDocument = useCallback((doc: PrintableDocument) => {
+    setPrintableDoc(doc);
+    requestAnimationFrame(() => {
+      window.setTimeout(() => {
+        window.print();
+      }, 80);
+    });
+  }, []);
+
+  const handleRecordMistake = useCallback((mistake: MistakeItem) => {
+    setSessionMistakes((prev) => {
+      const existing = prev.find((m) => m.key === mistake.key);
+      if (existing) {
+        return prev.map((m) =>
+          m.key === mistake.key
+            ? {
+                ...m,
+                wrongCount: m.wrongCount + 1,
+                lastSubmittedAnswer: mistake.lastSubmittedAnswer,
+                lastWrongAt: mistake.lastWrongAt,
+                resolved: false,
+              }
+            : m
+        );
+      }
+      return [mistake, ...prev].slice(0, 80);
+    });
+  }, []);
+
+  const handleMarkMistakeResolved = useCallback((key: string) => {
+    setSessionMistakes((prev) =>
+      prev.map((m) => (m.key === key ? { ...m, resolved: true } : m))
+    );
+  }, []);
+
+  const sendDuelMessage = useCallback((payload: Record<string, unknown>) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(payload));
+    } else {
+      setDuelError('Connexion WebSocket indisponible. Patientez un instant ou rechargez la page.');
+    }
+  }, []);
+
+  const handleCreateDuel = useCallback(
+    (opts: { subject: SubjectId | 'all'; gradeLevel: GradeLevel; questionCount: number }) => {
+      setDuelError(null);
+      sendDuelMessage({ type: 'duel:create', ...opts });
+    },
+    [sendDuelMessage]
+  );
+
+  const handleJoinDuel = useCallback(
+    (code: string) => {
+      setDuelError(null);
+      sendDuelMessage({ type: 'duel:join', code });
+    },
+    [sendDuelMessage]
+  );
+
+  const handleStartDuel = useCallback(
+    (code: string) => {
+      setDuelError(null);
+      sendDuelMessage({ type: 'duel:start', code });
+    },
+    [sendDuelMessage]
+  );
+
+  const handleAnswerDuel = useCallback(
+    (code: string, questionId: string, answer: string) => {
+      sendDuelMessage({ type: 'duel:answer', code, questionId, answer });
+    },
+    [sendDuelMessage]
+  );
+
+  const handleLeaveDuel = useCallback(() => {
+    sendDuelMessage({ type: 'duel:leave' });
+    setActiveDuel(null);
+    setDuelError(null);
+  }, [sendDuelMessage]);
+
+  const handleRefreshDuelLobby = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'duel:list' }));
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+    <>
+      <div
+        id="euleria-app-shell"
+        className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors"
+      >
       <TopBar
         activeSection={activeSection}
         onNavigate={setActiveSection}
@@ -363,13 +489,16 @@ const PlatformShell: React.FC = () => {
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          className="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white underline whitespace-nowrap shrink-0 cursor-pointer"
-        >
-          Personnaliser l’interface
-        </button>
+        <div className="flex items-center gap-4 shrink-0">
+          <PWAInstallButton variant="inline" />
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white underline whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            Personnaliser l’interface
+          </button>
+        </div>
       </div>
 
       <main className="pb-14">
@@ -422,83 +551,120 @@ const PlatformShell: React.FC = () => {
                   .catch(() => {});
               }
             }}
-          />
-        ) : activeSection === 'quiz' ? (
-          <DynamicQuizView
-            chapters={chapters}
-            initialChapterIds={quizSeedChapterIds}
-            initialWorkspaceMode={quizWorkspaceMode}
-            profile={profile}
-            accentColor={accentColor}
-            backendAvailable={backendAvailable}
-            onSignIn={signInWithGoogle}
-            apiFetch={apiFetch}
-            onXpSynced={(newTotalXp, newBadges) => {
-              applyXpAndBadges(newTotalXp, newBadges);
-              if (backendAvailable) {
-                fetch(apiUrl('/api/leaderboard'))
-                  .then((r) => (r.ok ? r.json() : null))
-                  .then((d) => d?.leaderboard && setLeaderboard(d.leaderboard))
-                  .catch(() => {});
-              }
-            }}
-          />
-        ) : activeSection === 'studio3d' ? (
-          <Studio3DView
-            chapters={chapters}
-            selectedSubject={selectedSubject}
-            onSelectSubject={setSelectedSubject}
-            initialGrade={selectedGrade}
-            themeMode={themeMode}
-            accentColor={accentColor}
-            showGrid={show3DHints}
-            onOpenChapterInCourse={handleOpenChapter}
-          />
-        ) : activeSection === 'leaderboard' ? (
-          <LeaderboardView
-            leaderboard={leaderboard}
-            profile={profile}
-            badges={badges}
-            progress={progress}
-            chapters={chapters}
-            selectedGrade={selectedGrade}
-            accentColor={accentColor}
-            backendAvailable={backendAvailable}
-            totalChaptersCount={chapters.length || 126}
-            overallPrediction={overallPrediction}
-            onSignIn={signInWithGoogle}
-            apiFetch={apiFetch}
-            onOpenChapter={handleOpenChapter}
-            onLaunchDynamicQuiz={(chapterId) => {
-              setQuizWorkspaceMode('quiz');
-              setQuizSeedChapterIds([chapterId]);
-              setActiveSection('quiz');
-            }}
-            onOpenMockExams={() => {
-              setQuizSeedChapterIds(undefined);
-              setQuizWorkspaceMode('exam');
-              setActiveSection('quiz');
-            }}
-            onUpdateWeeklyGoal={async (goalXp) => {
-              await handleUpdatePreferences({ weeklyXpGoal: goalXp });
-            }}
+            onPrintDocument={handlePrintDocument}
+            onMistakeRecorded={handleRecordMistake}
           />
         ) : (
-          <CollaborationView
-            rooms={rooms}
-            activeRoomSlug={activeRoomSlug}
-            onSelectRoom={handleSelectRoom}
-            messages={messages}
-            chapters={chapters}
-            onlineCount={onlineCount}
-            activePeers={activePeers}
-            profile={profile}
-            accentColor={accentColor}
-            onSignIn={signInWithGoogle}
-            apiFetch={apiFetch}
-            onOpenSharedChapter={handleOpenChapter}
-            onMessageSentOptimistic={handleMessageSentOptimistic}
-          />
+          <Suspense
+            fallback={
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-sm text-slate-500 dark:text-slate-400">
+                Chargement du module interactif...
+              </div>
+            }
+          >
+            {activeSection === 'quiz' ? (
+              <DynamicQuizView
+                chapters={chapters}
+                initialChapterIds={quizSeedChapterIds}
+                initialWorkspaceMode={quizWorkspaceMode}
+                profile={profile}
+                accentColor={accentColor}
+                backendAvailable={backendAvailable}
+                onSignIn={signInWithGoogle}
+                apiFetch={apiFetch}
+                onXpSynced={(newTotalXp, newBadges) => {
+                  applyXpAndBadges(newTotalXp, newBadges);
+                  if (backendAvailable) {
+                    fetch(apiUrl('/api/leaderboard'))
+                      .then((r) => (r.ok ? r.json() : null))
+                      .then((d) => d?.leaderboard && setLeaderboard(d.leaderboard))
+                      .catch(() => {});
+                  }
+                }}
+                onPrintDocument={handlePrintDocument}
+                onMistakeRecorded={handleRecordMistake}
+              />
+            ) : activeSection === 'studio3d' ? (
+              <Studio3DView
+                chapters={chapters}
+                selectedSubject={selectedSubject}
+                onSelectSubject={setSelectedSubject}
+                initialGrade={selectedGrade}
+                themeMode={themeMode}
+                accentColor={accentColor}
+                showGrid={show3DHints}
+                onOpenChapterInCourse={handleOpenChapter}
+              />
+            ) : activeSection === 'leaderboard' ? (
+              <LeaderboardView
+                leaderboard={leaderboard}
+                profile={profile}
+                badges={badges}
+                progress={progress}
+                chapters={chapters}
+                selectedGrade={selectedGrade}
+                accentColor={accentColor}
+                backendAvailable={backendAvailable}
+                totalChaptersCount={chapters.length || 126}
+                overallPrediction={overallPrediction}
+                sessionMistakes={sessionMistakes}
+                onSignIn={signInWithGoogle}
+                apiFetch={apiFetch}
+                onOpenChapter={handleOpenChapter}
+                onLaunchDynamicQuiz={(chapterId) => {
+                  setQuizWorkspaceMode('quiz');
+                  setQuizSeedChapterIds([chapterId]);
+                  setActiveSection('quiz');
+                }}
+                onOpenMockExams={() => {
+                  setQuizSeedChapterIds(undefined);
+                  setQuizWorkspaceMode('exam');
+                  setActiveSection('quiz');
+                }}
+                onUpdateWeeklyGoal={async (goalXp) => {
+                  await handleUpdatePreferences({ weeklyXpGoal: goalXp });
+                }}
+                onMarkSessionMistakeResolved={handleMarkMistakeResolved}
+                onAttemptRecorded={(prog, newXp, newBadges) => {
+                  updateLocalProgress(prog, newXp, newBadges || []);
+                  if (backendAvailable) {
+                    fetch(apiUrl('/api/leaderboard'))
+                      .then((r) => (r.ok ? r.json() : null))
+                      .then((d) => d?.leaderboard && setLeaderboard(d.leaderboard))
+                      .catch(() => {});
+                  }
+                }}
+                onPrintDocument={handlePrintDocument}
+              />
+            ) : (
+              <CollaborationView
+                rooms={rooms}
+                activeRoomSlug={activeRoomSlug}
+                onSelectRoom={handleSelectRoom}
+                messages={messages}
+                chapters={chapters}
+                onlineCount={onlineCount}
+                activePeers={activePeers}
+                profile={profile}
+                accentColor={accentColor}
+                backendAvailable={backendAvailable}
+                defaultGrade={selectedGrade}
+                duelLobby={duelLobby}
+                activeDuel={activeDuel}
+                duelError={duelError}
+                onCreateDuel={handleCreateDuel}
+                onJoinDuel={handleJoinDuel}
+                onStartDuel={handleStartDuel}
+                onAnswerDuel={handleAnswerDuel}
+                onLeaveDuel={handleLeaveDuel}
+                onRefreshLobby={handleRefreshDuelLobby}
+                onSignIn={signInWithGoogle}
+                apiFetch={apiFetch}
+                onOpenSharedChapter={handleOpenChapter}
+                onMessageSentOptimistic={handleMessageSentOptimistic}
+              />
+            )}
+          </Suspense>
         )}
       </main>
 
@@ -515,7 +681,11 @@ const PlatformShell: React.FC = () => {
         onSignIn={signInWithGoogle}
         onLogout={logout}
       />
-    </div>
+      </div>
+
+      <PrintDocumentPortal document={printableDoc} />
+      <OfflineIndicator />
+    </>
   );
 };
 
