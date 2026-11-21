@@ -11,6 +11,7 @@ import type {
   SubjectId,
   UserProfile,
 } from '../types/learning.ts';
+import { isSupabaseConfigured, sendSupabaseChatMessage } from '../lib/supabase.ts';
 import { LiveDuelView } from './LiveDuelView.tsx';
 
 interface CollaborationViewProps {
@@ -113,6 +114,23 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
     setSending(true);
     setError(null);
     try {
+      if (!backendAvailable && isSupabaseConfigured) {
+        const sent = await sendSupabaseChatMessage({
+          roomId: activeRoom.id,
+          roomSlug: activeRoom.slug,
+          author: profile,
+          content: content.trim(),
+          sharedChapterId: sharedChapterId ? Number(sharedChapterId) : null,
+        });
+        if (!sent) {
+          throw new Error('Envoi impossible vers Supabase.');
+        }
+        onMessageSentOptimistic(sent);
+        setContent('');
+        setSharedChapterId('');
+        return;
+      }
+
       const res = await apiFetch(`/api/rooms/${activeRoom.slug}/messages`, {
         method: 'POST',
         body: JSON.stringify({

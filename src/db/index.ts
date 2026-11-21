@@ -8,11 +8,18 @@ declare global {
 
 export const createPool = () => {
   if (!global._postgresPool) {
+    const parsedPort = process.env.SQL_PORT ? Number(process.env.SQL_PORT) : undefined;
+    const useSsl = process.env.SQL_SSL === 'true';
+
     global._postgresPool = new Pool({
       host: process.env.SQL_HOST,
+      port: Number.isFinite(parsedPort) ? parsedPort : undefined,
       user: process.env.SQL_USER,
       password: process.env.SQL_PASSWORD,
       database: process.env.SQL_DB_NAME,
+      ssl: useSsl
+        ? { rejectUnauthorized: process.env.SQL_SSL_REJECT_UNAUTHORIZED !== 'false' }
+        : undefined,
       max: 10,
       connectionTimeoutMillis: 15000,
     });

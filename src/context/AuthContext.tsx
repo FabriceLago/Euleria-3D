@@ -2,6 +2,13 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { onIdTokenChanged, signInWithPopup, signOut, User as FirebaseUser } from 'firebase/auth';
 import { auth, googleAuthProvider } from '../lib/firebase.ts';
 import { apiUrl } from '../lib/api.ts';
+import {
+  ensureSupabaseUserProfile,
+  fetchSupabaseUserProgress,
+  isSupabaseConfigured,
+  supabase,
+  upsertSupabaseChapterProgress,
+} from '../lib/supabase.ts';
 import type {
   BadgeItem,
   ChapterProgress,
@@ -27,6 +34,7 @@ interface AuthContextValue {
   updateLocalProgress: (prog: ChapterProgress, newXp: number, newBadges?: BadgeItem[]) => void;
   applyXpAndBadges: (newXp: number, newBadges?: BadgeItem[]) => void;
   setProfileState: React.Dispatch<React.SetStateAction<UserProfile | null>>;
+  authProviderMode: 'firebase' | 'supabase';
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -41,9 +49,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [signingIn, setSigningIn] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
+  const [authProviderMode, setAuthProviderMode] = useState<'firebase' | 'supabase'>('firebase');
 
   const tokenRef = useRef<string | null>(null);
   const signInPromiseRef = useRef<Promise<boolean> | null>(null);
+  const profileRef = useRef<UserProfile | null>(null);
+  profileRef.current = profile;
 
   const isJwtNearExpiry = (jwt: string | null): boolean => {
     if (!jwt) return true;
@@ -132,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
+        setAuthProviderMode('firebase');
         try {
           const token = await user.getIdToken();
           tokenRef.current = token;
@@ -144,15 +156,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         tokenRef.current = null;
         setIdToken(null);
-        setProfile(null);
-        setProgress([]);
-        setBadges([]);
-        setOverallPrediction(null);
+        if (!isSupabaseConfigured) {
+          setProfile(null);
+          setProgress([]);
+          setBadges([]);
+          setOverallPrediction(null);
+        }
       }
       setLoading(false);
     });
     return () => unsubscribe();
   }, [refreshDashboard]);
+
+  // Synchronisation automatique Supabase Auth si configuré (déploiement statique Hostinger / Vercel)
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+    let active = true;
+
+    async function syncSupabaseSession() {
+      if (!supabase || auth.currentUser) return;
+      const { data } = await supabase.auth.getSession();
+      const sbUser = data.session?.user;
+      if (!active || !sbUser) return;
+      const mapped = await ensureSupabaseUserProfile(sbUser);
+      if (!active || !mapped) return;
+      setAuthProviderMode('supabase');
+      setProfile(mapped);
+      const progRows = await fetchSupabaseUserProgress(mapped.id);
+      if (active) setProgress(progRows);
+      setLoading(false);
+    }
+
+    syncSupabaseSession();
+
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!active || auth.currentUser) return;
+      if (session?.user) {
+        const mapped = await ensureSupabaseUserProfile(session.user);
+        if (!active || !mapped) return;
+        setAuthProviderMode('supabase');
+        setProfile(mapped);
+        const progRows = await fetchSupabaseUserProgress(mapped.id);
+        if (active) setProgress(progRows);
+      } else if (authProviderMode === 'supabase') {
+        setProfile(null);
+        setProgress([]);
+        setBadges([]);
+        setOverallPrediction(null);
+      }
+    });
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [authProviderMode]);
 
   const signInWithGoogle = useCallback(async (): Promise<boolean> => {
     if (auth.currentUser) {
@@ -167,6 +225,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const pending = (async () => {
       try {
+        // Si Supabase est configuré et que le backend Express n'est pas actif, utiliser Supabase Auth OAuth
+        if (isSupabaseConfigured && supabase) {
+          let backendReachable = false;
+          try {
+            const probe = await fetch(apiUrl('/api/health'));
+            backendReachable =
+              probe.ok && (probe.headers.get('content-type') || '').includes('application/json');
+          } catch {
+            backendReachable = false;
+          }
+          if (!backendReachable) {
+            const { error } = await supabase.auth.signInWithOAuth({
+              provider: 'google',
+              options: { redirectTo: window.location.origin },
+            });
+            if (error) {
+              setAuthError(
+                'Connexion Google Supabase indisponible. Vérifiez que le fournisseur Google est activé dans Supabase Auth.'
+              );
+              return false;
+            }
+            return true;
+          }
+        }
+
         const credential = await signInWithPopup(auth, googleAuthProvider);
         const token = await credential.user.getIdToken();
         tokenRef.current = token;
@@ -215,7 +298,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [refreshDashboard]);
 
   const logout = useCallback(async () => {
-    await signOut(auth);
+    if (auth.currentUser) {
+      await signOut(auth);
+    }
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
+    }
+    setProfile(null);
+    setProgress([]);
+    setBadges([]);
+    setOverallPrediction(null);
   }, []);
 
   const updateLocalProgress = useCallback(
@@ -229,7 +321,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return [...prev, prog];
       });
-      setProfile((prev) => (prev ? { ...prev, xp: newXp } : prev));
+      const currentProfile = profileRef.current;
+      const computedXp = newXp > 0 ? newXp : (currentProfile?.xp ?? 0);
+      setProfile((prev) => (prev ? { ...prev, xp: computedXp } : prev));
+      if (authProviderMode === 'supabase' && currentProfile && isSupabaseConfigured) {
+        void upsertSupabaseChapterProgress(currentProfile.id, prog, computedXp);
+      }
       if (newBadges.length > 0) {
         const unlockedIds = new Set(newBadges.map((b) => b.id));
         setBadges((prev) =>
@@ -241,7 +338,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       }
     },
-    []
+    [authProviderMode]
   );
 
   const applyXpAndBadges = useCallback((newXp: number, newBadges: BadgeItem[] = []) => {
@@ -278,6 +375,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateLocalProgress,
         applyXpAndBadges,
         setProfileState: setProfile,
+        authProviderMode,
       }}
     >
       {children}

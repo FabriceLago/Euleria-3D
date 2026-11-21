@@ -143,6 +143,10 @@ export default defineConfig(() => {
                 test: /node_modules\/(@?firebase)/,
               },
               {
+                name: 'vendor-supabase',
+                test: /node_modules\/@supabase/,
+              },
+              {
                 name: 'curriculum-data',
                 test: /src\/db\/(curriculumData|physicsChemistryData|svtData|historyGeographyData|frenchPhilosophyData|englishLv1Data)/,
               },

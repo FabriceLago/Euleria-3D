@@ -6,6 +6,12 @@ import { CustomizationDrawer } from './components/CustomizationDrawer.tsx';
 import { OfflineIndicator, PWAInstallButton } from './components/PWAInstallPrompt.tsx';
 import { PrintDocumentPortal, type PrintableDocument } from './utils/printExport.tsx';
 import { apiUrl, wsUrl } from './lib/api.ts';
+import {
+  fetchSupabaseLeaderboard,
+  fetchSupabaseRoomsAndMessages,
+  isSupabaseConfigured,
+  updateSupabasePreferences,
+} from './lib/supabase.ts';
 import { ALL_SEED_CHAPTERS, ALL_SEED_ROOMS } from './db/curriculumData.ts';
 import type {
   AccentColor,
@@ -192,21 +198,57 @@ const PlatformShell: React.FC = () => {
         setMessages(roomData.messages || []);
       } catch {
         if (!mounted) return;
-        // Hébergement statique détecté (ex: Vercel sans VITE_API_BASE_URL) :
-        // On charge le programme officiel (21 chapitres + 3D WebGL + exercices) sans inventer de données utilisateurs.
+        // Hébergement statique détecté : programme complet en local + synchronisation Supabase si configurée
         setBackendAvailable(false);
         setChapters(buildLocalCurriculum());
-        setLeaderboard([]);
-        setRooms(
-          ALL_SEED_ROOMS.map((r, i) => ({
-            id: i + 1,
-            slug: r.slug,
-            name: r.name,
-            gradeLevel: r.gradeLevel,
-            topic: r.topic,
-          }))
-        );
-        setMessages([]);
+
+        if (isSupabaseConfigured) {
+          try {
+            const [sbLeaderboard, sbRoomsData] = await Promise.all([
+              fetchSupabaseLeaderboard(25),
+              fetchSupabaseRoomsAndMessages(activeRoomSlug),
+            ]);
+            if (!mounted) return;
+            setLeaderboard(sbLeaderboard);
+            setRooms(
+              sbRoomsData.rooms.length > 0
+                ? sbRoomsData.rooms
+                : ALL_SEED_ROOMS.map((r, i) => ({
+                    id: i + 1,
+                    slug: r.slug,
+                    name: r.name,
+                    gradeLevel: r.gradeLevel,
+                    topic: r.topic,
+                  }))
+            );
+            setMessages(sbRoomsData.messages);
+          } catch {
+            if (!mounted) return;
+            setLeaderboard([]);
+            setRooms(
+              ALL_SEED_ROOMS.map((r, i) => ({
+                id: i + 1,
+                slug: r.slug,
+                name: r.name,
+                gradeLevel: r.gradeLevel,
+                topic: r.topic,
+              }))
+            );
+            setMessages([]);
+          }
+        } else {
+          setLeaderboard([]);
+          setRooms(
+            ALL_SEED_ROOMS.map((r, i) => ({
+              id: i + 1,
+              slug: r.slug,
+              name: r.name,
+              gradeLevel: r.gradeLevel,
+              topic: r.topic,
+            }))
+          );
+          setMessages([]);
+        }
       } finally {
         if (mounted) setLoadingCurriculum(false);
       }
@@ -220,7 +262,17 @@ const PlatformShell: React.FC = () => {
   // Rechargement des messages lors du changement de salon
   const handleSelectRoom = useCallback(async (slug: string) => {
     setActiveRoomSlug(slug);
-    if (!backendAvailable) return;
+    if (!backendAvailable) {
+      if (isSupabaseConfigured) {
+        try {
+          const data = await fetchSupabaseRoomsAndMessages(slug);
+          setMessages(data.messages);
+        } catch (err) {
+          console.error('Failed to load Supabase room messages:', err);
+        }
+      }
+      return;
+    }
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'room:join', roomSlug: slug }));
     }
@@ -329,17 +381,22 @@ const PlatformShell: React.FC = () => {
     if (prefs.gradeLevel) setSelectedGrade(prefs.gradeLevel);
 
     if (profile) {
-      try {
-        const res = await apiFetch('/api/me/preferences', {
-          method: 'PATCH',
-          body: JSON.stringify(prefs),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user) setProfileState(data.user);
+      if (!backendAvailable && isSupabaseConfigured) {
+        const updated = await updateSupabasePreferences(profile.uid, prefs);
+        if (updated) setProfileState(updated);
+      } else if (backendAvailable) {
+        try {
+          const res = await apiFetch('/api/me/preferences', {
+            method: 'PATCH',
+            body: JSON.stringify(prefs),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.user) setProfileState(data.user);
+          }
+        } catch (err) {
+          console.error('Failed to persist preferences:', err);
         }
-      } catch (err) {
-        console.error('Failed to persist preferences:', err);
       }
     }
   };
@@ -468,10 +525,10 @@ const PlatformShell: React.FC = () => {
           </div>
         </div>
       )}
-      {!loadingCurriculum && !backendAvailable && (
+      {!loadingCurriculum && !backendAvailable && !isSupabaseConfigured && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
           <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-xs text-amber-800 dark:text-amber-200">
-            Hébergement statique détecté (API backend non reliée) : les 126 chapitres (Mathématiques, Physique-Chimie, SVT, Histoire-Géo, Français & Philo, Anglais LV1), modèles 3D WebGL et 378 exercices restent pleinement utilisables. Pour activer la synchronisation Cloud SQL, le classement et le chat temps réel, déployez sur Google Cloud Run ou configurez <span className="font-mono">VITE_API_BASE_URL</span>.
+            Mode autonome actif : les 126 chapitres, modèles 3D WebGL et 378 exercices sont pleinement utilisables. Configurez Supabase (<span className="font-mono">VITE_SUPABASE_URL</span> / <span className="font-mono">VITE_SUPABASE_ANON_KEY</span>) ou <span className="font-mono">VITE_API_BASE_URL</span> pour synchroniser comptes, classement et salons.
           </div>
         </div>
       )}
