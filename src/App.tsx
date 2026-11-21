@@ -84,6 +84,7 @@ const PlatformShell: React.FC = () => {
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel>('6e');
   const [selectedChapterId, setSelectedChapterId] = useState<number | null>(null);
   const [quizSeedChapterIds, setQuizSeedChapterIds] = useState<number[] | undefined>(undefined);
+  const [quizWorkspaceMode, setQuizWorkspaceMode] = useState<'quiz' | 'exam'>('quiz');
 
   // Données temps réel depuis Cloud SQL PostgreSQL
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
@@ -148,7 +149,8 @@ const PlatformShell: React.FC = () => {
           fetch(apiUrl('/api/leaderboard')),
           fetch(apiUrl(`/api/rooms?room=${encodeURIComponent(activeRoomSlug)}`)),
         ]);
-        if (!curRes.ok) {
+        const curContentType = curRes.headers.get('content-type') || '';
+        if (!curRes.ok || !curContentType.includes('application/json')) {
           throw new Error(`HTTP_${curRes.status}`);
         }
         const curData = await curRes.json();
@@ -282,6 +284,7 @@ const PlatformShell: React.FC = () => {
     accentColor?: AccentColor;
     layoutDensity?: LayoutDensity;
     show3DHints?: boolean;
+    weeklyXpGoal?: number;
   }) => {
     if (prefs.themeMode) setThemeMode(prefs.themeMode);
     if (prefs.accentColor) setAccentColor(prefs.accentColor);
@@ -406,14 +409,25 @@ const PlatformShell: React.FC = () => {
               }
             }}
             onLaunchDynamicQuiz={(chapterId) => {
+              setQuizWorkspaceMode('quiz');
               setQuizSeedChapterIds([chapterId]);
               setActiveSection('quiz');
+            }}
+            onXpSynced={(newTotalXp, newBadges) => {
+              applyXpAndBadges(newTotalXp, newBadges);
+              if (backendAvailable) {
+                fetch(apiUrl('/api/leaderboard'))
+                  .then((r) => (r.ok ? r.json() : null))
+                  .then((d) => d?.leaderboard && setLeaderboard(d.leaderboard))
+                  .catch(() => {});
+              }
             }}
           />
         ) : activeSection === 'quiz' ? (
           <DynamicQuizView
             chapters={chapters}
             initialChapterIds={quizSeedChapterIds}
+            initialWorkspaceMode={quizWorkspaceMode}
             profile={profile}
             accentColor={accentColor}
             backendAvailable={backendAvailable}
@@ -446,9 +460,28 @@ const PlatformShell: React.FC = () => {
             profile={profile}
             badges={badges}
             progress={progress}
+            chapters={chapters}
+            selectedGrade={selectedGrade}
+            accentColor={accentColor}
+            backendAvailable={backendAvailable}
             totalChaptersCount={chapters.length || 126}
             overallPrediction={overallPrediction}
             onSignIn={signInWithGoogle}
+            apiFetch={apiFetch}
+            onOpenChapter={handleOpenChapter}
+            onLaunchDynamicQuiz={(chapterId) => {
+              setQuizWorkspaceMode('quiz');
+              setQuizSeedChapterIds([chapterId]);
+              setActiveSection('quiz');
+            }}
+            onOpenMockExams={() => {
+              setQuizSeedChapterIds(undefined);
+              setQuizWorkspaceMode('exam');
+              setActiveSection('quiz');
+            }}
+            onUpdateWeeklyGoal={async (goalXp) => {
+              await handleUpdatePreferences({ weeklyXpGoal: goalXp });
+            }}
           />
         ) : (
           <CollaborationView

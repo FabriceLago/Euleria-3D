@@ -1377,6 +1377,28 @@ export const ALL_SEED_CHAPTERS: SeedChapter[] = [
   ...FRENCH_CHAPTERS,
   ...ENGLISH_CHAPTERS,
 ];
+export const EXAM_BADGES = [
+  {
+    slug: 'laureat-examen',
+    title: 'Lauréat d’examen blanc',
+    description: 'Obtenir au moins 14/20 (Mention Bien ou Très Bien) à un examen blanc Brevet ou Bac.',
+    iconName: 'Medal',
+    xpThreshold: 14,
+    conditionType: 'exam_honors',
+  },
+];
+
+export const FLASHCARD_BADGES = [
+  {
+    slug: 'memoire-durable',
+    title: 'Mémoire durable',
+    description: 'Maîtriser 15 flashcards en répétition espacée à travers vos chapitres.',
+    iconName: 'Brain',
+    xpThreshold: 15,
+    conditionType: 'flashcards_mastered',
+  },
+];
+
 export const ALL_SEED_BADGES = [
   ...SEED_BADGES,
   ...PHYSICS_BADGES,
@@ -1384,6 +1406,8 @@ export const ALL_SEED_BADGES = [
   ...HG_BADGES,
   ...FRENCH_BADGES,
   ...ENGLISH_BADGES,
+  ...EXAM_BADGES,
+  ...FLASHCARD_BADGES,
 ];
 export const ALL_SEED_ROOMS = [
   ...SEED_ROOMS,

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Atom,
   Award,
   BookOpen,
   Box,
+  Brain,
   CheckCircle2,
   Compass,
   Database,
@@ -15,27 +16,41 @@ import {
   Landmark,
   Languages,
   Leaf,
+  Medal,
   MessageSquare,
   TrendingUp,
   Trophy,
 } from 'lucide-react';
 import { GRADE_LEVELS } from '../db/curriculumData.ts';
 import type {
+  AccentColor,
   BadgeItem,
+  ChapterItem,
   ChapterProgress,
+  GradeLevel,
   LeaderboardEntry,
   PredictionMetrics,
   UserProfile,
 } from '../types/learning.ts';
+import { StudyPlanView } from './StudyPlanView.tsx';
 
 interface LeaderboardViewProps {
   leaderboard: LeaderboardEntry[];
   profile: UserProfile | null;
   badges: BadgeItem[];
   progress: ChapterProgress[];
+  chapters: ChapterItem[];
+  selectedGrade: GradeLevel;
+  accentColor: AccentColor;
+  backendAvailable: boolean;
   totalChaptersCount: number;
   overallPrediction: PredictionMetrics | null;
   onSignIn: () => void;
+  apiFetch: (url: string, options?: RequestInit) => Promise<Response>;
+  onOpenChapter: (chapter: ChapterItem) => void;
+  onLaunchDynamicQuiz: (chapterId: number) => void;
+  onOpenMockExams: () => void;
+  onUpdateWeeklyGoal: (goalXp: number) => Promise<void>;
 }
 
 const BADGE_ICONS: Record<string, React.FC<{ className?: string }>> = {
@@ -43,6 +58,7 @@ const BADGE_ICONS: Record<string, React.FC<{ className?: string }>> = {
   Award,
   BookOpen,
   Box,
+  Brain,
   CheckCircle2,
   Compass,
   Dna,
@@ -53,6 +69,7 @@ const BADGE_ICONS: Record<string, React.FC<{ className?: string }>> = {
   Landmark,
   Languages,
   Leaf,
+  Medal,
   TrendingUp,
   MessageSquare,
 };
@@ -62,34 +79,93 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   profile,
   badges,
   progress,
+  chapters,
+  selectedGrade,
+  accentColor,
+  backendAvailable,
   totalChaptersCount,
   overallPrediction,
   onSignIn,
+  apiFetch,
+  onOpenChapter,
+  onLaunchDynamicQuiz,
+  onOpenMockExams,
+  onUpdateWeeklyGoal,
 }) => {
+  const [activeSubView, setActiveSubView] = useState<'plan' | 'ranking'>('plan');
   const completedCount = progress.filter((p) => p.status === 'completed').length;
   const gradeLabelMap = new Map<string, string>(GRADE_LEVELS.map((g) => [g.id, g.label]));
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8">
-      <div className="pb-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="pb-5 border-b border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Gamification · Synchronisation temps réel PostgreSQL & WebSocket
+            {activeSubView === 'plan'
+              ? 'Tableau de bord personnalisé · Objectifs hebdomadaires, SM-2 & chapitres prioritaires'
+              : 'Gamification · Synchronisation temps réel PostgreSQL & WebSocket'}
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Classement, récompenses & prédiction
+            {activeSubView === 'plan'
+              ? 'Plan de révision personnalisé'
+              : 'Classement, récompenses & prédiction'}
           </h1>
         </div>
-        {!profile && (
-          <button
-            type="button"
-            onClick={onSignIn}
-            className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            Rejoindre le classement
-          </button>
-        )}
+
+        <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
+          <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+            <button
+              type="button"
+              onClick={() => setActiveSubView('plan')}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activeSubView === 'plan'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Plan de révision
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSubView('ranking')}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activeSubView === 'ranking'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Classement & Badges
+            </button>
+          </div>
+
+          {!profile && activeSubView === 'ranking' && (
+            <button
+              type="button"
+              onClick={onSignIn}
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              Rejoindre le classement
+            </button>
+          )}
+        </div>
       </div>
+
+      {activeSubView === 'plan' ? (
+        <StudyPlanView
+          chapters={chapters}
+          selectedGrade={selectedGrade}
+          profile={profile}
+          accentColor={accentColor}
+          backendAvailable={backendAvailable}
+          onSignIn={onSignIn}
+          apiFetch={apiFetch}
+          onOpenChapter={onOpenChapter}
+          onLaunchDynamicQuiz={onLaunchDynamicQuiz}
+          onOpenMockExams={onOpenMockExams}
+          onUpdateWeeklyGoal={onUpdateWeeklyGoal}
+        />
+      ) : (
+        <>
 
       {/* Synthèse personnelle si connecté */}
       {profile && (
@@ -143,7 +219,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {leaderboard.map((entry, idx) => {
-                const isMe = profile?.uid === entry.uid;
+                const isMe = profile?.id === entry.id;
                 return (
                   <div
                     key={entry.id}
@@ -196,11 +272,11 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
         <div className="lg:col-span-5 space-y-6">
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">
-              Récompenses virtuelles ({badges.filter((b) => b.earned).length}/{badges.length || 16})
+              Récompenses virtuelles ({badges.filter((b) => b.earned).length}/{badges.length || 18})
             </h2>
             {badges.length === 0 ? (
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Connectez-vous pour suivre le déblocage de vos 16 badges d’excellence en temps réel.
+                Connectez-vous pour suivre le déblocage de vos 18 badges d’excellence en temps réel.
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -331,6 +407,8 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

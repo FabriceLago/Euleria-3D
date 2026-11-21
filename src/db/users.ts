@@ -2,6 +2,19 @@ import { desc, eq } from 'drizzle-orm';
 import { db } from './index.ts';
 import { users } from './schema.ts';
 
+function sanitizeAvatarUrl(raw?: string): string | null {
+  if (!raw || typeof raw !== 'string') return null;
+  try {
+    const parsed = new URL(raw.trim());
+    if (parsed.protocol === 'https:') {
+      return parsed.toString().slice(0, 512);
+    }
+  } catch {
+    // Ignore malformed URLs
+  }
+  return null;
+}
+
 export async function getOrCreateUser(
   uid: string,
   email: string,
@@ -11,8 +24,9 @@ export async function getOrCreateUser(
   try {
     const safeName =
       displayName && displayName.trim().length > 0
-        ? displayName.trim()
+        ? displayName.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 40) || 'Élève'
         : email.split('@')[0] || 'Élève';
+    const safeAvatar = sanitizeAvatarUrl(avatarUrl);
 
     const result = await db
       .insert(users)
@@ -20,7 +34,7 @@ export async function getOrCreateUser(
         uid,
         email,
         displayName: safeName,
-        avatarUrl: avatarUrl || null,
+        avatarUrl: safeAvatar,
         lastActiveAt: new Date(),
       })
       .onConflictDoUpdate({
@@ -28,7 +42,7 @@ export async function getOrCreateUser(
         set: {
           email,
           lastActiveAt: new Date(),
-          ...(avatarUrl ? { avatarUrl } : {}),
+          ...(safeAvatar ? { avatarUrl: safeAvatar } : {}),
         },
       })
       .returning();
@@ -59,6 +73,7 @@ export async function updateUserPreferences(
     accentColor: string;
     layoutDensity: string;
     show3DHints: boolean;
+    weeklyXpGoal: number;
   }>
 ) {
   try {
@@ -83,7 +98,6 @@ export async function getLeaderboard(limit = 25) {
     return await db
       .select({
         id: users.id,
-        uid: users.uid,
         displayName: users.displayName,
         avatarUrl: users.avatarUrl,
         gradeLevel: users.gradeLevel,

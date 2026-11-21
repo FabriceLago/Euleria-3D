@@ -23,6 +23,7 @@ export const users = pgTable('users', {
   accentColor: text('accent_color').notNull().default('indigo'),
   layoutDensity: text('layout_density').notNull().default('comfortable'),
   show3DHints: boolean('show_3d_hints').notNull().default(true),
+  weeklyXpGoal: integer('weekly_xp_goal').notNull().default(400),
   lastActiveAt: timestamp('last_active_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
@@ -148,12 +149,77 @@ export const chatMessages = pgTable('chat_messages', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const examSessions = pgTable('exam_sessions', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  examSlug: text('exam_slug').notNull(),
+  examTitle: text('exam_title').notNull(),
+  gradeLabel: text('grade_label').notNull(),
+  scoreOn20: real('score_on_20').notNull(),
+  correctCount: integer('correct_count').notNull(),
+  totalQuestions: integer('total_questions').notNull(),
+  mention: text('mention').notNull(),
+  durationSeconds: integer('duration_seconds').notNull().default(0),
+  xpAwarded: integer('xp_awarded').notNull().default(0),
+  subjectBreakdownJson: text('subject_breakdown_json').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const flashcardReviews = pgTable(
+  'flashcard_reviews',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    chapterId: integer('chapter_id')
+      .references(() => chapters.id, { onDelete: 'cascade' })
+      .notNull(),
+    cardKey: text('card_key').notNull(),
+    easeFactor: real('ease_factor').notNull().default(2.5),
+    intervalDays: integer('interval_days').notNull().default(0),
+    repetitions: integer('repetitions').notNull().default(0),
+    lastRating: text('last_rating').notNull().default('good'),
+    nextReviewAt: timestamp('next_review_at').defaultNow().notNull(),
+    lastReviewedAt: timestamp('last_reviewed_at').defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('flashcard_reviews_user_chapter_card_idx').on(
+      table.userId,
+      table.chapterId,
+      table.cardKey
+    ),
+  ]
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   progress: many(userProgress),
   attempts: many(quizAttempts),
   badges: many(userBadges),
   messages: many(chatMessages),
+  exams: many(examSessions),
+  flashcardReviews: many(flashcardReviews),
+}));
+
+export const examSessionsRelations = relations(examSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [examSessions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const flashcardReviewsRelations = relations(flashcardReviews, ({ one }) => ({
+  user: one(users, {
+    fields: [flashcardReviews.userId],
+    references: [users.id],
+  }),
+  chapter: one(chapters, {
+    fields: [flashcardReviews.chapterId],
+    references: [chapters.id],
+  }),
 }));
 
 export const chaptersRelations = relations(chapters, ({ many }) => ({

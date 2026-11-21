@@ -565,6 +565,201 @@ export function getParamMetadataForPreset(preset: string): ParamMetadata {
         maxC: 3,
         stepC: 1,
       };
+    case 'fr_syntax_3d':
+      return {
+        labelA: 'Constituants / Propositions',
+        minA: 2,
+        maxA: 8,
+        stepA: 1,
+        labelB: 'Mots dans la phrase',
+        minB: 6,
+        maxB: 20,
+        stepB: 1,
+        labelC: 'Type (1:Simple 2:Subordonnée 3:Complexe)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'fr_narrative_3d':
+      return {
+        labelA: 'Étapes du schéma narratif',
+        minA: 3,
+        maxA: 6,
+        stepA: 1,
+        labelB: 'Intensité dramatique',
+        minB: 2,
+        maxB: 6,
+        stepB: 1,
+        labelC: 'Genre (1:Conte 2:Chevalerie 3:Roman XIXᵉ)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'fr_grammar_3d':
+      return {
+        labelA: 'Groupes / Modes verbaux',
+        minA: 1,
+        maxA: 4,
+        stepA: 1,
+        labelB: 'Temps verbaux révisés',
+        minB: 3,
+        maxB: 8,
+        stepB: 1,
+        labelC: 'Mode (1:Indicatif 2:Subjonctif/Cond.)',
+        minC: 1,
+        maxC: 2,
+        stepC: 1,
+      };
+    case 'fr_theater_3d':
+      return {
+        labelA: 'Actes de la pièce',
+        minA: 1,
+        maxA: 5,
+        stepA: 1,
+        labelB: 'Scènes par acte',
+        minB: 2,
+        maxB: 6,
+        stepB: 1,
+        labelC: 'Genre (1:Comédie 2:Tragédie 3:Moderne)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'fr_poetry_3d':
+      return {
+        labelA: 'Syllabes par vers (mètre)',
+        minA: 6,
+        maxA: 12,
+        stepA: 1,
+        labelB: 'Vers par strophe',
+        minB: 2,
+        maxB: 6,
+        stepB: 1,
+        labelC: 'Rimes (1:AABB 2:ABAB 3:ABBA)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'fr_rhetoric_3d':
+      return {
+        labelA: 'Axes / Arguments clés',
+        minA: 2,
+        maxA: 6,
+        stepA: 1,
+        labelB: 'Force persuasive (%)',
+        minB: 40,
+        maxB: 100,
+        stepB: 5,
+        labelC: 'Forme (1:Figures 2:Plaidoyer 3:Dissertation)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'fr_philo_3d':
+      return {
+        labelA: 'Concepts dialectiques',
+        minA: 2,
+        maxA: 5,
+        stepA: 1,
+        labelB: 'Rigueur démonstrative (%)',
+        minB: 40,
+        maxB: 100,
+        stepB: 5,
+        labelC: 'Domaine (1:Conscience 2:Vérité 3:Justice)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'en_tense_3d':
+      return {
+        labelA: 'Temps (1:Pres 2:BE+ing 3:Past 4:Perf 5:Fut 6:PPerf)',
+        minA: 1,
+        maxA: 6,
+        stepA: 1,
+        labelB: 'Repères / Verbes étudiés',
+        minB: 4,
+        maxB: 14,
+        stepB: 1,
+        labelC: 'Sphère (1:Présent 2:Passé 3:Futur/Antér.)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'en_syntax_3d':
+      return {
+        labelA: 'Blocs syntaxiques (WH/Aux/S/V/O)',
+        minA: 3,
+        maxA: 8,
+        stepA: 1,
+        labelB: 'Longueur phrase (mots)',
+        minB: 5,
+        maxB: 16,
+        stepB: 1,
+        labelC: 'Structure (1:WH-Q 2:Comparatif 3:Passif/Ind.)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'en_modals_3d':
+      return {
+        labelA: 'Auxiliaires modaux actifs',
+        minA: 2,
+        maxA: 6,
+        stepA: 1,
+        labelB: 'Degré de certitude / obligation (%)',
+        minB: 20,
+        maxB: 100,
+        stepB: 5,
+        labelC: 'Niveau (1:Base 2:If-clauses 3:Modaux B2)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'en_vocab_3d':
+      return {
+        labelA: 'Champs lexicaux interconnectés',
+        minA: 4,
+        maxA: 12,
+        stepA: 1,
+        labelB: 'Maîtrise lexicale (%)',
+        minB: 30,
+        maxB: 100,
+        stepB: 5,
+        labelC: 'Thème (1:Routine 2:Écologie 3:Numérique)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'en_culture_3d':
+      return {
+        labelA: 'Pôles culturels anglophones',
+        minA: 3,
+        maxA: 8,
+        stepA: 1,
+        labelB: 'Latitude repère (° N)',
+        minB: 10,
+        maxB: 60,
+        stepB: 1,
+        labelC: 'Aire (1:Royaume-Uni 2:États-Unis 3:Monde)',
+        minC: 1,
+        maxC: 3,
+        stepC: 1,
+      };
+    case 'en_essay_3d':
+      return {
+        labelA: 'Paragraphes & Linking words',
+        minA: 3,
+        maxA: 6,
+        stepA: 1,
+        labelB: 'Cohérence argumentative B2 (%)',
+        minB: 50,
+        maxB: 100,
+        stepB: 2,
+        labelC: 'Format (1:Essay 1ʳᵉ 2:Synthèse Bac B2)',
+        minC: 1,
+        maxC: 2,
+        stepC: 1,
+      };
     default:
       return {
         labelA: 'Paramètre a',
@@ -1016,6 +1211,181 @@ export function computeReadout(params: SceneParams): LiveMathReadout {
         secondaryLabel: 'Équilibre géopolitique',
         secondaryValue: mode === 1 ? 'Blocs Est / Ouest · Dissuasion' : mode === 2 ? 'Marché unique & institutions' : 'Puissances régionales & ONU',
         formulaLive: `${label} · Repère ${year} · ${poles} acteurs majeurs`,
+      };
+    }
+    case 'fr_syntax_3d': {
+      const blocks = Math.max(2, Math.min(8, Math.round(a)));
+      const words = Math.max(6, Math.round(b));
+      const mode = Math.max(1, Math.min(3, Math.round(c)));
+      const label = mode === 1 ? 'Phrase simple (S + V + COD)' : mode === 2 ? 'Phrase complexe (Subordination)' : 'Période syntaxique';
+      return {
+        primaryLabel: label,
+        primaryValue: `${blocks} groupes · ${words} mots`,
+        secondaryLabel: 'Architecture grammaticale',
+        secondaryValue: mode === 1 ? '1 verbe conjugué · Nature ≠ Fonction' : `${blocks} propositions articulées`,
+        formulaLive: `${label} · ${blocks} constituants · ${words} mots`,
+      };
+    }
+    case 'fr_narrative_3d': {
+      const steps = Math.max(3, Math.min(6, Math.round(a)));
+      const tension = Math.max(2, Math.min(6, Math.round(b)));
+      const mode = Math.max(1, Math.min(3, Math.round(c)));
+      const genre = mode === 1 ? 'Conte merveilleux' : mode === 2 ? 'Chevalerie / Autobiographie' : 'Roman réaliste & fantastique';
+      return {
+        primaryLabel: `Arc narratif · ${genre}`,
+        primaryValue: `${steps} étapes · Tension ${tension}/6`,
+        secondaryLabel: 'Dynamique du récit',
+        secondaryValue: 'SI → Élément perturbateur → Péripéties → Dénouement',
+        formulaLive: `${genre} · ${steps} étapes · Climax niveau ${tension}`,
+      };
+    }
+    case 'fr_grammar_3d': {
+      const groups = Math.max(1, Math.min(4, Math.round(a)));
+      const tenses = Math.max(3, Math.min(8, Math.round(b)));
+      const isSubj = Math.round(c) >= 2;
+      return {
+        primaryLabel: isSubj ? 'Subjonctif & Conditionnel' : 'Système de l’Indicatif',
+        primaryValue: `${tenses} temps · ${tenses * 6} formes`,
+        secondaryLabel: 'Groupes verbaux actifs',
+        secondaryValue: `${groups} groupes · Imparfait (fond) vs Passé simple`,
+        formulaLive: `${tenses} temps × 6 personnes = ${tenses * 6} conjugaisons`,
+      };
+    }
+    case 'fr_theater_3d': {
+      const acts = Math.max(1, Math.min(5, Math.round(a)));
+      const scenes = Math.max(2, Math.min(6, Math.round(b)));
+      const mode = Math.max(1, Math.min(3, Math.round(c)));
+      const genre = mode === 1 ? 'Comédie (Molière)' : mode === 2 ? 'Tragédie classique (3 unités)' : 'Théâtre moderne';
+      return {
+        primaryLabel: genre,
+        primaryValue: `${acts} actes · ${acts * scenes} scènes`,
+        secondaryLabel: 'Dispositif scénique',
+        secondaryValue: mode === 2 ? '1 lieu · 24 heures · 1 action (Catharsis)' : 'Double énonciation · Répliques + Didascalies',
+        formulaLive: `${acts} actes × ${scenes} scènes = ${acts * scenes} scènes`,
+      };
+    }
+    case 'fr_poetry_3d': {
+      const syl = Math.max(6, Math.min(12, Math.round(a)));
+      const lines = Math.max(2, Math.min(6, Math.round(b)));
+      const rimeMode = Math.max(1, Math.min(3, Math.round(c)));
+      const meterName = syl === 12 ? 'Alexandrin (6//6)' : syl === 10 ? 'Décasyllabe' : syl === 8 ? 'Octosyllabe' : `${syl} syllabes`;
+      const rimeLabel = rimeMode === 1 ? 'Rimes plates (AABB)' : rimeMode === 2 ? 'Rimes croisées (ABAB)' : 'Rimes embrassées (ABBA)';
+      return {
+        primaryLabel: `${meterName} · ${lines} vers`,
+        primaryValue: `${syl * lines} syllabes / strophe`,
+        secondaryLabel: 'Disposition des rimes',
+        secondaryValue: rimeLabel,
+        formulaLive: `${lines} vers × ${syl} syllabes = ${syl * lines} syllabes · ${rimeLabel}`,
+      };
+    }
+    case 'fr_rhetoric_3d': {
+      const axes = Math.max(2, Math.min(6, Math.round(a)));
+      const force = Math.max(40, Math.min(100, Math.round(b)));
+      const mode = Math.max(1, Math.min(3, Math.round(c)));
+      const label = mode === 1 ? 'Figures de style & rhétorique' : mode === 2 ? 'Argumentation (Convaincre/Persuader)' : 'Plan dialectique (Bac)';
+      return {
+        primaryLabel: label,
+        primaryValue: `${axes} axes · Impact ${force} %`,
+        secondaryLabel: 'Équilibre rhétorique',
+        secondaryValue: 'Thèse → Arguments → Exemples analysés',
+        formulaLive: `${axes} axes × 2 sous-parties = ${axes * 2} paragraphes · ${force}%`,
+      };
+    }
+    case 'fr_philo_3d': {
+      const concepts = Math.max(2, Math.min(5, Math.round(a)));
+      const rigor = Math.max(40, Math.min(100, Math.round(b)));
+      const domain = Math.max(1, Math.min(3, Math.round(c)));
+      const names = ['Conscience, Inconscient & Liberté', 'Raison, Vérité & Réfutabilité', 'État, Contrat social & Devoir'];
+      return {
+        primaryLabel: names[domain - 1],
+        primaryValue: `${concepts} concepts · Rigueur ${rigor} %`,
+        secondaryLabel: 'Mouvement dialectique',
+        secondaryValue: 'Thèse → Antithèse → Synthèse problématisée',
+        formulaLive: `${names[domain - 1]} · ${concepts} notions articulées`,
+      };
+    }
+    case 'en_tense_3d': {
+      const tenseIdx = Math.max(1, Math.min(6, Math.round(a)));
+      const verbs = Math.max(4, Math.round(b));
+      const names = [
+        'Present Simple (Habits)',
+        'Present Continuous (BE + V-ing)',
+        'Past Simple (Preterit -ed / 2nd col)',
+        'Present Perfect (HAVE/HAS + V-en)',
+        'Future (WILL / BE GOING TO)',
+        'Past Perfect (HAD + V-en)',
+      ];
+      return {
+        primaryLabel: names[tenseIdx - 1],
+        primaryValue: `Tense #${tenseIdx} · ${verbs} verbes repères`,
+        secondaryLabel: 'Axe chronologique anglais',
+        secondaryValue: tenseIdx === 4 ? 'Passé relié au présent (FOR / SINCE)' : tenseIdx === 6 ? 'Antériorité dans le passé' : 'Aspect & temporalité',
+        formulaLive: `${names[tenseIdx - 1]} · ${verbs} forms`,
+      };
+    }
+    case 'en_syntax_3d': {
+      const blocks = Math.max(3, Math.min(8, Math.round(a)));
+      const words = Math.max(5, Math.round(b));
+      const mode = Math.max(1, Math.min(3, Math.round(c)));
+      const label = mode === 1 ? 'WH-Question (Q-A-S-V)' : mode === 2 ? 'Comparatif & Superlatif' : 'Voix passive & Reported Speech';
+      return {
+        primaryLabel: label,
+        primaryValue: `${blocks} blocs · ${words} words`,
+        secondaryLabel: 'Ordre syntaxique anglais',
+        secondaryValue: mode === 1 ? 'WH + Aux + Subject + Verb' : mode === 2 ? '-er / more… than / as… as' : 'BE + Past Participle / Backshift',
+        formulaLive: `${label} · ${blocks} slots · ${words} words`,
+      };
+    }
+    case 'en_modals_3d': {
+      const modals = Math.max(2, Math.min(6, Math.round(a)));
+      const certainty = Math.max(20, Math.min(100, Math.round(b)));
+      const mode = Math.max(1, Math.min(3, Math.round(c)));
+      const modalName = certainty >= 85 ? 'MUST (obligation / certitude)' : certainty >= 65 ? 'SHOULD (conseil)' : certainty >= 45 ? 'MAY (probabilité)' : 'MIGHT (éventualité)';
+      return {
+        primaryLabel: mode === 2 ? 'If-Clauses (Type 1 & 2)' : mode === 3 ? 'Modaux au passé (B2)' : 'Échelle des modaux',
+        primaryValue: `${modalName} · ${certainty} %`,
+        secondaryLabel: 'Règle d’or modale',
+        secondaryValue: `${modals} modaux · Invariable + Base verbale (sans « to »)`,
+        formulaLive: mode === 3 ? `Modal + HAVE + V-en (${certainty}%)` : `Modal + BV · ${certainty}% certitude`,
+      };
+    }
+    case 'en_vocab_3d': {
+      const nodes = Math.max(4, Math.min(12, Math.round(a)));
+      const mastery = Math.max(30, Math.min(100, Math.round(b)));
+      const theme = Math.max(1, Math.min(3, Math.round(c)));
+      const labels = ['Daily Routine & Time', 'Environment & Sustainability', 'Digital Citizenship (B2)'];
+      return {
+        primaryLabel: labels[theme - 1],
+        primaryValue: `${nodes} champs · Maîtrise ${mastery} %`,
+        secondaryLabel: 'Réseau lexical actif',
+        secondaryValue: `${nodes * 6} expressions authentiques reliées`,
+        formulaLive: `${labels[theme - 1]} · ${nodes * 6} expressions (${mastery}%)`,
+      };
+    }
+    case 'en_culture_3d': {
+      const hubs = Math.max(3, Math.min(8, Math.round(a)));
+      const lat = Math.round(b);
+      const area = Math.max(1, Math.min(3, Math.round(c)));
+      const labels = ['United Kingdom (4 Nations)', 'United States (50 States)', 'English-Speaking World (Commonwealth)'];
+      return {
+        primaryLabel: labels[area - 1],
+        primaryValue: `${hubs} pôles · Lat. ${lat}° N`,
+        secondaryLabel: 'Aire culturelle anglophone',
+        secondaryValue: area === 1 ? 'London · Edinburgh · Cardiff · Belfast' : area === 2 ? 'Washington D.C. · New York · Ellis Island' : 'UK · USA · Canada · Australia · India',
+        formulaLive: `${labels[area - 1]} · ${hubs} hubs · ${lat}° N`,
+      };
+    }
+    case 'en_essay_3d': {
+      const paras = Math.max(3, Math.min(6, Math.round(a)));
+      const coh = Math.max(50, Math.min(100, Math.round(b)));
+      const isB2 = Math.round(c) >= 2;
+      const targetWords = 60 + (paras - 2) * 70;
+      return {
+        primaryLabel: isB2 ? 'Bac B2 Essay & Synthesis' : 'Structured Essay (Linking Words)',
+        primaryValue: `${paras} parties · ~${targetWords} words`,
+        secondaryLabel: 'Cohérence & connecteurs',
+        secondaryValue: `${coh} % · However · Although · Despite · Furthermore`,
+        formulaLive: `Intro + ${Math.max(1, paras - 2)} body + Concl ≈ ${targetWords} words (${coh}%)`,
       };
     }
     default:
@@ -3840,6 +4210,593 @@ export class MathSceneEngine {
               new THREE.Vector3(0, 1.35, 0)
             );
             const link = new THREE.Mesh(new THREE.TubeGeometry(linkCurve, 18, 0.024, 8, false), brushedMetalMat);
+            this.modelGroup.add(link);
+          }
+        }
+        break;
+      }
+
+      // ==================== FRANÇAIS, LITTÉRATURE & PHILOSOPHIE ====================
+      case 'fr_syntax_3d': {
+        // 3D Sentence Syntax Tree & Clause Bridge: root verb hub + elevated syntactic blocks connected by arches
+        const blocks = Math.max(2, Math.min(8, Math.round(a)));
+        const mode = Math.max(1, Math.min(3, Math.round(c)));
+
+        const baseDeck = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.14, 1.8), darkSlateMat);
+        baseDeck.position.y = 0.07;
+        baseDeck.receiveShadow = true;
+        this.modelGroup.add(baseDeck);
+
+        // Central Verb Nucleus elevated above the deck
+        const verbHub = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 1), warmBrassMat);
+        verbHub.position.set(0, 2.05 + explode * 0.35, 0);
+        verbHub.castShadow = true;
+        this.animatedSubparts.push({ obj: verbHub, baseY: verbHub.position.y, phase: 0, speed: 1.8, amp: 0.07 });
+        this.modelGroup.add(verbHub);
+
+        const palette = [0x2563eb, 0x059669, 0xd97706, 0x7c3aed, 0xe11d48, 0x0284c7];
+        for (let i = 0; i < blocks; i++) {
+          const x = -1.9 + (i / Math.max(1, blocks - 1)) * 3.8;
+          const z = mode >= 2 && i % 2 === 1 ? 0.52 + explode * 0.2 : -0.15;
+          const h = 0.55 + (i % 3) * 0.28;
+          const mat = new THREE.MeshPhysicalMaterial({
+            color: palette[i % palette.length],
+            roughness: 0.25,
+            metalness: 0.25,
+            clearcoat: 0.7,
+          });
+          const node = new THREE.Mesh(new THREE.BoxGeometry(0.42, h, 0.48), mat);
+          node.position.set(x, 0.14 + h / 2, z);
+          node.castShadow = true;
+          this.modelGroup.add(node);
+
+          // Grammatical dependency arc linking each constituent to the verb nucleus
+          const curve = new THREE.QuadraticBezierCurve3(
+            new THREE.Vector3(x, 0.14 + h, z),
+            new THREE.Vector3(x * 0.5, 1.95, z * 0.4),
+            new THREE.Vector3(0, 2.05, 0)
+          );
+          const arc = new THREE.Mesh(new THREE.TubeGeometry(curve, 18, 0.025, 8, false), brushedMetalMat);
+          this.modelGroup.add(arc);
+        }
+        break;
+      }
+
+      case 'fr_narrative_3d': {
+        // Dramatic Narrative Arc (Freytag / Schéma narratif 5 étapes): rising action curve + golden climax spire + story pedestals
+        const steps = Math.max(3, Math.min(6, Math.round(a)));
+        const tension = Math.max(2, Math.min(6, Math.round(b)));
+        const mode = Math.max(1, Math.min(3, Math.round(c)));
+
+        const trackBase = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.14, 1.5), darkSlateMat);
+        trackBase.position.y = 0.07;
+        trackBase.receiveShadow = true;
+        this.modelGroup.add(trackBase);
+
+        const pts: THREE.Vector3[] = [];
+        const heights = [0.45, 0.85, 1.15 + tension * 0.22, 0.95, 0.55, 0.4];
+        const stageColor = mode === 1 ? 0x6366f1 : mode === 2 ? 0xd97706 : 0xe11d48;
+        const stageMat = new THREE.MeshPhysicalMaterial({ color: stageColor, roughness: 0.24, metalness: 0.3, clearcoat: 0.75 });
+
+        for (let i = 0; i < steps; i++) {
+          const x = -2.0 + (i / (steps - 1)) * 4.0;
+          const h = heights[i % heights.length];
+          pts.push(new THREE.Vector3(x, 0.14 + h + 0.18, 0));
+
+          const pillar = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.2, 0.26, h, 18),
+            i === Math.floor(steps / 2) ? warmBrassMat : stageMat
+          );
+          pillar.position.set(x, 0.14 + h / 2 + explode * (i === Math.floor(steps / 2) ? 0.35 : 0.05), 0);
+          pillar.castShadow = true;
+          this.modelGroup.add(pillar);
+        }
+
+        // Smooth narrative tension ribbon curving over the stages
+        const curve = new THREE.CatmullRomCurve3(pts);
+        const ribbon = new THREE.Mesh(new THREE.TubeGeometry(curve, 36, 0.055, 10, false), accentMat);
+        ribbon.castShadow = true;
+        this.modelGroup.add(ribbon);
+
+        // Floating protagonist crystal orbiting the climax peak
+        const climaxPt = pts[Math.floor(steps / 2)];
+        const heroOrb = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), warmBrassMat);
+        heroOrb.position.set(climaxPt.x, climaxPt.y + 0.42, 0);
+        this.animatedSubparts.push({ obj: heroOrb, baseY: heroOrb.position.y, phase: 0, speed: 2.3, amp: 0.11 });
+        this.modelGroup.add(heroOrb);
+        break;
+      }
+
+      case 'fr_grammar_3d': {
+        // 3D Conjugation Carousel: 3 verbal group rings + 6 grammatical person towers rotating around the temporal axis
+        const groups = Math.max(1, Math.min(4, Math.round(a)));
+        const tenses = Math.max(3, Math.min(8, Math.round(b)));
+        const isSubj = Math.round(c) >= 2;
+
+        const dial = new THREE.Mesh(new THREE.CylinderGeometry(2.35, 2.5, 0.14, 36), darkSlateMat);
+        dial.position.y = 0.07;
+        dial.receiveShadow = true;
+        this.modelGroup.add(dial);
+
+        const coreAxis = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 2.3, 18), warmBrassMat);
+        coreAxis.position.y = 1.25;
+        coreAxis.castShadow = true;
+        this.modelGroup.add(coreAxis);
+
+        // Concentric tense rings
+        for (let g = 0; g < groups; g++) {
+          const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(0.85 + g * 0.42, 0.04, 12, 40),
+            g % 2 === 0 ? accentMat : brushedMetalMat
+          );
+          ring.rotation.x = Math.PI / 2;
+          ring.position.y = 0.45 + g * (0.48 + explode * 0.18);
+          this.modelGroup.add(ring);
+        }
+
+        // 6 grammatical person prisms (je, tu, il, nous, vous, ils)
+        const personMat = new THREE.MeshPhysicalMaterial({
+          color: isSubj ? 0x9333ea : 0x0284c7,
+          roughness: 0.22,
+          metalness: 0.35,
+          clearcoat: 0.75,
+        });
+        for (let p = 0; p < 6; p++) {
+          const ang = (p / 6) * Math.PI * 2;
+          const h = 0.45 + ((p + tenses) % 4) * 0.25;
+          const col = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, h, 6), personMat);
+          col.position.set(Math.cos(ang) * 1.75, 0.14 + h / 2, Math.sin(ang) * 1.75);
+          col.castShadow = true;
+          this.modelGroup.add(col);
+        }
+        break;
+      }
+
+      case 'fr_theater_3d': {
+        // Classical Italian/Greek Theater Stage Diorama: curved amphitheater tiers, wooden stage apron, velvet proscenium arch & 3-unities pillars
+        const acts = Math.max(1, Math.min(5, Math.round(a)));
+        const mode = Math.max(1, Math.min(3, Math.round(c)));
+
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.68, metalness: 0.08 });
+        const velvetMat = new THREE.MeshStandardMaterial({
+          color: mode === 1 ? 0xb91c1c : mode === 2 ? 0x4c1d95 : 0x0f766e,
+          roughness: 0.85,
+          metalness: 0.05,
+        });
+
+        // Raised theater stage floor
+        const stage = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.28, 2.1), woodMat);
+        stage.position.set(0, 0.14, -0.55);
+        stage.receiveShadow = true;
+        stage.castShadow = true;
+        this.modelGroup.add(stage);
+
+        // Proscenium pillars & crimson curtain pediment
+        const pL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 2.0, 0.32), warmBrassMat);
+        pL.position.set(-1.68, 1.28, 0.35);
+        const pR = new THREE.Mesh(new THREE.BoxGeometry(0.28, 2.0, 0.32), warmBrassMat);
+        pR.position.set(1.68, 1.28, 0.35);
+        const lintel = new THREE.Mesh(new THREE.BoxGeometry(3.75, 0.34, 0.4), velvetMat);
+        lintel.position.set(0, 2.38 + explode * 0.3, 0.35);
+        const curtainL = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 1.9, 14), velvetMat);
+        curtainL.position.set(-1.32, 1.25, 0.28);
+        const curtainR = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 1.9, 14), velvetMat);
+        curtainR.position.set(1.32, 1.25, 0.28);
+        this.modelGroup.add(pL, pR, lintel, curtainL, curtainR);
+
+        // Act markers (footlights) along the front of the stage
+        for (let i = 0; i < acts; i++) {
+          const fx = -1.1 + (i / Math.max(1, acts - 1)) * 2.2;
+          const lamp = new THREE.Mesh(
+            new THREE.SphereGeometry(0.09, 12, 12),
+            new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xf59e0b, emissiveIntensity: 0.8 })
+          );
+          lamp.position.set(fx, 0.34, 0.42);
+          this.modelGroup.add(lamp);
+        }
+
+        // Curved spectator amphitheater benches (double énonciation)
+        for (let r = 0; r < 3; r++) {
+          const arc = new THREE.Mesh(
+            new THREE.TorusGeometry(1.15 + r * 0.42, 0.09, 10, 28, Math.PI * 0.85),
+            brushedMetalMat
+          );
+          arc.rotation.x = Math.PI / 2;
+          arc.rotation.z = Math.PI * 0.075;
+          arc.position.set(0, 0.12 + r * 0.16, 0.85 + explode * 0.25);
+          this.modelGroup.add(arc);
+        }
+        break;
+      }
+
+      case 'fr_poetry_3d': {
+        // 3D Prosody & Alexandrine Metrical Bars: stacked stanza lines composed of rhythmic syllable beads + glowing hemistich caesura (6 // 6)
+        const syl = Math.max(6, Math.min(12, Math.round(a)));
+        const lines = Math.max(2, Math.min(6, Math.round(b)));
+        const rimeMode = Math.max(1, Math.min(3, Math.round(c)));
+
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.14, 2.2), darkSlateMat);
+        frame.position.y = 0.07;
+        frame.receiveShadow = true;
+        this.modelGroup.add(frame);
+
+        const rimeA = new THREE.MeshPhysicalMaterial({ color: 0x4f46e5, roughness: 0.2, metalness: 0.3, clearcoat: 0.8 });
+        const rimeB = new THREE.MeshPhysicalMaterial({ color: 0xe11d48, roughness: 0.2, metalness: 0.3, clearcoat: 0.8 });
+        const patterns = [
+          [0, 0, 1, 1, 0, 0], // AABB
+          [0, 1, 0, 1, 0, 1], // ABAB
+          [0, 1, 1, 0, 0, 1], // ABBA
+        ];
+        const pat = patterns[rimeMode - 1];
+
+        for (let l = 0; l < lines; l++) {
+          const y = 0.42 + l * (0.36 + explode * 0.1);
+          const rMat = pat[l % pat.length] === 0 ? rimeA : rimeB;
+          for (let s = 0; s < syl; s++) {
+            const halfGap = syl === 12 && s >= 6 ? 0.24 : 0;
+            const sx = -2.0 + (s / Math.max(1, syl - 1)) * 3.76 + halfGap;
+            const isRhymeEnd = s === syl - 1;
+            const bead = new THREE.Mesh(
+              isRhymeEnd ? new THREE.SphereGeometry(0.14, 14, 14) : new THREE.BoxGeometry(0.2, 0.14, 0.22),
+              isRhymeEnd ? rMat : brushedMetalMat
+            );
+            bead.position.set(sx, y, 0);
+            bead.castShadow = true;
+            this.modelGroup.add(bead);
+          }
+        }
+
+        // Golden Caesura divider blade at the center of the Alexandrine (6 // 6)
+        if (syl === 12) {
+          const caesura = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, lines * 0.42 + 0.5, 10), warmBrassMat);
+          caesura.position.set(0.02, 0.25 + (lines * 0.42) / 2, 0);
+          this.modelGroup.add(caesura);
+        }
+        break;
+      }
+
+      case 'fr_rhetoric_3d': {
+        // Rhetorical / Dialectical Balance & Parthenon of Arguments: central thesis keystone supported by N argument columns
+        const axes = Math.max(2, Math.min(6, Math.round(a)));
+        const force = Math.max(40, Math.min(100, b));
+
+        const base = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.18, 2.0), darkSlateMat);
+        base.position.y = 0.09;
+        base.receiveShadow = true;
+        this.modelGroup.add(base);
+
+        const colH = 0.95 + (force / 100) * 0.85;
+        for (let i = 0; i < axes; i++) {
+          const x = -1.55 + (i / Math.max(1, axes - 1)) * 3.1;
+          const col = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.16, 0.2, colH, 16),
+            i % 2 === 0 ? accentMat : brushedMetalMat
+          );
+          col.position.set(x, 0.18 + colH / 2, 0);
+          col.castShadow = true;
+          this.modelGroup.add(col);
+        }
+
+        // Thesis entablature beam & golden conclusion keystone
+        const beamY = 0.18 + colH + 0.15 + explode * 0.35;
+        const thesisBeam = new THREE.Mesh(new THREE.BoxGeometry(3.9, 0.26, 0.9), warmBrassMat);
+        thesisBeam.position.y = beamY;
+        thesisBeam.castShadow = true;
+        this.modelGroup.add(thesisBeam);
+
+        const crown = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), accentMat);
+        crown.position.y = beamY + 0.52;
+        this.animatedSubparts.push({ obj: crown, baseY: crown.position.y, phase: 0, speed: 2.0, amp: 0.09 });
+        this.modelGroup.add(crown);
+        break;
+      }
+
+      case 'fr_philo_3d': {
+        // Philosophical Dialectical Armillary Sphere: central Cogito / Truth prism surrounded by rotating Thesis / Antithesis / Synthesis rings
+        const concepts = Math.max(2, Math.min(5, Math.round(a)));
+        const domain = Math.max(1, Math.min(3, Math.round(c)));
+
+        const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.35, 0.2, 28), darkSlateMat);
+        plinth.position.y = 0.1;
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.55, 16), warmBrassMat);
+        neck.position.y = 0.45;
+        this.modelGroup.add(plinth, neck);
+
+        const centerY = 1.65;
+        const coreColor = domain === 1 ? 0x6366f1 : domain === 2 ? 0x0ea5e9 : 0xd97706;
+        const coreMat = new THREE.MeshPhysicalMaterial({ color: coreColor, roughness: 0.18, metalness: 0.4, clearcoat: 0.9 });
+        const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 0), coreMat);
+        core.position.y = centerY;
+        core.castShadow = true;
+        this.animatedSubparts.push({ obj: core, baseY: centerY, phase: 0, speed: 1.6, amp: 0.06 });
+        this.modelGroup.add(core);
+
+        for (let r = 0; r < concepts; r++) {
+          const rad = 0.85 + r * (0.24 + explode * 0.08);
+          const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(rad, 0.035, 12, 48),
+            r % 2 === 0 ? warmBrassMat : brushedMetalMat
+          );
+          ring.position.y = centerY;
+          ring.rotation.x = r * 0.65;
+          ring.rotation.y = r * 0.85;
+          this.modelGroup.add(ring);
+
+          const node = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 14), accentMat);
+          this.modelGroup.add(node);
+          this.orbitSubparts.push({
+            obj: node,
+            radiusX: rad,
+            radiusZ: rad,
+            centerY,
+            speed: (r % 2 === 0 ? 1 : -1) * (0.65 + r * 0.15),
+            phase: r * 1.4,
+            tiltX: r * 0.45,
+            tiltZ: r * 0.3,
+          });
+        }
+        break;
+      }
+
+      // ==================== ANGLAIS (LV1) ====================
+      case 'en_tense_3d': {
+        // English Aspect & Timeline Axis: Past → Present → Future glowing rail with 6 aspect stations & bridging Present Perfect arc
+        const tenseIdx = Math.max(1, Math.min(6, Math.round(a)));
+
+        const railBase = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.14, 1.3), darkSlateMat);
+        railBase.position.y = 0.07;
+        railBase.receiveShadow = true;
+        this.modelGroup.add(railBase);
+
+        const axisRod = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4.4, 14), warmBrassMat);
+        axisRod.rotation.z = Math.PI / 2;
+        axisRod.position.y = 0.85;
+        this.modelGroup.add(axisRod);
+
+        // 6 tense markers along the chronological axis
+        const xs = [-1.8, -1.1, -0.35, 0.35, 1.15, 1.85];
+        for (let i = 0; i < 6; i++) {
+          const active = i + 1 === tenseIdx;
+          const h = active ? 1.55 : 0.72;
+          const post = new THREE.Mesh(
+            new THREE.CylinderGeometry(active ? 0.2 : 0.12, active ? 0.24 : 0.14, h, 16),
+            active ? accentMat : brushedMetalMat
+          );
+          post.position.set(xs[i], 0.14 + h / 2 + (active ? explode * 0.3 : 0), 0);
+          post.castShadow = true;
+          this.modelGroup.add(post);
+
+          if (active) {
+            const beacon = new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 0), warmBrassMat);
+            beacon.position.set(xs[i], 0.14 + h + 0.42, 0);
+            this.animatedSubparts.push({ obj: beacon, baseY: beacon.position.y, phase: 0, speed: 2.4, amp: 0.1 });
+            this.modelGroup.add(beacon);
+          }
+        }
+
+        // Aspect bridge arc linking Past to Present (Present Perfect / Continuous aspect)
+        const bridge = new THREE.QuadraticBezierCurve3(
+          new THREE.Vector3(-1.1, 0.9, 0),
+          new THREE.Vector3(-0.2, 2.25 + explode * 0.25, 0),
+          new THREE.Vector3(0.4, 0.9, 0)
+        );
+        const arc = new THREE.Mesh(new THREE.TubeGeometry(bridge, 24, 0.04, 10, false), accentMat);
+        this.modelGroup.add(arc);
+        break;
+      }
+
+      case 'en_syntax_3d': {
+        // English Word-Order Modular Rails (WH + Aux + Subject + Verb + Object) with interlocking syntax cubes
+        const blocks = Math.max(3, Math.min(8, Math.round(a)));
+        const mode = Math.max(1, Math.min(3, Math.round(c)));
+
+        const track = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.16, 1.5), darkSlateMat);
+        track.position.y = 0.08;
+        track.receiveShadow = true;
+        this.modelGroup.add(track);
+
+        const colors = [0xf59e0b, 0xef4444, 0x2563eb, 0x10b981, 0x8b5cf6, 0x06b6d4];
+        const spacing = 4.0 / Math.max(1, blocks - 1);
+        for (let i = 0; i < blocks; i++) {
+          const x = -2.0 + i * spacing;
+          const h = mode === 2 ? 0.5 + i * 0.22 : 0.75 + (i % 2) * 0.35;
+          const cube = new THREE.Mesh(
+            new THREE.BoxGeometry(0.46, h, 0.56),
+            new THREE.MeshPhysicalMaterial({ color: colors[i % colors.length], roughness: 0.24, metalness: 0.25, clearcoat: 0.7 })
+          );
+          cube.position.set(x, 0.16 + h / 2 + (i % 2 === 0 ? explode * 0.25 : 0), 0);
+          cube.castShadow = true;
+          this.modelGroup.add(cube);
+        }
+
+        // Transformation arc (Active → Passive or Direct → Reported) in mode 3
+        if (mode === 3) {
+          const swapCurve = new THREE.QuadraticBezierCurve3(
+            new THREE.Vector3(1.8, 1.35, 0),
+            new THREE.Vector3(0, 2.55, 0),
+            new THREE.Vector3(-1.8, 1.35, 0)
+          );
+          const swapArc = new THREE.Mesh(new THREE.TubeGeometry(swapCurve, 26, 0.04, 10, false), warmBrassMat);
+          this.modelGroup.add(swapArc);
+        }
+        break;
+      }
+
+      case 'en_modals_3d': {
+        // Modal Certainty & Obligation Graduated Tower (Might → May → Should → Must) with glowing certainty needle
+        const modals = Math.max(2, Math.min(6, Math.round(a)));
+        const certainty = Math.max(20, Math.min(100, b));
+
+        const base = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.14, 1.6), darkSlateMat);
+        base.position.y = 0.07;
+        base.receiveShadow = true;
+        this.modelGroup.add(base);
+
+        for (let i = 0; i < modals; i++) {
+          const frac = (i + 1) / modals;
+          const h = 0.45 + frac * 1.65;
+          const x = -1.65 + (i / Math.max(1, modals - 1)) * 3.3;
+          const colHue = 0.58 - frac * 0.52;
+          const barMat = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color().setHSL(colHue, 0.78, 0.48),
+            roughness: 0.22,
+            metalness: 0.28,
+            clearcoat: 0.75,
+          });
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(0.46, h, 0.56), barMat);
+          bar.position.set(x, 0.14 + h / 2 + explode * frac * 0.22, 0);
+          bar.castShadow = true;
+          this.modelGroup.add(bar);
+        }
+
+        // Floating certainty threshold ring
+        const levelY = 0.45 + (certainty / 100) * 1.65;
+        const indicator = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.06, 0.85), warmBrassMat);
+        indicator.position.y = levelY;
+        this.modelGroup.add(indicator);
+        break;
+      }
+
+      case 'en_vocab_3d': {
+        // 3D Semantic Constellation: central lexical theme sphere surrounded by N orbiting vocabulary cluster satellites
+        const nodes = Math.max(4, Math.min(12, Math.round(a)));
+        const mastery = Math.max(30, Math.min(100, b));
+        const theme = Math.max(1, Math.min(3, Math.round(c)));
+
+        const coreColor = theme === 1 ? 0x2563eb : theme === 2 ? 0x16a34a : 0x7c3aed;
+        const hub = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(0.54, 1),
+          new THREE.MeshPhysicalMaterial({ color: coreColor, roughness: 0.2, metalness: 0.3, clearcoat: 0.85 })
+        );
+        hub.position.y = 1.48;
+        hub.castShadow = true;
+        this.modelGroup.add(hub);
+
+        const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 0.14, 24), darkSlateMat);
+        pedestal.position.y = 0.07;
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.85, 12), warmBrassMat);
+        stem.position.y = 0.52;
+        this.modelGroup.add(pedestal, stem);
+
+        const rBase = 1.45 + (mastery / 100) * 0.45 + explode * 0.35;
+        for (let i = 0; i < nodes; i++) {
+          const ang = (i / nodes) * Math.PI * 2;
+          const elev = 1.48 + Math.sin(i * 1.7) * 0.55;
+          const sx = Math.cos(ang) * rBase;
+          const sz = Math.sin(ang) * rBase;
+
+          const sat = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), i % 2 === 0 ? accentMat : warmBrassMat);
+          sat.position.set(sx, elev, sz);
+          sat.castShadow = true;
+          this.animatedSubparts.push({ obj: sat, baseY: elev, phase: i * 0.7, speed: 1.7, amp: 0.08 });
+          this.modelGroup.add(sat);
+
+          const spoke = new THREE.LineCurve3(new THREE.Vector3(0, 1.48, 0), new THREE.Vector3(sx, elev, sz));
+          const link = new THREE.Mesh(new THREE.TubeGeometry(spoke, 8, 0.018, 6, false), brushedMetalMat);
+          this.modelGroup.add(link);
+        }
+        break;
+      }
+
+      case 'en_culture_3d': {
+        // English-Speaking World Cultural Landmark Diorama: Big Ben Clock Tower (UK) / Skyscraper Beacon (US) / Global Anglophone Globe
+        const hubs = Math.max(3, Math.min(8, Math.round(a)));
+        const area = Math.max(1, Math.min(3, Math.round(c)));
+
+        const dais = new THREE.Mesh(new THREE.CylinderGeometry(2.35, 2.5, 0.14, 36), darkSlateMat);
+        dais.position.y = 0.07;
+        dais.receiveShadow = true;
+        this.modelGroup.add(dais);
+
+        if (area === 1) {
+          // Elizabeth Tower (Big Ben) silhouette + 4 constituent nation columns
+          const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd6b588, roughness: 0.72, metalness: 0.08 });
+          const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.68, 2.05, 0.68), stoneMat);
+          shaft.position.y = 0.14 + 1.025;
+          shaft.castShadow = true;
+          const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.42, 0.74), warmBrassMat);
+          clockFace.position.y = 1.95;
+          const spire = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.85, 4), accentMat);
+          spire.rotation.y = Math.PI / 4;
+          spire.position.y = 2.6 + explode * 0.3;
+          this.modelGroup.add(shaft, clockFace, spire);
+
+          for (let n = 0; n < 4; n++) {
+            const ang = (n / 4) * Math.PI * 2 + Math.PI / 4;
+            const col = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.65, 14), brushedMetalMat);
+            col.position.set(Math.cos(ang) * 1.55, 0.46, Math.sin(ang) * 1.55);
+            col.castShadow = true;
+            this.modelGroup.add(col);
+          }
+        } else if (area === 2) {
+          // US Federal Capitol & New York Skyline Cluster
+          const glassMatUS = new THREE.MeshPhysicalMaterial({ color: 0x2563eb, roughness: 0.18, metalness: 0.55, clearcoat: 0.85 });
+          for (let i = 0; i < hubs; i++) {
+            const ang = (i / hubs) * Math.PI * 2;
+            const rad = i === 0 ? 0 : 1.15 + explode * 0.25;
+            const h = i === 0 ? 2.25 : 0.85 + (i % 3) * 0.42;
+            const tower = new THREE.Mesh(new THREE.BoxGeometry(0.38, h, 0.38), i === 0 ? warmBrassMat : glassMatUS);
+            tower.position.set(Math.cos(ang) * rad, 0.14 + h / 2, Math.sin(ang) * rad);
+            tower.castShadow = true;
+            this.modelGroup.add(tower);
+          }
+        } else {
+          // Global English-Speaking Network (Commonwealth & transatlantic links)
+          const globe = new THREE.Mesh(
+            new THREE.SphereGeometry(0.88, 30, 30),
+            new THREE.MeshPhysicalMaterial({ color: 0x0284c7, roughness: 0.25, metalness: 0.18, clearcoat: 0.7 })
+          );
+          globe.position.y = 1.45;
+          globe.castShadow = true;
+          this.modelGroup.add(globe);
+
+          for (let h = 0; h < hubs; h++) {
+            const node = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), h % 2 === 0 ? warmBrassMat : accentMat);
+            this.modelGroup.add(node);
+            this.orbitSubparts.push({
+              obj: node,
+              radiusX: 1.55 + explode * 0.25,
+              radiusZ: 1.55 + explode * 0.25,
+              centerY: 1.45,
+              speed: 0.65,
+              phase: (h / hubs) * Math.PI * 2,
+              tiltX: 0.35 * (h % 2 === 0 ? 1 : -1),
+              tiltZ: 0.2,
+            });
+          }
+        }
+        break;
+      }
+
+      case 'en_essay_3d': {
+        // Structured Essay Pyramid: Introduction base, N interlocking body paragraphs bridged by golden linking-word bars, and Conclusion capstone
+        const paras = Math.max(3, Math.min(6, Math.round(a)));
+        const coh = Math.max(50, Math.min(100, b));
+
+        const base = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.14, 1.6), darkSlateMat);
+        base.position.y = 0.07;
+        base.receiveShadow = true;
+        this.modelGroup.add(base);
+
+        const bodyW = 3.8 / paras;
+        for (let p = 0; p < paras; p++) {
+          const x = -1.9 + bodyW / 2 + p * bodyW;
+          const isEdge = p === 0 || p === paras - 1;
+          const h = isEdge ? 0.72 : 1.15 + (coh / 100) * 0.65;
+          const block = new THREE.Mesh(
+            new THREE.BoxGeometry(bodyW * 0.76, h, 0.72),
+            isEdge ? brushedMetalMat : accentMat
+          );
+          block.position.set(x, 0.14 + h / 2 + explode * (isEdge ? 0.05 : 0.22), 0);
+          block.castShadow = true;
+          this.modelGroup.add(block);
+
+          // Golden Linking Word connector bridge between consecutive paragraphs
+          if (p < paras - 1) {
+            const nextX = x + bodyW;
+            const link = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, bodyW * 0.55, 10), warmBrassMat);
+            link.rotation.z = Math.PI / 2;
+            link.position.set((x + nextX) / 2, 0.75, 0);
             this.modelGroup.add(link);
           }
         }

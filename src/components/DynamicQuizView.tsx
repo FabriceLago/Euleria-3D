@@ -40,10 +40,12 @@ import type {
   SubjectId,
   UserProfile,
 } from '../types/learning.ts';
+import { MockExamView } from './MockExamView.tsx';
 
 interface DynamicQuizViewProps {
   chapters: ChapterItem[];
   initialChapterIds?: number[];
+  initialWorkspaceMode?: 'quiz' | 'exam';
   profile: UserProfile | null;
   accentColor: AccentColor;
   backendAvailable: boolean;
@@ -97,6 +99,7 @@ const ORIGIN_LABELS: Record<PublicQuizQuestion['origin'], string> = {
 export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
   chapters,
   initialChapterIds,
+  initialWorkspaceMode = 'quiz',
   profile,
   accentColor,
   backendAvailable,
@@ -104,6 +107,7 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
   apiFetch,
   onXpSynced,
 }) => {
+  const [workspaceMode, setWorkspaceMode] = useState<'quiz' | 'exam'>(initialWorkspaceMode);
   const [filterSubject, setFilterSubject] = useState<'all' | SubjectId>('all');
   const [filterGrade, setFilterGrade] = useState<'all' | GradeLevel>('all');
   const [selectedIds, setSelectedIds] = useState<number[]>(() =>
@@ -138,10 +142,15 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
     Boolean(initialChapterIds && initialChapterIds.length > 0)
   );
 
+  useEffect(() => {
+    setWorkspaceMode(initialWorkspaceMode);
+  }, [initialWorkspaceMode]);
+
   // Synchronise la pré-sélection si l'élève arrive depuis un chapitre précis
   useEffect(() => {
     if (initialChapterIds && initialChapterIds.length > 0) {
       hasInitializedSelectionRef.current = true;
+      setWorkspaceMode('quiz');
       setSelectedIds(initialChapterIds);
       const firstChap = chapters.find((c) => c.id === initialChapterIds[0]);
       if (firstChap) {
@@ -401,27 +410,70 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
       <div className="pb-5 border-b border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Générateur paramétrique · Rétroaction immédiate & calcul automatique d’XP
+            {workspaceMode === 'exam'
+              ? 'Épreuves blanches chronométrées · Note sur 20, Mention officielle & bilan par matière'
+              : 'Générateur paramétrique · Rétroaction immédiate & calcul automatique d’XP'}
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Quiz dynamiques sur mesure
+            {workspaceMode === 'exam'
+              ? 'Examens blancs (Brevet & Bac)'
+              : 'Quiz dynamiques sur mesure'}
           </h1>
         </div>
 
-        {phase !== 'setup' && (
-          <button
-            type="button"
-            onClick={() => setPhase('setup')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors self-start lg:self-auto cursor-pointer"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Modifier les chapitres</span>
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
+          <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+            <button
+              type="button"
+              onClick={() => setWorkspaceMode('quiz')}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                workspaceMode === 'quiz'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Quiz sur mesure
+            </button>
+            <button
+              type="button"
+              onClick={() => setWorkspaceMode('exam')}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                workspaceMode === 'exam'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Examens blancs
+            </button>
+          </div>
+
+          {workspaceMode === 'quiz' && phase !== 'setup' && (
+            <button
+              type="button"
+              onClick={() => setPhase('setup')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Modifier les chapitres</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* ==================== PHASE 1 : CONFIGURATION ==================== */}
-      {phase === 'setup' && (
+      {workspaceMode === 'exam' ? (
+        <MockExamView
+          chapters={chapters}
+          profile={profile}
+          accentColor={accentColor}
+          backendAvailable={backendAvailable}
+          onSignIn={onSignIn}
+          apiFetch={apiFetch}
+          onXpSynced={onXpSynced}
+        />
+      ) : (
+        <>
+          {/* ==================== PHASE 1 : CONFIGURATION ==================== */}
+          {phase === 'setup' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Colonne gauche : sélection multi-chapitres */}
           <div className="lg:col-span-8 space-y-4">
@@ -1029,6 +1081,8 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

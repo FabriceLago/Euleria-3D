@@ -52,6 +52,65 @@ export interface UserProfile {
   accentColor: AccentColor;
   layoutDensity: LayoutDensity;
   show3DHints: boolean;
+  weeklyXpGoal?: number;
+}
+
+export interface StudyPlanDailyActivity {
+  dateIso: string;
+  dayLabel: string;
+  actionsCount: number;
+  xpEarned: number;
+}
+
+export interface StudyPlanSubjectSummary {
+  subject: SubjectId;
+  label: string;
+  gradeCompletedChapters: number;
+  gradeTotalChapters: number;
+  avgMasteryPct: number;
+  avgExamScoreOn20: number | null;
+  dueCardsCount: number;
+  status: 'prioritaire' | 'en_cours' | 'solide' | 'a_decouvrir';
+}
+
+export interface StudyPlanPriorityChapter {
+  chapterId: number;
+  title: string;
+  subject: SubjectId;
+  subjectLabel: string;
+  gradeLevel: GradeLevel;
+  masteryPct: number;
+  dueCardsCount: number;
+  reason: string;
+  priorityLevel: 'haute' | 'moyenne' | 'decouverte';
+}
+
+export interface StudyPlanDueChapter {
+  chapterId: number;
+  chapterTitle: string;
+  subject: SubjectId;
+  subjectLabel: string;
+  gradeLevel: GradeLevel;
+  dueCount: number;
+}
+
+export interface StudyPlanData {
+  gradeLevel: GradeLevel;
+  weeklyXpGoal: number;
+  weeklyXpEarned: number;
+  weeklyActionsCount: number;
+  dailyActivity: StudyPlanDailyActivity[];
+  dueFlashcardsCount: number;
+  masteredFlashcardsCount: number;
+  dueByChapter: StudyPlanDueChapter[];
+  subjectSummaries: StudyPlanSubjectSummary[];
+  priorityChapters: StudyPlanPriorityChapter[];
+  latestExam: {
+    examTitle: string;
+    scoreOn20: number;
+    mention: string;
+    createdAt: string;
+  } | null;
 }
 
 export interface ChapterProgress {
@@ -89,7 +148,6 @@ export interface PredictionMetrics {
 
 export interface LeaderboardEntry {
   id: number;
-  uid: string;
   displayName: string;
   avatarUrl: string | null;
   gradeLevel: GradeLevel;

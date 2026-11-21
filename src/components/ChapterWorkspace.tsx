@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Atom,
   Award,
-  BookOpen,
   Calculator,
   CheckCircle2,
   ChevronRight,
@@ -42,6 +41,7 @@ import type {
   ThemeMode,
 } from '../types/learning.ts';
 import { MathViewport3D } from './MathViewport3D.tsx';
+import { ChapterStudyDeck } from './ChapterStudyDeck.tsx';
 
 interface ChapterWorkspaceProps {
   chapters: ChapterItem[];
@@ -67,6 +67,7 @@ interface ChapterWorkspaceProps {
     newBadges: BadgeItem[]
   ) => void;
   onLaunchDynamicQuiz?: (chapterId: number) => void;
+  onXpSynced?: (newTotalXp: number, newBadges: BadgeItem[]) => void;
 }
 
 const ACCENT_RING_MAP: Record<AccentColor, string> = {
@@ -96,6 +97,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
   apiFetch,
   onAttemptRecorded,
   onLaunchDynamicQuiz,
+  onXpSynced,
 }) => {
   const subjectChapters = useMemo(
     () => chapters.filter((c) => (c.subject || 'mathematics') === selectedSubject),
@@ -442,22 +444,16 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
             showGrid={showGrid}
           />
 
-          <div
-            className={`rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 ${padClass}`}
-          >
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                <BookOpen className="w-4 h-4 text-slate-500" />
-                <span>Fondements théoriques du chapitre</span>
-              </div>
-              <span className="text-xs font-mono tabular-nums text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
-                {activeChapter.formulaDisplay}
-              </span>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              {activeChapter.theoryContent}
-            </p>
-          </div>
+          <ChapterStudyDeck
+            chapter={activeChapter}
+            padClass={padClass}
+            accentColor={accentColor}
+            isAuthenticated={isAuthenticated}
+            backendAvailable={backendAvailable}
+            onRequireSignIn={onRequireSignIn}
+            apiFetch={apiFetch}
+            onXpSynced={onXpSynced}
+          />
         </div>
 
         {/* Colonne droite : Prédiction temps réel + Exercices & Quiz interactifs */}

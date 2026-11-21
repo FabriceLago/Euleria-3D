@@ -31,9 +31,9 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const navItems: Array<{ id: AppSection; label: string }> = [
     { id: 'curriculum', label: 'Programme' },
-    { id: 'quiz', label: 'Quiz Dynamique' },
+    { id: 'quiz', label: 'Quiz & Examens' },
     { id: 'studio3d', label: 'Atelier 3D' },
-    { id: 'leaderboard', label: 'Classement' },
+    { id: 'leaderboard', label: 'Bilan & Rang' },
     { id: 'collaboration', label: 'Entraide' },
   ];
 

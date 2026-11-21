@@ -4,7 +4,9 @@ import {
   badges,
   chapters,
   chatMessages,
+  examSessions,
   exercises,
+  flashcardReviews,
   quizAttempts,
   studyRooms,
   userBadges,
@@ -13,6 +15,21 @@ import {
 } from './schema.ts';
 import { ALL_SEED_BADGES, ALL_SEED_CHAPTERS, ALL_SEED_ROOMS } from './curriculumData.ts';
 import { computeRealTimePrediction, evaluateExerciseAnswer } from '../services/predictionEngine.ts';
+import {
+  buildChapterFlashcards,
+  buildChapterStudySheet,
+  computeSm2NextState,
+  type FlashcardRating,
+} from '../services/flashcardEngine.ts';
+
+export class ValidationError extends Error {
+  statusCode: number;
+  constructor(message: string, statusCode = 400) {
+    super(message);
+    this.name = 'ValidationError';
+    this.statusCode = statusCode;
+  }
+}
 
 let seedPromise: Promise<void> | null = null;
 
@@ -214,7 +231,12 @@ export async function recordExerciseAttempt(params: {
 
     const exercise = exRows[0];
     if (!exercise) {
-      throw new Error('Exercice introuvable.');
+      throw new ValidationError('Exercice introuvable.', 404);
+    }
+
+    const cleanAnswer = params.submittedAnswer.trim().slice(0, 256);
+    if (!cleanAnswer) {
+      throw new ValidationError('Réponse vide.', 400);
     }
 
     const chapterExercises = await db
@@ -224,13 +246,17 @@ export async function recordExerciseAttempt(params: {
 
     const isCorrect = evaluateExerciseAnswer(
       exercise.exerciseType,
-      params.submittedAnswer,
+      cleanAnswer,
       exercise.correctAnswer,
       exercise.numericTolerance ?? 0.05
     );
 
-    const priorCorrectOnExercise = await db
-      .select({ id: quizAttempts.id })
+    const priorCorrectRows = await db
+      .select({
+        id: quizAttempts.id,
+        xpEarned: quizAttempts.xpEarned,
+        createdAt: quizAttempts.createdAt,
+      })
       .from(quizAttempts)
       .where(
         and(
@@ -239,17 +265,28 @@ export async function recordExerciseAttempt(params: {
           eq(quizAttempts.isCorrect, true)
         )
       )
-      .limit(1);
+      .orderBy(desc(quizAttempts.createdAt))
+      .limit(10);
 
-    const alreadySolved = priorCorrectOnExercise.length > 0;
-    const xpEarned = isCorrect ? (alreadySolved ? 5 : exercise.xpValue) : 0;
+    const alreadySolved = priorCorrectRows.length > 0;
+    const twelveHoursAgo = Date.now() - 12 * 60 * 60 * 1000;
+    const recentlyRewarded = priorCorrectRows.some(
+      (row) => row.xpEarned > 0 && row.createdAt.getTime() > twelveHoursAgo
+    );
+    const xpEarned = isCorrect
+      ? alreadySolved
+        ? recentlyRewarded
+          ? 0
+          : 5
+        : exercise.xpValue
+      : 0;
 
     // Enregistrement de la tentative
     await db.insert(quizAttempts).values({
       userId: params.userId,
       chapterId: exercise.chapterId,
       exerciseId: exercise.id,
-      submittedAnswer: params.submittedAnswer,
+      submittedAnswer: cleanAnswer,
       isCorrect,
       responseTimeMs: Math.max(500, Math.min(params.responseTimeMs || 6000, 300000)),
       xpEarned,
@@ -375,6 +412,7 @@ export async function recordExerciseAttempt(params: {
       userXp: freshUser?.xp ?? 0,
     };
   } catch (error) {
+    if (error instanceof ValidationError) throw error;
     console.error('Database error in recordExerciseAttempt:', error);
     throw new Error('Impossible d’enregistrer votre réponse.', { cause: error });
   }
@@ -408,6 +446,24 @@ export async function evaluateAndAwardBadges(userId: number) {
       .where(eq(chatMessages.userId, userId));
     const messageCount = msgCountRows[0]?.count ?? 0;
 
+    const examBestRows = await db
+      .select({ maxScore: sql<number>`coalesce(max(${examSessions.scoreOn20}), 0)::real` })
+      .from(examSessions)
+      .where(eq(examSessions.userId, userId));
+    const bestExamScore = examBestRows[0]?.maxScore ?? 0;
+
+    const masteredFlashcardRows = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(flashcardReviews)
+      .where(
+        and(
+          eq(flashcardReviews.userId, userId),
+          sql`${flashcardReviews.repetitions} >= 1`,
+          sql`${flashcardReviews.intervalDays} >= 1`
+        )
+      );
+    const masteredFlashcardsCount = masteredFlashcardRows[0]?.count ?? 0;
+
     const newlyAwarded: Array<(typeof allBadges)[number]> = [];
 
     for (const badge of allBadges) {
@@ -427,6 +483,13 @@ export async function evaluateAndAwardBadges(userId: number) {
       ) {
         qualifies = true;
       } else if (badge.conditionType === 'collaboration' && messageCount >= badge.xpThreshold) {
+        qualifies = true;
+      } else if (badge.conditionType === 'exam_honors' && bestExamScore >= badge.xpThreshold) {
+        qualifies = true;
+      } else if (
+        badge.conditionType === 'flashcards_mastered' &&
+        masteredFlashcardsCount >= badge.xpThreshold
+      ) {
         qualifies = true;
       }
 
@@ -502,12 +565,28 @@ export async function createChatMessage(params: {
       .limit(1);
 
     if (!room) {
-      throw new Error('Salon introuvable.');
+      throw new ValidationError('Salon introuvable.', 404);
     }
 
     const cleanContent = params.content.trim().slice(0, 1000);
     if (!cleanContent) {
-      throw new Error('Le message ne peut pas être vide.');
+      throw new ValidationError('Le message ne peut pas être vide.', 400);
+    }
+
+    let validSharedChapterId: number | null = null;
+    if (params.sharedChapterId !== undefined && params.sharedChapterId !== null) {
+      if (!Number.isInteger(params.sharedChapterId) || params.sharedChapterId <= 0) {
+        throw new ValidationError('Chapitre partagé invalide.', 400);
+      }
+      const [sharedChapter] = await db
+        .select({ id: chapters.id })
+        .from(chapters)
+        .where(eq(chapters.id, params.sharedChapterId))
+        .limit(1);
+      if (!sharedChapter) {
+        throw new ValidationError('Chapitre partagé introuvable.', 400);
+      }
+      validSharedChapterId = sharedChapter.id;
     }
 
     const [inserted] = await db
@@ -516,7 +595,7 @@ export async function createChatMessage(params: {
         roomId: room.id,
         userId: params.userId,
         content: cleanContent,
-        sharedChapterId: params.sharedChapterId ?? null,
+        sharedChapterId: validSharedChapterId,
       })
       .returning();
 
@@ -545,6 +624,7 @@ export async function createChatMessage(params: {
       newlyUnlockedBadges,
     };
   } catch (error) {
+    if (error instanceof ValidationError) throw error;
     console.error('Database error in createChatMessage:', error);
     throw new Error('Impossible d’envoyer le message.', { cause: error });
   }
@@ -629,5 +709,655 @@ export async function awardDynamicQuizXp(userId: number, xpEarned: number) {
   } catch (error) {
     console.error('Database error in awardDynamicQuizXp:', error);
     throw new Error('Impossible d’enregistrer les points XP du quiz dynamique.', { cause: error });
+  }
+}
+
+export async function recordExamSession(params: {
+  userId: number;
+  examSlug: string;
+  examTitle: string;
+  gradeLabel: string;
+  scoreOn20: number;
+  correctCount: number;
+  totalQuestions: number;
+  mention: string;
+  durationSeconds: number;
+  xpAwarded: number;
+  subjectBreakdown: Array<{
+    subject: string;
+    label: string;
+    correct: number;
+    total: number;
+    scoreOn20: number;
+  }>;
+}) {
+  try {
+    const safeXp = Math.max(0, Math.min(400, Math.round(params.xpAwarded)));
+    const [inserted] = await db
+      .insert(examSessions)
+      .values({
+        userId: params.userId,
+        examSlug: params.examSlug,
+        examTitle: params.examTitle,
+        gradeLabel: params.gradeLabel,
+        scoreOn20: params.scoreOn20,
+        correctCount: params.correctCount,
+        totalQuestions: params.totalQuestions,
+        mention: params.mention,
+        durationSeconds: Math.max(1, Math.round(params.durationSeconds)),
+        xpAwarded: safeXp,
+        subjectBreakdownJson: JSON.stringify(params.subjectBreakdown),
+      })
+      .returning();
+
+    if (safeXp > 0) {
+      await db
+        .update(users)
+        .set({
+          xp: sql`${users.xp} + ${safeXp}`,
+          lastActiveAt: new Date(),
+        })
+        .where(eq(users.id, params.userId));
+    }
+
+    const newlyUnlockedBadges = await evaluateAndAwardBadges(params.userId);
+    const [freshUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, params.userId))
+      .limit(1);
+
+    return {
+      sessionId: inserted?.id ?? null,
+      userXp: freshUser?.xp ?? 0,
+      newlyUnlockedBadges,
+    };
+  } catch (error) {
+    console.error('Database error in recordExamSession:', error);
+    throw new Error('Impossible d’enregistrer la copie d’examen blanc.', { cause: error });
+  }
+}
+
+export async function getUserExamHistory(userId: number, limit = 15) {
+  try {
+    const rows = await db
+      .select()
+      .from(examSessions)
+      .where(eq(examSessions.userId, userId))
+      .orderBy(desc(examSessions.createdAt))
+      .limit(limit);
+
+    const history = rows.map((row) => ({
+      id: row.id,
+      examSlug: row.examSlug,
+      examTitle: row.examTitle,
+      gradeLabel: row.gradeLabel,
+      scoreOn20: row.scoreOn20,
+      correctCount: row.correctCount,
+      totalQuestions: row.totalQuestions,
+      mention: row.mention,
+      durationSeconds: row.durationSeconds,
+      xpAwarded: row.xpAwarded,
+      subjectBreakdown: JSON.parse(row.subjectBreakdownJson) as Array<{
+        subject: string;
+        label: string;
+        correct: number;
+        total: number;
+        scoreOn20: number;
+      }>,
+      createdAt: row.createdAt.toISOString(),
+    }));
+
+    const totalExams = history.length;
+    const bestScoreOn20 =
+      totalExams > 0 ? Math.max(...history.map((h) => h.scoreOn20)) : null;
+    const averageScoreOn20 =
+      totalExams > 0
+        ? Math.round(
+            (history.reduce((sum, h) => sum + h.scoreOn20, 0) / totalExams) * 10
+          ) / 10
+        : null;
+
+    return {
+      history,
+      summary: {
+        totalExams,
+        bestScoreOn20,
+        averageScoreOn20,
+      },
+    };
+  } catch (error) {
+    console.error('Database error in getUserExamHistory:', error);
+    throw new Error('Impossible de charger l’historique des examens blancs.', { cause: error });
+  }
+}
+
+export async function getChapterFlashcardsAndSheet(chapterId: number, userId: number | null) {
+  try {
+    await ensureCurriculumSeeded();
+    const [chapterRow] = await db
+      .select()
+      .from(chapters)
+      .where(eq(chapters.id, chapterId))
+      .limit(1);
+
+    if (!chapterRow) {
+      return null;
+    }
+
+    const chapterExercises = await db
+      .select()
+      .from(exercises)
+      .where(eq(exercises.chapterId, chapterId))
+      .orderBy(asc(exercises.orderIndex));
+
+    const reviewMap = new Map<
+      string,
+      {
+        easeFactor: number;
+        intervalDays: number;
+        repetitions: number;
+        lastRating: string;
+        nextReviewAt: Date;
+        lastReviewedAt: Date;
+      }
+    >();
+
+    if (userId) {
+      const reviewRows = await db
+        .select()
+        .from(flashcardReviews)
+        .where(
+          and(
+            eq(flashcardReviews.userId, userId),
+            eq(flashcardReviews.chapterId, chapterId)
+          )
+        );
+      for (const r of reviewRows) {
+        reviewMap.set(r.cardKey, {
+          easeFactor: r.easeFactor,
+          intervalDays: r.intervalDays,
+          repetitions: r.repetitions,
+          lastRating: r.lastRating,
+          nextReviewAt: r.nextReviewAt,
+          lastReviewedAt: r.lastReviewedAt,
+        });
+      }
+    }
+
+    const sourceExercises = chapterExercises.map((ex) => ({
+      orderIndex: ex.orderIndex,
+      prompt: ex.prompt,
+      hint: ex.hint,
+      correctAnswer: ex.correctAnswer,
+      explanation: ex.explanation,
+    }));
+
+    const studySheet = buildChapterStudySheet(chapterRow, sourceExercises);
+    const flashcards = buildChapterFlashcards(chapterRow, sourceExercises, reviewMap);
+    const masteredCount = flashcards.filter((c) => c.sm2.isMastered).length;
+    const dueCount = flashcards.filter((c) => c.sm2.isDue).length;
+
+    return {
+      chapterId,
+      studySheet,
+      flashcards,
+      stats: {
+        totalCards: flashcards.length,
+        masteredCount,
+        dueCount,
+      },
+    };
+  } catch (error) {
+    console.error('Database error in getChapterFlashcardsAndSheet:', error);
+    throw new Error('Impossible de charger les fiches et flashcards du chapitre.', { cause: error });
+  }
+}
+
+export async function assertValidChapterCardKey(
+  chapterId: number,
+  cardKey: string
+): Promise<void> {
+  await ensureCurriculumSeeded();
+  const [chapterRow] = await db
+    .select({ id: chapters.id })
+    .from(chapters)
+    .where(eq(chapters.id, chapterId))
+    .limit(1);
+
+  if (!chapterRow) {
+    throw new ValidationError('Chapitre introuvable.', 404);
+  }
+
+  if (cardKey === 'concept' || cardKey === 'formula') {
+    return;
+  }
+
+  const chapterExercises = await db
+    .select({ orderIndex: exercises.orderIndex })
+    .from(exercises)
+    .where(eq(exercises.chapterId, chapterId))
+    .orderBy(asc(exercises.orderIndex));
+
+  const validKeys = new Set<string>(['concept', 'formula']);
+  chapterExercises.forEach((ex, idx) => {
+    validKeys.add(`ex-${ex.orderIndex || idx + 1}`);
+  });
+
+  if (!validKeys.has(cardKey)) {
+    throw new ValidationError('Flashcard introuvable pour ce chapitre.', 400);
+  }
+}
+
+export async function recordFlashcardReview(params: {
+  userId: number;
+  chapterId: number;
+  cardKey: string;
+  rating: FlashcardRating;
+}) {
+  try {
+    await assertValidChapterCardKey(params.chapterId, params.cardKey);
+
+    const existingRows = await db
+      .select()
+      .from(flashcardReviews)
+      .where(
+        and(
+          eq(flashcardReviews.userId, params.userId),
+          eq(flashcardReviews.chapterId, params.chapterId),
+          eq(flashcardReviews.cardKey, params.cardKey)
+        )
+      )
+      .limit(1);
+
+    const existing = existingRows[0];
+    const now = new Date();
+    const next = computeSm2NextState(
+      {
+        easeFactor: existing?.easeFactor ?? 2.5,
+        intervalDays: existing?.intervalDays ?? 0,
+        repetitions: existing?.repetitions ?? 0,
+      },
+      params.rating,
+      now
+    );
+
+    // Prime de +5 XP pour une révision réussie (good/easy), limitée à 1 fois par carte toutes les 12h
+    const twelveHoursAgo = now.getTime() - 12 * 60 * 60 * 1000;
+    const recentlyReviewed =
+      existing && existing.lastReviewedAt.getTime() > twelveHoursAgo && existing.repetitions >= 1;
+    const xpEarned =
+      (params.rating === 'good' || params.rating === 'easy') && !recentlyReviewed ? 5 : 0;
+
+    await db
+      .insert(flashcardReviews)
+      .values({
+        userId: params.userId,
+        chapterId: params.chapterId,
+        cardKey: params.cardKey,
+        easeFactor: next.easeFactor,
+        intervalDays: next.intervalDays,
+        repetitions: next.repetitions,
+        lastRating: next.lastRating,
+        nextReviewAt: next.nextReviewAt,
+        lastReviewedAt: next.lastReviewedAt,
+      })
+      .onConflictDoUpdate({
+        target: [flashcardReviews.userId, flashcardReviews.chapterId, flashcardReviews.cardKey],
+        set: {
+          easeFactor: next.easeFactor,
+          intervalDays: next.intervalDays,
+          repetitions: next.repetitions,
+          lastRating: next.lastRating,
+          nextReviewAt: next.nextReviewAt,
+          lastReviewedAt: next.lastReviewedAt,
+        },
+      });
+
+    if (xpEarned > 0) {
+      await db
+        .update(users)
+        .set({
+          xp: sql`${users.xp} + ${xpEarned}`,
+          lastActiveAt: now,
+        })
+        .where(eq(users.id, params.userId));
+    }
+
+    const newlyUnlockedBadges = await evaluateAndAwardBadges(params.userId);
+    const [freshUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, params.userId))
+      .limit(1);
+
+    return {
+      sm2: {
+        easeFactor: next.easeFactor,
+        intervalDays: next.intervalDays,
+        repetitions: next.repetitions,
+        lastRating: next.lastRating,
+        nextReviewAt: next.nextReviewAt.toISOString(),
+        lastReviewedAt: next.lastReviewedAt.toISOString(),
+        isDue: next.isDue,
+        isMastered: next.isMastered,
+      },
+      xpEarned,
+      userXp: freshUser?.xp ?? 0,
+      newlyUnlockedBadges,
+    };
+  } catch (error) {
+    if (error instanceof ValidationError) throw error;
+    console.error('Database error in recordFlashcardReview:', error);
+    throw new Error('Impossible d’enregistrer la révision de la flashcard.', { cause: error });
+  }
+}
+
+const STUDY_PLAN_SUBJECT_ORDER = [
+  { id: 'mathematics', label: 'Mathématiques' },
+  { id: 'physics_chemistry', label: 'Physique-Chimie' },
+  { id: 'svt', label: 'SVT' },
+  { id: 'history_geography', label: 'Histoire-Géographie' },
+  { id: 'french_philosophy', label: 'Français & Philo' },
+  { id: 'english_lv1', label: 'Anglais LV1' },
+] as const;
+
+const DAY_LABELS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+
+export async function getUserStudyPlan(userId: number) {
+  try {
+    await ensureCurriculumSeeded();
+
+    const [userRow] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const gradeLevel = (userRow?.gradeLevel || '6e') as string;
+    const weeklyXpGoal = userRow?.weeklyXpGoal ?? 400;
+
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+    const [allChapters, progressRows, recentAttempts, recentExams, allFlashcardRows] =
+      await Promise.all([
+        db.select().from(chapters).orderBy(asc(chapters.orderIndex), asc(chapters.id)),
+        db.select().from(userProgress).where(eq(userProgress.userId, userId)),
+        db
+          .select()
+          .from(quizAttempts)
+          .where(eq(quizAttempts.userId, userId))
+          .orderBy(desc(quizAttempts.createdAt))
+          .limit(300),
+        db
+          .select()
+          .from(examSessions)
+          .where(eq(examSessions.userId, userId))
+          .orderBy(desc(examSessions.createdAt))
+          .limit(20),
+        db.select().from(flashcardReviews).where(eq(flashcardReviews.userId, userId)),
+      ]);
+
+    // 1. Rythme sur 7 jours + XP hebdomadaire réel
+    const dayBuckets = new Map<string, { dateIso: string; dayLabel: string; actionsCount: number; xpEarned: number }>();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sevenDaysAgo);
+      d.setDate(sevenDaysAgo.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      dayBuckets.set(iso, {
+        dateIso: iso,
+        dayLabel: DAY_LABELS_FR[d.getDay()],
+        actionsCount: 0,
+        xpEarned: 0,
+      });
+    }
+
+    for (const att of recentAttempts) {
+      const iso = att.createdAt.toISOString().slice(0, 10);
+      const b = dayBuckets.get(iso);
+      if (b) {
+        b.actionsCount += 1;
+        b.xpEarned += att.xpEarned;
+      }
+    }
+    for (const ex of recentExams) {
+      const iso = ex.createdAt.toISOString().slice(0, 10);
+      const b = dayBuckets.get(iso);
+      if (b) {
+        b.actionsCount += 1;
+        b.xpEarned += ex.xpAwarded;
+      }
+    }
+    for (const fc of allFlashcardRows) {
+      const iso = fc.lastReviewedAt.toISOString().slice(0, 10);
+      const b = dayBuckets.get(iso);
+      if (b) {
+        b.actionsCount += 1;
+        if (fc.repetitions >= 1 && (fc.lastRating === 'good' || fc.lastRating === 'easy')) {
+          b.xpEarned += 5;
+        }
+      }
+    }
+
+    const dailyActivity = Array.from(dayBuckets.values());
+    const weeklyXpEarned = dailyActivity.reduce((s, d) => s + d.xpEarned, 0);
+    const weeklyActionsCount = dailyActivity.reduce((s, d) => s + d.actionsCount, 0);
+
+    // 2. Radar SM-2 (cartes dues + maîtrisées)
+    const chapterById = new Map(allChapters.map((c) => [c.id, c]));
+    const subjectLabelMap = new Map<string, string>(
+      STUDY_PLAN_SUBJECT_ORDER.map((s) => [s.id, s.label])
+    );
+
+    const dueCountByChapterId = new Map<number, number>();
+    let dueFlashcardsCount = 0;
+    let masteredFlashcardsCount = 0;
+
+    for (const fc of allFlashcardRows) {
+      if (fc.repetitions >= 1 && fc.intervalDays >= 1) {
+        masteredFlashcardsCount += 1;
+      }
+      if (fc.nextReviewAt.getTime() <= now.getTime()) {
+        dueFlashcardsCount += 1;
+        dueCountByChapterId.set(fc.chapterId, (dueCountByChapterId.get(fc.chapterId) || 0) + 1);
+      }
+    }
+
+    const dueByChapter = Array.from(dueCountByChapterId.entries())
+      .map(([chapterId, dueCount]) => {
+        const ch = chapterById.get(chapterId);
+        if (!ch) return null;
+        return {
+          chapterId,
+          chapterTitle: ch.title,
+          subject: ch.subject,
+          subjectLabel: subjectLabelMap.get(ch.subject) || ch.subject,
+          gradeLevel: ch.gradeLevel,
+          dueCount,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      .sort((a, b) => b.dueCount - a.dueCount)
+      .slice(0, 5);
+
+    // 3. Agrégation des notes d'examens blancs par matière
+    const examScoresBySubject = new Map<string, number[]>();
+    for (const ex of recentExams) {
+      try {
+        const breakdown = JSON.parse(ex.subjectBreakdownJson) as Array<{
+          subject: string;
+          scoreOn20: number;
+        }>;
+        for (const item of breakdown) {
+          const arr = examScoresBySubject.get(item.subject) || [];
+          arr.push(item.scoreOn20);
+          examScoresBySubject.set(item.subject, arr);
+        }
+      } catch {
+        // Ignore malformed JSON
+      }
+    }
+
+    const progressByChapterId = new Map(progressRows.map((p) => [p.chapterId, p]));
+
+    // 4. Bilan par matière (6 matières du tronc commun)
+    const subjectSummaries = STUDY_PLAN_SUBJECT_ORDER.map((subj) => {
+      const gradeChs = allChapters.filter(
+        (c) => c.subject === subj.id && c.gradeLevel === gradeLevel
+      );
+      const allSubjChs = allChapters.filter((c) => c.subject === subj.id);
+
+      const gradeCompletedChapters = gradeChs.filter(
+        (c) => progressByChapterId.get(c.id)?.status === 'completed'
+      ).length;
+
+      const startedSubjProgs = allSubjChs
+        .map((c) => progressByChapterId.get(c.id))
+        .filter((p): p is NonNullable<typeof p> => Boolean(p));
+
+      const avgMasteryPct =
+        startedSubjProgs.length > 0
+          ? Math.round(
+              startedSubjProgs.reduce((sum, p) => sum + p.masteryScore, 0) /
+                startedSubjProgs.length
+            )
+          : 0;
+
+      const scores = examScoresBySubject.get(subj.id) || [];
+      const avgExamScoreOn20 =
+        scores.length > 0
+          ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
+          : null;
+
+      const dueCardsCount = allSubjChs.reduce(
+        (sum, c) => sum + (dueCountByChapterId.get(c.id) || 0),
+        0
+      );
+
+      let status: 'prioritaire' | 'en_cours' | 'solide' | 'a_decouvrir' = 'a_decouvrir';
+      if (
+        (avgExamScoreOn20 !== null && avgExamScoreOn20 < 12) ||
+        (startedSubjProgs.length > 0 && avgMasteryPct < 50)
+      ) {
+        status = 'prioritaire';
+      } else if (
+        (avgExamScoreOn20 !== null && avgExamScoreOn20 >= 14) ||
+        avgMasteryPct >= 75
+      ) {
+        status = 'solide';
+      } else if (startedSubjProgs.length > 0 || avgExamScoreOn20 !== null || dueCardsCount > 0) {
+        status = 'en_cours';
+      }
+
+      return {
+        subject: subj.id,
+        label: subj.label,
+        gradeCompletedChapters,
+        gradeTotalChapters: gradeChs.length,
+        avgMasteryPct,
+        avgExamScoreOn20,
+        dueCardsCount,
+        status,
+      };
+    });
+
+    // 5. Classement des chapitres prioritaires à retravailler (Top 6)
+    const subjectExamAvgMap = new Map(
+      subjectSummaries.map((s) => [s.subject as string, s.avgExamScoreOn20])
+    );
+
+    const scoredCandidates = allChapters
+      .filter((ch) => {
+        const prog = progressByChapterId.get(ch.id);
+        const due = dueCountByChapterId.get(ch.id) || 0;
+        return ch.gradeLevel === gradeLevel || Boolean(prog) || due > 0;
+      })
+      .map((ch) => {
+        const prog = progressByChapterId.get(ch.id);
+        const masteryPct = Math.round(prog?.masteryScore ?? 0);
+        const due = dueCountByChapterId.get(ch.id) || 0;
+        const examAvg = subjectExamAvgMap.get(ch.subject) ?? null;
+        const subjLabel = subjectLabelMap.get(ch.subject) || ch.subject;
+
+        let score = 0;
+        let reason = `Prochain chapitre recommandé en ${gradeLevel}`;
+        let priorityLevel: 'haute' | 'moyenne' | 'decouverte' = 'decouverte';
+
+        if (examAvg !== null && examAvg < 12 && prog?.status !== 'completed') {
+          score += 90 - examAvg * 4;
+          reason = `Moyenne d’examen blanc ${examAvg.toFixed(1).replace('.', ',')}/20 en ${subjLabel}`;
+          priorityLevel = 'haute';
+        }
+        if (due > 0) {
+          score += 45 + due * 10;
+          reason =
+            priorityLevel === 'haute'
+              ? `${reason} · ${due} flashcard${due > 1 ? 's' : ''} à revoir`
+              : `${due} flashcard${due > 1 ? 's' : ''} SM-2 à réviser aujourd’hui`;
+          if (priorityLevel === 'decouverte') priorityLevel = 'haute';
+        }
+        if (prog && prog.status === 'in_progress') {
+          score += 65 - masteryPct * 0.5;
+          if (priorityLevel === 'decouverte') {
+            reason = `Chapitre entamé — maîtrise BKT à ${masteryPct}%`;
+            priorityLevel = masteryPct < 55 ? 'haute' : 'moyenne';
+          }
+        } else if (!prog && ch.gradeLevel === gradeLevel) {
+          score += 20;
+        } else if (prog?.status === 'completed' && due === 0) {
+          score -= 50;
+        }
+
+        return {
+          chapterId: ch.id,
+          title: ch.title,
+          subject: ch.subject,
+          subjectLabel: subjLabel,
+          gradeLevel: ch.gradeLevel,
+          masteryPct,
+          dueCardsCount: due,
+          reason,
+          priorityLevel,
+          _score: score,
+        };
+      })
+      .filter((c) => c._score > 0)
+      .sort((a, b) => b._score - a._score);
+
+    // Diversifie pour ne pas afficher 6 chapitres de la même matière en mode découverte
+    const priorityChapters: Array<Omit<(typeof scoredCandidates)[number], '_score'>> = [];
+    const perSubjCap = new Map<string, number>();
+    for (const cand of scoredCandidates) {
+      if (priorityChapters.length >= 6) break;
+      const count = perSubjCap.get(cand.subject) || 0;
+      if (count >= 2 && scoredCandidates.length > 6) continue;
+      perSubjCap.set(cand.subject, count + 1);
+      const { _score: _, ...clean } = cand;
+      priorityChapters.push(clean);
+    }
+
+    const latestExamRow = recentExams[0] || null;
+
+    return {
+      gradeLevel,
+      weeklyXpGoal,
+      weeklyXpEarned,
+      weeklyActionsCount,
+      dailyActivity,
+      dueFlashcardsCount,
+      masteredFlashcardsCount,
+      dueByChapter,
+      subjectSummaries,
+      priorityChapters,
+      latestExam: latestExamRow
+        ? {
+            examTitle: latestExamRow.examTitle,
+            scoreOn20: latestExamRow.scoreOn20,
+            mention: latestExamRow.mention,
+            createdAt: latestExamRow.createdAt.toISOString(),
+          }
+        : null,
+    };
+  } catch (error) {
+    console.error('Database error in getUserStudyPlan:', error);
+    throw new Error('Impossible de générer le tableau de bord de révision.', { cause: error });
   }
 }

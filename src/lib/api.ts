@@ -9,9 +9,13 @@ export function apiUrl(path: string): string {
 export function wsUrl(path = '/ws'): string {
   const normalized = path.startsWith('/') ? path : `/${path}`;
   if (API_BASE_URL) {
-    const u = new URL(API_BASE_URL);
-    const proto = u.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${proto}//${u.host}${normalized}`;
+    try {
+      const u = new URL(API_BASE_URL);
+      const proto = u.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${proto}//${u.host}${normalized}`;
+    } catch {
+      // Fallback sur l'origine courante si VITE_API_BASE_URL est mal formé
+    }
   }
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${proto}//${window.location.host}${normalized}`;
