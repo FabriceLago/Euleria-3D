@@ -54,6 +54,15 @@ fx.bounce('slice-0');
 run(1.0);
 assert.ok(Math.abs(box.scale.x - 1) < 1e-9, 'rebonds superposés : échelle revenue à 1');
 
+// Fenêtre : A finie, B encore en cours, puis C ne doit pas capturer l'échelle gonflée.
+fx.bounce('slice-0');
+run(0.5);
+fx.bounce('slice-0');
+run(0.15);
+fx.bounce('slice-0');
+run(1.0);
+assert.ok(Math.abs(box.scale.x - 1) < 1e-9, 'rebond A fini pendant B : pas de dérive d\'échelle');
+
 const reduced = new MissionFx(ctx, true, '#4f46e5');
 assert.equal(subs.size, 2, 'deux abonnés à la boucle');
 reduced.burst({ x: 0, y: 0, z: 0 });

@@ -25,7 +25,7 @@ export class MissionFx {
   private orbState: Orb[];
   private dummy = new THREE.Object3D();
   private highlighted = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
-  private bounceBase = new Map<THREE.Object3D, THREE.Vector3>();
+  private bounceBase = new Map<THREE.Object3D, { base: THREE.Vector3; active: number }>();
 
   constructor(private ctx: FxContext, private reduced: boolean, accentHex: string) {
     const count = ctx.isSoftwareGl ? 16 : 64;
@@ -64,15 +64,19 @@ export class MissionFx {
 
   bounce(tag: string) {
     const obj = this.ctx.findByTag(tag) ?? this.ctx.modelGroup;
-    let base = this.bounceBase.get(obj);
-    if (!base) {
-      base = obj.scale.clone();
-      this.bounceBase.set(obj, base);
+    let entry = this.bounceBase.get(obj);
+    if (!entry) {
+      entry = { base: obj.scale.clone(), active: 0 };
+      this.bounceBase.set(obj, entry);
     }
-    const b = base;
-    this.tween(0.6, (k) => obj.scale.copy(b).multiplyScalar(1 + Math.sin(k * Math.PI) * 0.18), ease.outCubic, () => {
-      obj.scale.copy(b);
-      this.bounceBase.delete(obj);
+    const e = entry;
+    e.active++;
+    this.tween(0.6, (k) => obj.scale.copy(e.base).multiplyScalar(1 + Math.sin(k * Math.PI) * 0.18), ease.outCubic, () => {
+      e.active--;
+      if (e.active === 0) {
+        obj.scale.copy(e.base);
+        this.bounceBase.delete(obj);
+      }
     });
   }
 
@@ -127,7 +131,7 @@ export class MissionFx {
 
   dispose() {
     this.unsub();
-    for (const [obj, base] of this.bounceBase) obj.scale.copy(base);
+    for (const [obj, entry] of this.bounceBase) obj.scale.copy(entry.base);
     this.bounceBase.clear();
     this.tweens.clear();
     this.clearHighlights();
