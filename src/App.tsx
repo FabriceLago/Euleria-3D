@@ -456,19 +456,21 @@ const PlatformShell: React.FC = () => {
   }, []);
 
   const handleMissionComplete = useCallback(
-    async (r: MissionResult) => {
-      if (!backendAvailable || !profile) return; // mode local : étoiles gardées sur l'appareil, pas d'XP (comme les exercices)
+    // Renvoie les XP réellement accordées par le serveur (plafond quotidien inclus), null si aucune
+    async (r: MissionResult): Promise<number | null> => {
+      if (!backendAvailable || !profile) return null; // mode local : étoiles gardées sur l'appareil, pas d'XP (comme les exercices)
       try {
         const res = await apiFetch('/api/missions/complete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ missionId: r.missionId, stars: r.stars, timeMs: r.timeMs }),
         });
-        if (!res.ok) return;
+        if (!res.ok) return null;
         const data = await res.json();
         if (typeof data.userXp === 'number') applyXpAndBadges(data.userXp, data.newlyUnlockedBadges ?? []);
+        return typeof data.xpEarned === 'number' ? data.xpEarned : null;
       } catch {
-        // hors ligne : la mission reste jouable, seules les XP ne sont pas créditées
+        return null; // hors ligne : la mission reste jouable, seules les XP ne sont pas créditées
       }
     },
     [backendAvailable, profile, apiFetch, applyXpAndBadges]
