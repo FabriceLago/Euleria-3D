@@ -25,6 +25,7 @@ export class MissionFx {
   private orbState: Orb[];
   private dummy = new THREE.Object3D();
   private highlighted = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
+  private bounceBase = new Map<THREE.Object3D, THREE.Vector3>();
 
   constructor(private ctx: FxContext, private reduced: boolean, accentHex: string) {
     const count = ctx.isSoftwareGl ? 16 : 64;
@@ -63,8 +64,16 @@ export class MissionFx {
 
   bounce(tag: string) {
     const obj = this.ctx.findByTag(tag) ?? this.ctx.modelGroup;
-    const base = obj.scale.clone();
-    this.tween(0.6, (k) => obj.scale.copy(base).multiplyScalar(1 + Math.sin(k * Math.PI) * 0.18), ease.outCubic, () => obj.scale.copy(base));
+    let base = this.bounceBase.get(obj);
+    if (!base) {
+      base = obj.scale.clone();
+      this.bounceBase.set(obj, base);
+    }
+    const b = base;
+    this.tween(0.6, (k) => obj.scale.copy(b).multiplyScalar(1 + Math.sin(k * Math.PI) * 0.18), ease.outCubic, () => {
+      obj.scale.copy(b);
+      this.bounceBase.delete(obj);
+    });
   }
 
   highlight(tag: string, hex: string) {
@@ -118,9 +127,12 @@ export class MissionFx {
 
   dispose() {
     this.unsub();
+    for (const [obj, base] of this.bounceBase) obj.scale.copy(base);
+    this.bounceBase.clear();
     this.tweens.clear();
     this.clearHighlights();
     this.ctx.scene.remove(this.orbs);
+    this.orbs.dispose();
     this.orbs.geometry.dispose();
     (this.orbs.material as THREE.Material).dispose();
     this.ctx.camera.zoom = 1;

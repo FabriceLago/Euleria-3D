@@ -21,7 +21,14 @@ export function setSoundOn(on: boolean) {
 
 function beep(freq: number, dur: number, type: OscillatorType = 'sine', gain = 0.04, delay = 0) {
   if (!soundOn || typeof window === 'undefined' || !('AudioContext' in window)) return;
-  ctx ??= new AudioContext();
+  if (!ctx) {
+    try {
+      ctx = new AudioContext();
+    } catch {
+      soundOn = false; // audio indisponible : on coupe pour la session, sans persister
+      return;
+    }
+  }
   if (ctx.state === 'suspended') void ctx.resume();
   const t0 = ctx.currentTime + delay;
   const osc = ctx.createOscillator();

@@ -10,7 +10,7 @@ for (const f of Object.values(ease)) {
 }
 assert.ok([0.6, 0.7, 0.8].some((t) => ease.outBack(t) > 1), 'outBack dépasse puis revient');
 
-let frame: ((dt: number) => void) | null = null;
+const subs = new Set<(dt: number) => void>();
 const scene = new THREE.Scene();
 const box = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
 box.userData.tag = 'slice-0';
@@ -18,11 +18,13 @@ const group = new THREE.Group();
 group.add(box);
 const ctx: FxContext = {
   scene, camera: new THREE.PerspectiveCamera(), modelGroup: group, isSoftwareGl: false,
-  onFrame: (cb) => ((frame = cb), () => (frame = null)),
+  onFrame: (cb) => (subs.add(cb), () => subs.delete(cb)),
   findByTag: (t) => (t === 'slice-0' ? box : null),
 };
 const fx = new MissionFx(ctx, false, '#4f46e5');
-const run = (seconds: number) => { for (let t = 0; t < seconds; t += 1 / 60) frame!(1 / 60); };
+const run = (seconds: number) => {
+  for (let t = 0; t < seconds; t += 1 / 60) for (const cb of [...subs]) cb(1 / 60);
+};
 
 let last = -1;
 let finished = false;
@@ -45,13 +47,30 @@ fx.bounce('slice-0');
 run(0.8);
 assert.ok(Math.abs(box.scale.x - 1) < 1e-9, 'échelle restaurée après le rebond');
 
+// Rebonds qui se chevauchent : l'échelle de base ne doit pas être capturée deux fois.
+fx.bounce('slice-0');
+run(0.1);
+fx.bounce('slice-0');
+run(1.0);
+assert.ok(Math.abs(box.scale.x - 1) < 1e-9, 'rebonds superposés : échelle revenue à 1');
+
 const reduced = new MissionFx(ctx, true, '#4f46e5');
+assert.equal(subs.size, 2, 'deux abonnés à la boucle');
 reduced.burst({ x: 0, y: 0, z: 0 });
 assert.equal(reduced.aliveOrbs(), 0, 'mouvement réduit : pas de particules');
+reduced.punchZoom();
+run(0.6);
+assert.equal(ctx.camera.zoom, 1, 'mouvement réduit : pas de zoom');
 reduced.dispose();
+assert.equal(subs.size, 1, 'mouvement réduit désabonné');
 
+// Dispose en plein rebond : l'échelle d'origine est restaurée.
+fx.bounce('slice-0');
+run(0.2);
+assert.ok(box.scale.x > 1, 'rebond en cours');
 const before = scene.children.length;
 fx.dispose();
+assert.ok(Math.abs(box.scale.x - 1) < 1e-9, 'dispose en plein rebond : échelle restaurée');
 assert.equal(scene.children.length, before - 1, 'particules retirées de la scène');
-assert.equal(frame, null, 'désabonné de la boucle');
+assert.equal(subs.size, 0, 'désabonné de la boucle');
 console.log('missions fx OK');
