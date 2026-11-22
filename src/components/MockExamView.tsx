@@ -523,7 +523,7 @@ export const MockExamView: React.FC<MockExamViewProps> = ({
               </div>
               {historySummary.totalExams > 0 && (
                 <span className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
-                  {historySummary.totalExams} copie{historySummary.totalExams > 1 ? 's' : ''}
+                  {historySummary.totalExams > 1 ? `${historySummary.totalExams} copies` : `${historySummary.totalExams} copie`}
                 </span>
               )}
             </div>
@@ -683,7 +683,9 @@ export const MockExamView: React.FC<MockExamViewProps> = ({
             <div className="flex items-start gap-2.5 text-sm text-amber-900 dark:text-amber-200">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>
-                Il reste <strong className="font-mono tabular-nums">{unansweredCount}</strong> question{unansweredCount > 1 ? 's' : ''} sans réponse. Voulez-vous tout de même rendre votre copie maintenant ?
+                {unansweredCount > 1
+                  ? `Il reste ${unansweredCount} questions sans réponse. Voulez-vous tout de même rendre votre copie maintenant ?`
+                  : `Il reste ${unansweredCount} question sans réponse. Voulez-vous tout de même rendre votre copie maintenant ?`}
               </span>
             </div>
             <div className="flex items-center gap-2 shrink-0">

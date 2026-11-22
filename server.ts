@@ -52,6 +52,22 @@ import {
   type FlashcardRating,
 } from './src/services/flashcardEngine.ts';
 import type { ChapterItem, GradeLevel, SubjectId } from './src/types/learning.ts';
+import { parseLang, reverseDict, translateDeep, type Dict, type Lang } from './src/i18n/core.ts';
+import enDict from './src/i18n/locales/en.json' with { type: 'json' };
+import nlDict from './src/i18n/locales/nl.json' with { type: 'json' };
+
+// Dictionnaires de traduction (FR → langue) et inverses (langue → FR) pour corriger les réponses
+const DICTS: Record<Lang, Dict> = { fr: {}, en: enDict as Dict, nl: nlDict as Dict };
+const REVERSE_DICTS: Record<Lang, Dict> = { fr: {}, en: reverseDict(DICTS.en), nl: reverseDict(DICTS.nl) };
+function reqLang(req: { query?: unknown; url?: string }): Lang {
+  const q = (req as express.Request).query;
+  if (q && typeof q === 'object') return parseLang((q as Record<string, unknown>).lang);
+  return parseLang(new URL(req.url || '/', 'http://x').searchParams.get('lang'));
+}
+/** Réponse saisie dans la langue de l'élève → texte français de référence. */
+function answerToFr(answer: string, lang: Lang): string {
+  return REVERSE_DICTS[lang][answer] ?? answer;
+}
 
 const PORT = Number(process.env.PORT) || 3000;
 const DIST_DIR = path.resolve(process.cwd(), 'dist');
@@ -69,6 +85,7 @@ interface ConnectedClient {
   gradeLevel: string;
   roomSlug: string;
   duelCode: string | null;
+  lang: Lang;
 }
 
 interface DuelParticipantInternal {
@@ -105,7 +122,7 @@ const duelRooms = new Map<string, DuelRoomInternal>();
 
 function sendToClient(client: ConnectedClient, event: string, payload: unknown) {
   if (client.ws.readyState === WebSocket.OPEN) {
-    client.ws.send(JSON.stringify({ event, payload }));
+    client.ws.send(JSON.stringify({ event, payload: translateDeep(payload, DICTS[client.lang]) }));
   }
 }
 
@@ -466,6 +483,16 @@ async function startServer() {
 
   app.use(express.json({ limit: '64kb' }));
 
+  // Traduction de toutes les réponses JSON selon ?lang= (fr par défaut, aucun coût)
+  app.use((req, res, next) => {
+    const lang = reqLang(req);
+    if (lang !== 'fr') {
+      const send = res.json.bind(res);
+      res.json = (body: unknown) => send(translateDeep(body, DICTS[lang]));
+    }
+    next();
+  });
+
   // Interception propre des corps JSON malformés ou trop volumineux (évite toute trace HTML)
   app.use(
     (
@@ -664,7 +691,7 @@ async function startServer() {
       const outcome = await recordExerciseAttempt({
         userId: user.id,
         exerciseId: parsedExerciseId,
-        submittedAnswer: submittedAnswer.trim(),
+        submittedAnswer: answerToFr(submittedAnswer.trim(), reqLang(req)),
         responseTimeMs: Number(responseTimeMs) || 6000,
       });
 
@@ -796,7 +823,7 @@ async function startServer() {
       const isFinalQuestion = session.answeredIds.size + 1 >= session.questions.length;
       const evaluation = evaluateDynamicQuestionAnswer({
         question,
-        submittedAnswer: submittedAnswer.trim(),
+        submittedAnswer: answerToFr(submittedAnswer.trim(), reqLang(req)),
         responseTimeMs: Math.max(500, Math.min(Number(responseTimeMs) || 10000, 300000)),
         currentStreak: session.currentStreak,
         isFinalQuestion,
@@ -994,7 +1021,7 @@ async function startServer() {
       const safeAnswers: Record<string, string> = {};
       for (const [k, v] of Object.entries(answers as Record<string, unknown>)) {
         if (validQuestionIds.has(k) && typeof v === 'string') {
-          safeAnswers[k] = v.trim().slice(0, 256);
+          safeAnswers[k] = answerToFr(v.trim().slice(0, 256), reqLang(req));
         }
       }
 
@@ -1316,6 +1343,7 @@ async function startServer() {
       gradeLevel: '6e',
       roomSlug: 'entraide-college',
       duelCode: null,
+      lang: reqLang(req),
     };
     let msgTimestamps: number[] = [];
     clients.add(client);
@@ -1534,7 +1562,7 @@ async function startServer() {
           const activeQ = room.questions[room.currentIndex];
           if (!activeQ || activeQ.id !== data.questionId) return;
 
-          const cleanAns = data.answer.trim().slice(0, 256);
+          const cleanAns = answerToFr(data.answer.trim().slice(0, 256), client.lang);
           const isCorrect = evaluateExerciseAnswer(
             activeQ.exerciseType,
             cleanAns,

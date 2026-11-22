@@ -1,5 +1,7 @@
 import React from 'react';
 import type { AccentColor, UserProfile } from '../types/learning.ts';
+import { LANGS, LANG_LABELS, parseLang } from '../i18n/core.ts';
+import { setLang, useI18n } from '../i18n/I18nProvider.tsx';
 
 export type AppSection = 'curriculum' | 'quiz' | 'studio3d' | 'leaderboard' | 'collaboration';
 
@@ -29,12 +31,13 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenCustomization,
   onSignIn,
 }) => {
+  const { lang, t } = useI18n();
   const navItems: Array<{ id: AppSection; label: string }> = [
-    { id: 'curriculum', label: 'Programme' },
-    { id: 'quiz', label: 'Quiz & Examens' },
-    { id: 'studio3d', label: 'Atelier 3D' },
-    { id: 'leaderboard', label: 'Bilan & Rang' },
-    { id: 'collaboration', label: 'Entraide' },
+    { id: 'curriculum', label: t('Programme') },
+    { id: 'quiz', label: t('Quiz & Examens') },
+    { id: 'studio3d', label: t('Atelier 3D') },
+    { id: 'leaderboard', label: t('Bilan & Rang') },
+    { id: 'collaboration', label: t('Entraide') },
   ];
 
   return (
@@ -71,7 +74,19 @@ export const TopBar: React.FC<TopBarProps> = ({
         </nav>
 
         {/* Zone 3 : 1 action principale */}
-        <div className="flex items-center shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <select
+            aria-label={t('Langue')}
+            value={lang}
+            onChange={(e) => setLang(parseLang(e.target.value))}
+            className="px-2 py-2 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 cursor-pointer"
+          >
+            {LANGS.map((l) => (
+              <option key={l} value={l}>
+                {l.toUpperCase()} · {LANG_LABELS[l]}
+              </option>
+            ))}
+          </select>
           {profile ? (
             <button
               type="button"
@@ -91,7 +106,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               onClick={onSignIn}
               className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 disabled:opacity-60 cursor-pointer ${ACCENT_BTN_MAP[accentColor]}`}
             >
-              {signingIn ? 'Connexion...' : 'Connexion Google'}
+              {signingIn ? t('Connexion...') : t('Connexion Google')}
             </button>
           )}
         </div>

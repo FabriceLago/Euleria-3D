@@ -12,7 +12,9 @@ import {
   isSupabaseConfigured,
   updateSupabasePreferences,
 } from './lib/supabase.ts';
-import { ALL_SEED_CHAPTERS, ALL_SEED_ROOMS } from './db/curriculumData.ts';
+import { ALL_SEED_CHAPTERS, ALL_SEED_ROOMS as RAW_SEED_ROOMS } from './db/curriculumData.ts';
+import { translateDeep } from './i18n/core.ts';
+import { useI18n } from './i18n/I18nProvider.tsx';
 import type {
   AccentColor,
   ChapterItem,
@@ -75,6 +77,8 @@ function buildLocalCurriculum(): ChapterItem[] {
 }
 
 const PlatformShell: React.FC = () => {
+  const { dict, t } = useI18n();
+  const ALL_SEED_ROOMS = translateDeep(RAW_SEED_ROOMS, dict);
   const {
     firebaseUser,
     profile,
@@ -200,7 +204,7 @@ const PlatformShell: React.FC = () => {
         if (!mounted) return;
         // Hébergement statique détecté : programme complet en local + synchronisation Supabase si configurée
         setBackendAvailable(false);
-        setChapters(buildLocalCurriculum());
+        setChapters(translateDeep(buildLocalCurriculum(), dict));
 
         if (isSupabaseConfigured) {
           try {
@@ -454,9 +458,9 @@ const PlatformShell: React.FC = () => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(payload));
     } else {
-      setDuelError('Connexion WebSocket indisponible. Patientez un instant ou rechargez la page.');
+      setDuelError(t('Connexion WebSocket indisponible. Patientez un instant ou rechargez la page.'));
     }
-  }, []);
+  }, [t]);
 
   const handleCreateDuel = useCallback(
     (opts: { subject: SubjectId | 'all'; gradeLevel: GradeLevel; questionCount: number }) => {
@@ -528,7 +532,7 @@ const PlatformShell: React.FC = () => {
       {!loadingCurriculum && !backendAvailable && !isSupabaseConfigured && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
           <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-xs text-amber-800 dark:text-amber-200">
-            Mode autonome actif : les 126 chapitres, modèles 3D WebGL et 378 exercices sont pleinement utilisables. Configurez Supabase (<span className="font-mono">VITE_SUPABASE_URL</span> / <span className="font-mono">VITE_SUPABASE_ANON_KEY</span>) ou <span className="font-mono">VITE_API_BASE_URL</span> pour synchroniser comptes, classement et salons.
+            {t('Mode autonome actif : les 126 chapitres, modèles 3D WebGL et 378 exercices sont pleinement utilisables. Configurez Supabase')} (<span className="font-mono">VITE_SUPABASE_URL</span> / <span className="font-mono">VITE_SUPABASE_ANON_KEY</span>) {t('ou')} <span className="font-mono">VITE_API_BASE_URL</span> {t('pour synchroniser comptes, classement et salons.')}
           </div>
         </div>
       )}
@@ -538,11 +542,11 @@ const PlatformShell: React.FC = () => {
         <div>
           {profile ? (
             <span>
-              Bienvenue, <strong className="text-slate-900 dark:text-white">{profile.displayName}</strong> · Niveau {profile.gradeLevel} · Série {profile.streakDays} j.
+              {t('Bienvenue,')} <strong className="text-slate-900 dark:text-white">{profile.displayName}</strong> · {t('Niveau {grade} · Série {days} j.', { grade: profile.gradeLevel, days: profile.streakDays })}
             </span>
           ) : (
             <span>
-              Mode exploration · Connectez-vous avec Google pour enregistrer vos progrès et discuter en direct
+              {t('Mode exploration · Connectez-vous avec Google pour enregistrer vos progrès et discuter en direct')}
             </span>
           )}
         </div>
@@ -553,7 +557,7 @@ const PlatformShell: React.FC = () => {
             onClick={() => setDrawerOpen(true)}
             className="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white underline whitespace-nowrap shrink-0 cursor-pointer"
           >
-            Personnaliser l’interface
+            {t('Personnaliser l’interface')}
           </button>
         </div>
       </div>
@@ -561,7 +565,7 @@ const PlatformShell: React.FC = () => {
       <main className="pb-14">
         {loadingCurriculum ? (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-sm text-slate-500 dark:text-slate-400">
-            Initialisation des programmes scientifiques et du moteur WebGL...
+            {t('Initialisation des programmes scientifiques et du moteur WebGL...')}
           </div>
         ) : activeSection === 'curriculum' ? (
           <ChapterWorkspace
@@ -615,7 +619,7 @@ const PlatformShell: React.FC = () => {
           <Suspense
             fallback={
               <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-sm text-slate-500 dark:text-slate-400">
-                Chargement du module interactif...
+                {t('Chargement du module interactif...')}
               </div>
             }
           >

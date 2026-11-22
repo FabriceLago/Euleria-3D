@@ -255,7 +255,7 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
                       kind: 'progress-bulletin',
                       plan: activePlan,
                       profile,
-                      generatedAt: new Date().toLocaleDateString('fr-FR'),
+                      generatedAt: new Date().toLocaleDateString(document.documentElement.lang),
                     })
                   }
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap cursor-pointer"
@@ -272,8 +272,9 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
                   </span>
                 </div>
                 <div className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
-                  {goalPct}% atteint · {activePlan.weeklyActionsCount} activité
-                  {activePlan.weeklyActionsCount > 1 ? 's' : ''}
+                  {activePlan.weeklyActionsCount > 1
+                    ? `${goalPct}% atteint · ${activePlan.weeklyActionsCount} activités`
+                    : `${goalPct}% atteint · ${activePlan.weeklyActionsCount} activité`}
                 </div>
               </div>
             </div>
@@ -451,8 +452,9 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
                 <span>Répétition espacée (SM-2)</span>
               </div>
               <span className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
-                {activePlan.masteredFlashcardsCount} maîtrisée
-                {activePlan.masteredFlashcardsCount > 1 ? 's' : ''}
+                {activePlan.masteredFlashcardsCount > 1
+                  ? `${activePlan.masteredFlashcardsCount} maîtrisées`
+                  : `${activePlan.masteredFlashcardsCount} maîtrisée`}
               </span>
             </div>
 
@@ -477,7 +479,7 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
                           {due.chapterTitle}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-                          {due.subjectLabel} · {due.dueCount} carte{due.dueCount > 1 ? 's' : ''} à revoir
+                          {due.subjectLabel} · {due.dueCount > 1 ? `${due.dueCount} cartes à revoir` : `${due.dueCount} carte à revoir`}
                         </div>
                       </div>
                       {ch && (

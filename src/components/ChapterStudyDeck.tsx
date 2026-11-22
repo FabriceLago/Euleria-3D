@@ -357,7 +357,7 @@ export const ChapterStudyDeck: React.FC<ChapterStudyDeckProps> = ({
                           kind: 'study-sheet',
                           sheet: studySheet,
                           subjectLabel: subjLabel,
-                          generatedAt: new Date().toLocaleDateString('fr-FR'),
+                          generatedAt: new Date().toLocaleDateString(document.documentElement.lang),
                         });
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap cursor-pointer"
@@ -465,7 +465,7 @@ export const ChapterStudyDeck: React.FC<ChapterStudyDeckProps> = ({
                   </span>
                   <span className="mx-1.5" aria-hidden="true">·</span>
                   <span>
-                    {masteredCount} maîtrisée{masteredCount > 1 ? 's' : ''}
+                    {masteredCount > 1 ? `${masteredCount} maîtrisées` : `${masteredCount} maîtrisée`}
                   </span>
                   <span className="mx-1.5" aria-hidden="true">·</span>
                   <span>
