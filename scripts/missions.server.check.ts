@@ -5,6 +5,7 @@ import { validateMissionCompletion } from '../src/missions/serverValidation.ts';
 
 assert.deepEqual(validateMissionCompletion({ missionId: 'fractions-3', stars: 3, timeMs: 20000 }), { ok: true, xp: 40 });
 assert.deepEqual(validateMissionCompletion({ missionId: 'fractions-1', stars: 2, timeMs: 5000 }), { ok: true, xp: 15 });
+assert.deepEqual(validateMissionCompletion({ missionId: 'fractions-1', stars: 3, timeMs: 400 }), { ok: true, xp: 20 });
 for (const bad of [
   { missionId: 'inconnue', stars: 3, timeMs: 5000 },
   { missionId: 'fractions-1', stars: 4, timeMs: 5000 },

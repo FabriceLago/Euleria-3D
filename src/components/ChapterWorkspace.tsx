@@ -75,6 +75,7 @@ interface ChapterWorkspaceProps {
   onMistakeRecorded?: (mistake: MistakeItem) => void;
   onMissionComplete?: (r: MissionResult) => void;
   onMissionFailed?: (r: MissionResult, chapter: ChapterItem) => void;
+  missionXpEnabled?: boolean;
 }
 
 const ACCENT_RING_MAP: Record<AccentColor, string> = {
@@ -109,6 +110,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
   onMistakeRecorded,
   onMissionComplete,
   onMissionFailed,
+  missionXpEnabled,
 }) => {
   const subjectChapters = useMemo(
     () => chapters.filter((c) => (c.subject || 'mathematics') === selectedSubject),
@@ -491,6 +493,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
           <MathViewport3D
             onMissionComplete={onMissionComplete}
             onMissionFailed={(r) => onMissionFailed?.(r, activeChapter)}
+            missionXpEnabled={missionXpEnabled}
             preset={activeChapter.scenePreset}
             chapterTitle={activeChapter.title}
             defaultParams={activeChapter.defaultParams}

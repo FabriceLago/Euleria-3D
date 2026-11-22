@@ -26,6 +26,7 @@ interface MathViewport3DProps {
   heightClass?: string;
   onMissionComplete?: (r: MissionResult) => void;
   onMissionFailed?: (r: MissionResult) => void;
+  missionXpEnabled?: boolean;
 }
 
 const ACCENT_HEX_MAP: Record<AccentColor, string> = {
@@ -45,6 +46,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
   heightClass = 'h-[440px] lg:h-[520px]',
   onMissionComplete,
   onMissionFailed,
+  missionXpEnabled = false,
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<MathSceneEngine | null>(null);
@@ -211,6 +213,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
     setActive(m);
     setRun(r);
     setShowHint(false);
+    setClock(0);
     failReported.current = false;
     applyStart({ ...m.start, ...r.rounds[0].start });
     handleCameraChange('perspective');
@@ -279,7 +282,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
     const engine = engineRef.current;
     if (!el || !engine || !active || run?.phase !== 'playing') return;
     const controls = active.kind === 'adjust' ? active.controls ?? [] : [];
-    return attachGestures(
+    const detach = attachGestures(
       el,
       controls,
       {
@@ -298,7 +301,8 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
         },
         onEnd: () => {
           const r = runRef.current;
-          if (active.kind === 'adjust' && r?.phase === 'playing' && r.rounds[r.round].goal?.(paramsRef.current)) handleSolved();
+          // Victoire automatique au niveau 1 seulement ; aux niveaux 2-3 l'élève valide
+          if (active.level === 1 && active.kind === 'adjust' && r?.phase === 'playing' && r.rounds[r.round].goal?.(paramsRef.current)) handleSolved();
         },
         pick: (x, y) => engine.pick(x, y),
         dialCenter: () => {
@@ -310,6 +314,20 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
       },
       active.kind === 'identify' ? engine.listTags() : []
     );
+    // Entrée valide (comme le bouton « Valider ») pour les missions d'ajustement
+    const onEnter = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.repeat || active.kind !== 'adjust') return;
+      const r = runRef.current;
+      if (r?.phase !== 'playing') return;
+      e.preventDefault();
+      if (r.rounds[r.round].goal?.(paramsRef.current)) handleSolved();
+      else handleWrong();
+    };
+    el.addEventListener('keydown', onEnter);
+    return () => {
+      detach();
+      el.removeEventListener('keydown', onEnter);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, run?.phase]);
 
@@ -367,7 +385,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
   return (
     <div
       className={`relative w-full ${heightClass} rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 select-none`}
-      style={{ touchAction: missionsOpen ? 'none' : undefined }}
+      style={{ touchAction: active ? 'none' : undefined }}
     >
       {/* Conteneur WebGL isolé */}
       <div
@@ -562,7 +580,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
           run={run}
           timeLeftS={timeLeftS}
           stars={stars}
-          xp={xp}
+          xp={missionXpEnabled ? xp : null}
           showHint={showHint}
           soundOn={soundOn}
           onPick={startMission}

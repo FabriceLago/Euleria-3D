@@ -104,7 +104,7 @@ export function attachGestures(el: HTMLElement, controls: MissionControl[], h: G
   };
 
   const key = (e: KeyboardEvent) => {
-    const tag = digitTag(e.key, identifyTags);
+    const tag = e.repeat ? null : digitTag(e.key, identifyTags);
     if (tag !== null) {
       e.preventDefault();
       h.onTap(tag);

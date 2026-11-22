@@ -16,6 +16,7 @@ interface Studio3DViewProps {
   onOpenChapterInCourse: (chapter: ChapterItem) => void;
   onMissionComplete?: (r: MissionResult) => void;
   onMissionFailed?: (r: MissionResult, chapter: ChapterItem) => void;
+  missionXpEnabled?: boolean;
 }
 
 export const Studio3DView: React.FC<Studio3DViewProps> = ({
@@ -29,6 +30,7 @@ export const Studio3DView: React.FC<Studio3DViewProps> = ({
   onOpenChapterInCourse,
   onMissionComplete,
   onMissionFailed,
+  missionXpEnabled,
 }) => {
   const [grade, setGrade] = useState<GradeLevel>(initialGrade);
   const subjectChapters = useMemo(
@@ -149,6 +151,7 @@ export const Studio3DView: React.FC<Studio3DViewProps> = ({
       <MathViewport3D
         onMissionComplete={onMissionComplete}
         onMissionFailed={(r) => onMissionFailed?.(r, activeChapter)}
+        missionXpEnabled={missionXpEnabled}
         preset={activeChapter.scenePreset}
         chapterTitle={activeChapter.title}
         defaultParams={activeChapter.defaultParams}

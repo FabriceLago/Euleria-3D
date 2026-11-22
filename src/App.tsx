@@ -660,6 +660,7 @@ const PlatformShell: React.FC = () => {
             onMistakeRecorded={handleRecordMistake}
             onMissionComplete={handleMissionComplete}
             onMissionFailed={handleMissionFailed}
+            missionXpEnabled={backendAvailable && !!profile}
           />
         ) : (
           <Suspense
@@ -703,6 +704,7 @@ const PlatformShell: React.FC = () => {
                 onOpenChapterInCourse={handleOpenChapter}
                 onMissionComplete={handleMissionComplete}
                 onMissionFailed={handleMissionFailed}
+                missionXpEnabled={backendAvailable && !!profile}
               />
             ) : activeSection === 'leaderboard' ? (
               <LeaderboardView

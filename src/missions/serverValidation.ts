@@ -2,7 +2,7 @@
 import { findMission } from './catalog/index.ts';
 import { missionXp } from './runner.ts';
 
-const MIN_HUMAN_MS = 1500; // ponytail: plancher anti-robot simple ; plafonner par mission et par jour si un abus apparaît
+const MIN_HUMAN_MS = 300; // ponytail: plancher anti-robot minimal (un tap rapide au niveau 1 est légitime) ; plafonner par mission et par jour si un abus apparaît
 
 export function validateMissionCompletion(body: unknown): { ok: true; xp: number } | { ok: false } {
   if (!body || typeof body !== 'object') return { ok: false };
