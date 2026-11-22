@@ -23,6 +23,12 @@ export function tapValue(c: MissionControl, tag: string): number | null {
   return Number.isFinite(n) ? snap(n + (c.offset ?? 0), c.min, c.max, c.step) : null;
 }
 
+/** Touche chiffre '1'..'9' → étiquette d'identification correspondante (ou null). */
+export function digitTag(key: string, tags: string[]): string | null {
+  if (!/^[1-9]$/.test(key)) return null;
+  return tags[Number(key) - 1] ?? null;
+}
+
 const KEYS: Partial<Record<MissionControl['gesture'], Record<string, number>>> = {
   'drag-x': { ArrowRight: 1, ArrowLeft: -1 },
   dial: { ArrowRight: 1, ArrowLeft: -1 },
@@ -46,7 +52,7 @@ export interface GestureHandlers {
 const TAP_SLOP_PX = 6;
 
 /** Branche les gestes sur l'élément ; renvoie la fonction de nettoyage. */
-export function attachGestures(el: HTMLElement, controls: MissionControl[], h: GestureHandlers): () => void {
+export function attachGestures(el: HTMLElement, controls: MissionControl[], h: GestureHandlers, identifyTags: string[] = []): () => void {
   let drag: { id: number; x: number; y: number; tag: string | null; start: Record<ParamKey, number>; moved: boolean } | null = null;
 
   const down = (e: PointerEvent) => {
@@ -90,7 +96,21 @@ export function attachGestures(el: HTMLElement, controls: MissionControl[], h: G
     h.onEnd();
   };
 
+  // Annulation navigateur (ex. reprise du doigt) : aucun tap, aucune valeur modifiée.
+  const cancel = (e: PointerEvent) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag = null;
+    el.releasePointerCapture?.(e.pointerId);
+  };
+
   const key = (e: KeyboardEvent) => {
+    const tag = digitTag(e.key, identifyTags);
+    if (tag !== null) {
+      e.preventDefault();
+      h.onTap(tag);
+      h.onEnd();
+      return;
+    }
     for (const c of controls) {
       const v = keyValue(c, h.getValue(c.param), e.key);
       if (v !== null) {
@@ -105,13 +125,15 @@ export function attachGestures(el: HTMLElement, controls: MissionControl[], h: G
   el.addEventListener('pointerdown', down);
   el.addEventListener('pointermove', move);
   el.addEventListener('pointerup', up);
-  el.addEventListener('pointercancel', up);
+  el.addEventListener('pointercancel', cancel);
+  el.addEventListener('lostpointercapture', cancel);
   el.addEventListener('keydown', key);
   return () => {
     el.removeEventListener('pointerdown', down);
     el.removeEventListener('pointermove', move);
     el.removeEventListener('pointerup', up);
-    el.removeEventListener('pointercancel', up);
+    el.removeEventListener('pointercancel', cancel);
+    el.removeEventListener('lostpointercapture', cancel);
     el.removeEventListener('keydown', key);
   };
 }

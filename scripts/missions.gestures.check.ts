@@ -1,7 +1,7 @@
 // Gestes : glissé → cran, molette d'angle, toucher d'étiquette, clavier.
 //   npx tsx scripts/missions.gestures.check.ts
 import assert from 'node:assert';
-import { dialValue, dragValue, keyValue, snap, tapValue } from '../src/missions/gestures.ts';
+import { digitTag, dialValue, dragValue, keyValue, snap, tapValue } from '../src/missions/gestures.ts';
 import type { MissionControl } from '../src/missions/types.ts';
 
 const dx: MissionControl = { param: 'a', gesture: 'drag-x', min: 1, max: 12, step: 1, pxPerStep: 20 };
@@ -32,4 +32,8 @@ assert.equal(keyValue(dx, 1, 'ArrowLeft'), 1);
 assert.equal(keyValue(dy, 4, 'ArrowUp'), 5);
 assert.equal(keyValue(dy, 4, 'ArrowRight'), null);
 assert.equal(keyValue(tap, 4, 'ArrowRight'), null);
+assert.equal(digitTag('2', ['step-0', 'step-1']), 'step-1');
+assert.equal(digitTag('3', ['a', 'b']), null);
+assert.equal(digitTag('0', ['a']), null);
+assert.equal(digitTag('x', ['a']), null);
 console.log('missions gestures OK');
