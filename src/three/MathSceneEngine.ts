@@ -2308,7 +2308,30 @@ export class MathSceneEngine {
         surface.receiveShadow = true;
         this.modelGroup.add(surface);
 
-        // Gradient trajectory spheres along sigmoid slice z=0
+        // Suivi EWMA devant la surface : réponses y_t (vert = réussite, rouge = échec) au sol,
+        // estimation P_t = α·y_t + (1 − α)·P_{t−1} (P₀ = 0,5) en hauteur. α grand → courbe nerveuse.
+        const answers = [1, 1, 0, 1, 1, 0, 1, 1];
+        const zRow = size / 2 + 0.5;
+        const okMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4 });
+        const koMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
+        const track: THREE.Vector3[] = [];
+        let est = 0.5;
+        answers.forEach((yt, t) => {
+          est = c * yt + (1 - c) * est;
+          const x = -size / 2 + (t + 0.5) * (size / answers.length);
+          const mark = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 0.22), yt ? okMat : koMat);
+          mark.position.set(x, 0.14, zRow);
+          this.modelGroup.add(mark);
+          const p = new THREE.Vector3(x, 0.25 + est * 2.4, zRow);
+          track.push(p);
+          const dotMesh = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), warmBrassMat);
+          dotMesh.position.copy(p);
+          this.modelGroup.add(dotMesh);
+        });
+        this.modelGroup.add(
+          new THREE.Line(new THREE.BufferGeometry().setFromPoints(track), new THREE.LineBasicMaterial({ color: 0xf59e0b }))
+        );
+
         // Seuil de décision σ = 50 % en x = −b / w (repère vertical)
         const xThr = -b / a;
         if (Math.abs(xThr) <= size / 2) {
@@ -2808,7 +2831,7 @@ export class MathSceneEngine {
 
         if (molIdx === 1) {
           // H2O bent molecule + dipole vector
-          const halfAngle = THREE.MathUtils.degToRad(Math.min(175, Math.max(70, b)) / 2);
+          const halfAngle = THREE.MathUtils.degToRad(Math.min(180, Math.max(70, b)) / 2);
           const oAtom = new THREE.Mesh(new THREE.SphereGeometry(0.52, 28, 28), matO);
           oAtom.position.copy(centerPos);
           oAtom.castShadow = true;
@@ -3016,7 +3039,9 @@ export class MathSceneEngine {
         const waveGeo = new THREE.PlaneGeometry(size, size, segs, segs);
         waveGeo.rotateX(-Math.PI / 2);
         const pos = waveGeo.attributes.position;
-        const k = Math.max(0.8, a * 1.3);
+        // Même λ que l'affichage (λ = v / f, f = 200·a Hz), compressé pour rester lisible à l'écran
+        const lambda = c / Math.max(1, Math.round(a * 200));
+        const k = (2 * Math.PI) / Math.min(4, 0.3 + 0.5 * lambda);
         const amp = Math.max(0.15, Math.min(1.0, b * 0.55));
         for (let i = 0; i < pos.count; i++) {
           const x = pos.getX(i);
