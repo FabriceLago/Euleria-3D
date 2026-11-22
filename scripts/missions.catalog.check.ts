@@ -5,14 +5,20 @@ import { getParamMetadataForPreset } from '../src/three/MathSceneEngine.ts';
 import { ALL_MISSIONS, findMission, getMissionsForPreset } from '../src/missions/catalog/index.ts';
 import type { MissionDef, MissionParams, MissionRound } from '../src/missions/types.ts';
 
-const seeded = () => {
-  let s = 42;
+const seeded = (seed: number) => {
+  let s = seed;
   return () => ((s = (s * 16807) % 2147483647) / 2147483647);
 };
+// Niveau 3 : 50 tirages pour couvrir toutes les manches possibles de chaque série
 const rounds = (m: MissionDef): MissionRound[] =>
-  m.rounds ? m.rounds(seeded()) : [{ prompt: m.prompt, start: m.start, goal: m.goal, targetTag: m.targetTag, solution: m.solution }];
+  m.rounds
+    ? Array.from({ length: 50 }, (_, i) => m.rounds!(seeded(i + 1))).flat()
+    : [{ prompt: m.prompt, start: m.start, goal: m.goal, targetTag: m.targetTag, solution: m.solution }];
 
-const PILOTS = ['fractions_3d', 'pc_optics_3d', 'svt_dna_3d', 'hg_timeline_3d', 'fr_narrative_3d', 'en_tense_3d'];
+const PILOTS = [
+  'fractions_3d', 'pc_optics_3d', 'svt_dna_3d', 'hg_timeline_3d', 'fr_narrative_3d', 'en_tense_3d',
+  'volumes_6e', 'angles_5e', 'pythagore_4e', 'trigonometrie_3e', 'sphere_3e', 'integrales_term',
+];
 for (const preset of PILOTS) {
   const ms = getMissionsForPreset(preset);
   assert.deepEqual(ms.map((m) => m.level), [1, 2, 3], `${preset} : 3 niveaux attendus`);
