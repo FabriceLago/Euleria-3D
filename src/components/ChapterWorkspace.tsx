@@ -435,7 +435,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
 
       {/* Sélecteur de chapitres du niveau actif */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {gradeChapters.map((ch) => {
+        {gradeChapters.map((ch, chIdx) => {
           const isSelected = ch.id === activeChapter.id;
           const prog = progressMap.get(ch.id);
           const completed = prog?.status === 'completed';
@@ -454,7 +454,8 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
             >
               <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <span>
-                  Chapitre 0{ch.orderIndex} · {ch.estimatedMinutes} min · {ch.xpReward} XP
+                  {/* Position dans le niveau : orderIndex vaut 101, 102… pour certaines matières */}
+                  Chapitre 0{chIdx + 1} · {ch.estimatedMinutes} min · {ch.xpReward} XP
                 </span>
                 {completed && (
                   <span className="inline-flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400">
