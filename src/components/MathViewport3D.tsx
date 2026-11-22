@@ -24,7 +24,8 @@ interface MathViewport3DProps {
   accentColor: AccentColor;
   showGrid: boolean;
   heightClass?: string;
-  onMissionComplete?: (r: MissionResult) => void;
+  /** Peut renvoyer les XP réellement accordées par le serveur, affichées à la place de l'estimation */
+  onMissionComplete?: (r: MissionResult) => void | Promise<number | null>;
   onMissionFailed?: (r: MissionResult) => void;
   missionXpEnabled?: boolean;
 }
@@ -214,6 +215,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
     setRun(r);
     setShowHint(false);
     setClock(0);
+    setGrantedXp(null);
     failReported.current = false;
     applyStart({ ...m.start, ...r.rounds[0].start });
     handleCameraChange('perspective');
@@ -360,13 +362,20 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
   // Fin de mission : étoiles, XP affichées, sauvegarde locale, résultat au parent
   const stars = run?.phase === 'done' ? computeStars(run) : null;
   const xp = active && stars ? missionXp(active.level, stars) : null;
+  // XP réellement accordées par le serveur : seule valeur affichée (0 si plafond quotidien atteint)
+  const [grantedXp, setGrantedXp] = useState<number | null>(null);
   useEffect(() => {
     if (!active || !run || run.phase !== 'done') return;
     const s = computeStars(run);
     for (let i = 0; i < s; i++) setTimeout(() => sfx.star(i), 250 + i * 250);
     if (s > 0) {
       setBest(saveBest(active.id, s));
-      onMissionComplete?.(missionResult(active, s, elapsedMs(run, performance.now())));
+      const token = runToken.current; // ignore une réponse arrivée après un « Rejouer » ou un changement de chapitre
+      void Promise.resolve(onMissionComplete?.(missionResult(active, s, elapsedMs(run, performance.now())))).then(
+        (granted) => {
+          if (typeof granted === 'number' && token === runToken.current) setGrantedXp(granted);
+        }
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run?.phase]);
@@ -580,7 +589,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
           run={run}
           timeLeftS={timeLeftS}
           stars={stars}
-          xp={missionXpEnabled ? xp : null}
+          xp={missionXpEnabled ? grantedXp : null}
           showHint={showHint}
           soundOn={soundOn}
           onPick={startMission}

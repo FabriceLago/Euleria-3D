@@ -14,7 +14,7 @@ interface Studio3DViewProps {
   accentColor: AccentColor;
   showGrid: boolean;
   onOpenChapterInCourse: (chapter: ChapterItem) => void;
-  onMissionComplete?: (r: MissionResult) => void;
+  onMissionComplete?: (r: MissionResult) => void | Promise<number | null>;
   onMissionFailed?: (r: MissionResult, chapter: ChapterItem) => void;
   missionXpEnabled?: boolean;
 }

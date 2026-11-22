@@ -73,7 +73,7 @@ interface ChapterWorkspaceProps {
   onXpSynced?: (newTotalXp: number, newBadges: BadgeItem[]) => void;
   onPrintDocument?: (doc: PrintableDocument) => void;
   onMistakeRecorded?: (mistake: MistakeItem) => void;
-  onMissionComplete?: (r: MissionResult) => void;
+  onMissionComplete?: (r: MissionResult) => void | Promise<number | null>;
   onMissionFailed?: (r: MissionResult, chapter: ChapterItem) => void;
   missionXpEnabled?: boolean;
 }
