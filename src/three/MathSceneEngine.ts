@@ -23,6 +23,16 @@ export interface LiveMathReadout {
   formulaLive: string;
 }
 
+/** Accès minimal pour les effets de mission (src/missions/fx.ts) : aucune logique de jeu dans le moteur. */
+export interface FxContext {
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  modelGroup: THREE.Group;
+  isSoftwareGl: boolean;
+  onFrame(cb: (dt: number) => void): () => void;
+  findByTag(tag: string): THREE.Object3D | null;
+}
+
 export interface ParamMetadata {
   labelA: string;
   minA: number;
@@ -1553,6 +1563,9 @@ export class MathSceneEngine {
   private params: SceneParams;
   private cameraTransitionActive = false;
   private onContextLostCb?: (lost: boolean) => void;
+  private frameListeners = new Set<(dt: number) => void>();
+  private raycaster = new THREE.Raycaster();
+  private pointerNdc = new THREE.Vector2();
 
   constructor(
     container: HTMLElement,
@@ -1602,6 +1615,14 @@ export class MathSceneEngine {
     this.camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 120);
     this.camera.position.set(6.5, 5.2, 7.5);
 
+    // Molette : défilement de la page ; zoom 3D seulement avec Ctrl (le pincement d'un pavé tactile envoie aussi ctrlKey)
+    this.renderer.domElement.addEventListener(
+      'wheel',
+      (e) => {
+        if (!e.ctrlKey) e.stopImmediatePropagation();
+      },
+      { capture: true }
+    );
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.target.set(0, 1.0, 0);
     this.controls.enableDamping = !this.isSoftwareGl;
@@ -1749,6 +1770,63 @@ export class MathSceneEngine {
     }
   }
 
+  /** Étiquette (userData.tag) de l'objet sous le pointeur, ou null. Ne teste que les objets étiquetés. */
+  public pick(clientX: number, clientY: number): string | null {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.pointerNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+    this.raycaster.setFromCamera(this.pointerNdc, this.camera);
+    const tagged: THREE.Object3D[] = [];
+    this.modelGroup.traverse((o) => {
+      if (o.userData.tag) tagged.push(o);
+    });
+    const hit = this.raycaster.intersectObjects(tagged, false)[0];
+    return hit ? String(hit.object.userData.tag) : null;
+  }
+
+  public findByTag(tag: string): THREE.Object3D | null {
+    let found: THREE.Object3D | null = null;
+    this.modelGroup.traverse((o) => {
+      if (!found && o.userData.tag === tag) found = o;
+    });
+    return found;
+  }
+
+  /** Étiquettes des objets de la scène, dans l'ordre de construction (accès clavier des missions d'identification). */
+  public listTags(): string[] {
+    const tags: string[] = [];
+    this.modelGroup.traverse((o) => {
+      if (o.userData.tag) tags.push(String(o.userData.tag));
+    });
+    return tags;
+  }
+
+  public setOrbitEnabled(enabled: boolean) {
+    this.controls.enabled = enabled;
+  }
+
+  public onFrame(cb: (dt: number) => void): () => void {
+    this.frameListeners.add(cb);
+    return () => this.frameListeners.delete(cb);
+  }
+
+  public projectToScreen(obj: THREE.Object3D): { x: number; y: number } {
+    const v = new THREE.Vector3();
+    obj.getWorldPosition(v).project(this.camera);
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    return { x: rect.left + ((v.x + 1) / 2) * rect.width, y: rect.top + ((1 - v.y) / 2) * rect.height };
+  }
+
+  public getFxContext(): FxContext {
+    return {
+      scene: this.scene,
+      camera: this.camera,
+      modelGroup: this.modelGroup,
+      isSoftwareGl: this.isSoftwareGl,
+      onFrame: (cb) => this.onFrame(cb),
+      findByTag: (tag) => this.findByTag(tag),
+    };
+  }
+
   public updateParams(next: Partial<SceneParams>) {
     const prevTheme = this.params.darkMode;
     const prevPreset = this.params.preset;
@@ -1888,6 +1966,7 @@ export class MathSceneEngine {
             active ? accentMat : brushedMetalMat
           );
           slice.position.set(startX + i * (sliceW + gap), 0.12 + h / 2, 0);
+          slice.userData.tag = `slice-${i}`;
           slice.castShadow = true;
           slice.receiveShadow = true;
           this.modelGroup.add(slice);
@@ -2466,6 +2545,7 @@ export class MathSceneEngine {
           brushedMetalMat
         );
         normalRod.position.set(0, surfaceY, 0);
+        normalRod.userData.tag = 'normal';
         this.modelGroup.add(normalRod);
 
         // Incident laser emitter + ray (from upper left to (0, surfaceY, 0))
@@ -4289,6 +4369,7 @@ export class MathSceneEngine {
           );
           pillar.position.set(x, 0.14 + h / 2 + explode * (i === Math.floor(steps / 2) ? 0.35 : 0.05), 0);
           pillar.castShadow = true;
+          pillar.userData.tag = `step-${i}`;
           this.modelGroup.add(pillar);
         }
 
@@ -4564,6 +4645,7 @@ export class MathSceneEngine {
           );
           post.position.set(xs[i], 0.14 + h / 2 + (active ? explode * 0.3 : 0), 0);
           post.castShadow = true;
+          post.userData.tag = `tense-${i + 1}`;
           this.modelGroup.add(post);
 
           if (active) {
@@ -4914,6 +4996,7 @@ export class MathSceneEngine {
         }
       }
 
+      this.frameListeners.forEach((cb) => cb(delta));
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
 
