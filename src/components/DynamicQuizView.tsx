@@ -554,8 +554,9 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-                    1. Sélectionnez vos chapitres sources ({selectedIds.length} sélectionné
-                    {selectedIds.length > 1 ? 's' : ''})
+                    {selectedIds.length > 1
+                      ? `1. Sélectionnez vos chapitres sources (${selectedIds.length} sélectionnés)`
+                      : `1. Sélectionnez vos chapitres sources (${selectedIds.length} sélectionné)`}
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Les questions, valeurs numériques et formules sont générées dynamiquement à partir des chapitres cochés.

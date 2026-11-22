@@ -109,7 +109,7 @@ export const GrandOralView: React.FC<GrandOralViewProps> = ({
   const handlePrintBrief = () => {
     onPrintDocument({
       kind: 'grand-oral-brief',
-      generatedAt: new Date().toLocaleDateString('fr-FR'),
+      generatedAt: new Date().toLocaleDateString(document.documentElement.lang),
       brief: {
         title: activeTopic.title,
         specialtiesLabel: activeTopic.specialties,

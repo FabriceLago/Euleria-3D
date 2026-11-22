@@ -321,7 +321,7 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
                       </span>{' '}
                       · {msg.authorGrade} ·{' '}
                       <span className="font-mono tabular-nums">
-                        {new Date(msg.createdAt).toLocaleTimeString('fr-FR', {
+                        {new Date(msg.createdAt).toLocaleTimeString(document.documentElement.lang, {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}

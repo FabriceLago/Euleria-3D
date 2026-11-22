@@ -43,6 +43,7 @@ import type {
 } from '../types/learning.ts';
 import type { PrintableDocument } from '../utils/printExport.tsx';
 import { MathViewport3D } from './MathViewport3D.tsx';
+import type { MissionResult } from '../missions/types.ts';
 import { ChapterStudyDeck } from './ChapterStudyDeck.tsx';
 
 interface ChapterWorkspaceProps {
@@ -72,6 +73,9 @@ interface ChapterWorkspaceProps {
   onXpSynced?: (newTotalXp: number, newBadges: BadgeItem[]) => void;
   onPrintDocument?: (doc: PrintableDocument) => void;
   onMistakeRecorded?: (mistake: MistakeItem) => void;
+  onMissionComplete?: (r: MissionResult) => void;
+  onMissionFailed?: (r: MissionResult, chapter: ChapterItem) => void;
+  missionXpEnabled?: boolean;
 }
 
 const ACCENT_RING_MAP: Record<AccentColor, string> = {
@@ -104,6 +108,9 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
   onXpSynced,
   onPrintDocument,
   onMistakeRecorded,
+  onMissionComplete,
+  onMissionFailed,
+  missionXpEnabled,
 }) => {
   const subjectChapters = useMemo(
     () => chapters.filter((c) => (c.subject || 'mathematics') === selectedSubject),
@@ -484,6 +491,9 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
         {/* Colonne gauche : Scène 3D WebGL + Synthèse théorique */}
         <div className="lg:col-span-7 space-y-5">
           <MathViewport3D
+            onMissionComplete={onMissionComplete}
+            onMissionFailed={(r) => onMissionFailed?.(r, activeChapter)}
+            missionXpEnabled={missionXpEnabled}
             preset={activeChapter.scenePreset}
             chapterTitle={activeChapter.title}
             defaultParams={activeChapter.defaultParams}

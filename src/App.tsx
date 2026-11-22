@@ -12,7 +12,9 @@ import {
   isSupabaseConfigured,
   updateSupabasePreferences,
 } from './lib/supabase.ts';
-import { ALL_SEED_CHAPTERS, ALL_SEED_ROOMS } from './db/curriculumData.ts';
+import { ALL_SEED_CHAPTERS, ALL_SEED_ROOMS as RAW_SEED_ROOMS } from './db/curriculumData.ts';
+import { translateDeep } from './i18n/core.ts';
+import { useI18n } from './i18n/I18nProvider.tsx';
 import type {
   AccentColor,
   ChapterItem,
@@ -27,6 +29,7 @@ import type {
   SubjectId,
   ThemeMode,
 } from './types/learning.ts';
+import type { MissionResult } from './missions/types.ts';
 
 const DynamicQuizView = lazy(() =>
   import('./components/DynamicQuizView.tsx').then((m) => ({ default: m.DynamicQuizView }))
@@ -75,6 +78,8 @@ function buildLocalCurriculum(): ChapterItem[] {
 }
 
 const PlatformShell: React.FC = () => {
+  const { dict, t } = useI18n();
+  const ALL_SEED_ROOMS = translateDeep(RAW_SEED_ROOMS, dict);
   const {
     firebaseUser,
     profile,
@@ -200,7 +205,7 @@ const PlatformShell: React.FC = () => {
         if (!mounted) return;
         // Hébergement statique détecté : programme complet en local + synchronisation Supabase si configurée
         setBackendAvailable(false);
-        setChapters(buildLocalCurriculum());
+        setChapters(translateDeep(buildLocalCurriculum(), dict));
 
         if (isSupabaseConfigured) {
           try {
@@ -450,13 +455,56 @@ const PlatformShell: React.FC = () => {
     );
   }, []);
 
+  const handleMissionComplete = useCallback(
+    async (r: MissionResult) => {
+      if (!backendAvailable || !profile) return; // mode local : étoiles gardées sur l'appareil, pas d'XP (comme les exercices)
+      try {
+        const res = await apiFetch('/api/missions/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ missionId: r.missionId, stars: r.stars, timeMs: r.timeMs }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (typeof data.userXp === 'number') applyXpAndBadges(data.userXp, data.newlyUnlockedBadges ?? []);
+      } catch {
+        // hors ligne : la mission reste jouable, seules les XP ne sont pas créditées
+      }
+    },
+    [backendAvailable, profile, apiFetch, applyXpAndBadges]
+  );
+
+  const handleMissionFailed = useCallback(
+    (r: MissionResult, chapter: ChapterItem) => {
+      handleRecordMistake({
+        key: `mission-${r.missionId}`,
+        exerciseId: null,
+        chapterId: chapter.id,
+        chapterTitle: chapter.title,
+        subject: chapter.subject || 'mathematics',
+        gradeLevel: chapter.gradeLevel,
+        exerciseType: 'practice',
+        prompt: r.prompt,
+        hint: r.hint,
+        options: null,
+        explanation: r.hint,
+        lastSubmittedAnswer: '',
+        wrongCount: 1,
+        lastWrongAt: new Date().toISOString(),
+        resolved: false,
+        source: 'mission',
+      });
+    },
+    [handleRecordMistake]
+  );
+
   const sendDuelMessage = useCallback((payload: Record<string, unknown>) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(payload));
     } else {
-      setDuelError('Connexion WebSocket indisponible. Patientez un instant ou rechargez la page.');
+      setDuelError(t('Connexion WebSocket indisponible. Patientez un instant ou rechargez la page.'));
     }
-  }, []);
+  }, [t]);
 
   const handleCreateDuel = useCallback(
     (opts: { subject: SubjectId | 'all'; gradeLevel: GradeLevel; questionCount: number }) => {
@@ -528,7 +576,7 @@ const PlatformShell: React.FC = () => {
       {!loadingCurriculum && !backendAvailable && !isSupabaseConfigured && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
           <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-xs text-amber-800 dark:text-amber-200">
-            Mode autonome actif : les 126 chapitres, modèles 3D WebGL et 378 exercices sont pleinement utilisables. Configurez Supabase (<span className="font-mono">VITE_SUPABASE_URL</span> / <span className="font-mono">VITE_SUPABASE_ANON_KEY</span>) ou <span className="font-mono">VITE_API_BASE_URL</span> pour synchroniser comptes, classement et salons.
+            {t('Mode autonome actif : les 126 chapitres, modèles 3D WebGL et 378 exercices sont pleinement utilisables. Configurez Supabase')} (<span className="font-mono">VITE_SUPABASE_URL</span> / <span className="font-mono">VITE_SUPABASE_ANON_KEY</span>) {t('ou')} <span className="font-mono">VITE_API_BASE_URL</span> {t('pour synchroniser comptes, classement et salons.')}
           </div>
         </div>
       )}
@@ -538,11 +586,11 @@ const PlatformShell: React.FC = () => {
         <div>
           {profile ? (
             <span>
-              Bienvenue, <strong className="text-slate-900 dark:text-white">{profile.displayName}</strong> · Niveau {profile.gradeLevel} · Série {profile.streakDays} j.
+              {t('Bienvenue,')} <strong className="text-slate-900 dark:text-white">{profile.displayName}</strong> · {t('Niveau {grade} · Série {days} j.', { grade: profile.gradeLevel, days: profile.streakDays })}
             </span>
           ) : (
             <span>
-              Mode exploration · Connectez-vous avec Google pour enregistrer vos progrès et discuter en direct
+              {t('Mode exploration · Connectez-vous avec Google pour enregistrer vos progrès et discuter en direct')}
             </span>
           )}
         </div>
@@ -553,7 +601,7 @@ const PlatformShell: React.FC = () => {
             onClick={() => setDrawerOpen(true)}
             className="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white underline whitespace-nowrap shrink-0 cursor-pointer"
           >
-            Personnaliser l’interface
+            {t('Personnaliser l’interface')}
           </button>
         </div>
       </div>
@@ -561,7 +609,7 @@ const PlatformShell: React.FC = () => {
       <main className="pb-14">
         {loadingCurriculum ? (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-sm text-slate-500 dark:text-slate-400">
-            Initialisation des programmes scientifiques et du moteur WebGL...
+            {t('Initialisation des programmes scientifiques et du moteur WebGL...')}
           </div>
         ) : activeSection === 'curriculum' ? (
           <ChapterWorkspace
@@ -610,12 +658,15 @@ const PlatformShell: React.FC = () => {
             }}
             onPrintDocument={handlePrintDocument}
             onMistakeRecorded={handleRecordMistake}
+            onMissionComplete={handleMissionComplete}
+            onMissionFailed={handleMissionFailed}
+            missionXpEnabled={backendAvailable && !!profile}
           />
         ) : (
           <Suspense
             fallback={
               <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-sm text-slate-500 dark:text-slate-400">
-                Chargement du module interactif...
+                {t('Chargement du module interactif...')}
               </div>
             }
           >
@@ -651,6 +702,9 @@ const PlatformShell: React.FC = () => {
                 accentColor={accentColor}
                 showGrid={show3DHints}
                 onOpenChapterInCourse={handleOpenChapter}
+                onMissionComplete={handleMissionComplete}
+                onMissionFailed={handleMissionFailed}
+                missionXpEnabled={backendAvailable && !!profile}
               />
             ) : activeSection === 'leaderboard' ? (
               <LeaderboardView

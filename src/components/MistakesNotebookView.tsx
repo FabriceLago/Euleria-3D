@@ -399,7 +399,8 @@ export const MistakesNotebookView: React.FC<MistakesNotebookViewProps> = ({
             {remediationPct}%
           </div>
           <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Sur {totalTracked} erreur{totalTracked > 1 ? 's' : ''} suivie{totalTracked > 1 ? 's' : ''}
+            {/* phrase entière dans un seul nœud texte : traduisible avec son pluriel */}
+            {totalTracked > 1 ? `Sur ${totalTracked} erreurs suivies` : `Sur ${totalTracked} erreur suivie`}
           </div>
         </div>
       </div>
@@ -515,7 +516,7 @@ export const MistakesNotebookView: React.FC<MistakesNotebookViewProps> = ({
                     <span>{item.chapterTitle}</span>
                     <span aria-hidden="true">·</span>
                     <span className="font-mono tabular-nums">
-                      {item.wrongCount} erreur{item.wrongCount > 1 ? 's' : ''}
+                      {item.wrongCount > 1 ? `${item.wrongCount} erreurs` : `${item.wrongCount} erreur`}
                     </span>
                   </div>
 

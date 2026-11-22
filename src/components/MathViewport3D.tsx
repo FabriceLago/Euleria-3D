@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronUp, Gamepad2, RotateCcw } from 'lucide-react';
 import {
   CameraPreset,
   computeReadout,
@@ -7,6 +7,14 @@ import {
   MathSceneEngine,
 } from '../three/MathSceneEngine.ts';
 import type { AccentColor, ThemeMode } from '../types/learning.ts';
+import { getMissionsForPreset } from '../missions/catalog/index.ts';
+import { computeStars, createRun, elapsedMs, missionXp, step, type RunEvent, type RunState } from '../missions/runner.ts';
+import { attachGestures } from '../missions/gestures.ts';
+import { ease, MissionFx } from '../missions/fx.ts';
+import { isSoundOn, setSoundOn, sfx, vibrate } from '../missions/audio.ts';
+import { loadBest, saveBest } from '../missions/progress.ts';
+import { MissionHUD } from '../missions/MissionHUD.tsx';
+import type { MissionDef, MissionParams, MissionResult, ParamKey } from '../missions/types.ts';
 
 interface MathViewport3DProps {
   preset: string;
@@ -16,6 +24,9 @@ interface MathViewport3DProps {
   accentColor: AccentColor;
   showGrid: boolean;
   heightClass?: string;
+  onMissionComplete?: (r: MissionResult) => void;
+  onMissionFailed?: (r: MissionResult) => void;
+  missionXpEnabled?: boolean;
 }
 
 const ACCENT_HEX_MAP: Record<AccentColor, string> = {
@@ -33,6 +44,9 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
   accentColor,
   showGrid,
   heightClass = 'h-[440px] lg:h-[520px]',
+  onMissionComplete,
+  onMissionFailed,
+  missionXpEnabled = false,
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<MathSceneEngine | null>(null);
@@ -100,6 +114,11 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
 
     return () => {
       ro.disconnect();
+      runToken.current++;
+      if (demoTimer.current) clearTimeout(demoTimer.current);
+      demoTimer.current = null;
+      fxRef.current?.dispose();
+      fxRef.current = null;
       engine.dispose();
       engineRef.current = null;
     };
@@ -133,12 +152,248 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
     handleCameraChange('perspective');
   };
 
+  // ---- Missions 3D ----
+  const missions = useMemo(() => getMissionsForPreset(preset), [preset]);
+  const [missionsOpen, setMissionsOpen] = useState(false);
+  const [active, setActive] = useState<MissionDef | null>(null);
+  const [run, setRun] = useState<RunState | null>(null);
+  const [best, setBest] = useState<Record<string, number>>(loadBest);
+  const [soundOn, setSoundOnState] = useState(isSoundOn);
+  const [showHint, setShowHint] = useState(false);
+  const [clock, setClock] = useState(0);
+  const fxRef = useRef<MissionFx | null>(null);
+  const paramsRef = useRef<MissionParams>({ a: paramA, b: paramB, c: paramC });
+  paramsRef.current = { a: paramA, b: paramB, c: paramC };
+  const runRef = useRef<RunState | null>(null);
+  runRef.current = run;
+  const failReported = useRef(false);
+  const demoTimer = useRef<number | null>(null);
+  const runToken = useRef(0);
+  const reducedMotion = useMemo(
+    () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
+    []
+  );
+
+  const setParam = useCallback((p: ParamKey, v: number) => {
+    paramsRef.current = { ...paramsRef.current, [p]: v };
+    if (p === 'a') setParamA(v);
+    else if (p === 'b') setParamB(v);
+    else setParamC(v);
+  }, []);
+  const applyStart = useCallback(
+    (s: Partial<MissionParams>) => {
+      (Object.keys(s) as ParamKey[]).forEach((k) => setParam(k, s[k] as number));
+      setExplode(0);
+    },
+    [setParam]
+  );
+  const dispatch = useCallback((e: RunEvent) => setRun((r) => (r ? step(r, e) : r)), []);
+
+  const missionResult = (m: MissionDef, stars: 0 | 1 | 2 | 3, timeMs: number): MissionResult => ({
+    missionId: m.id, level: m.level, stars, timeMs, prompt: m.prompt, hint: m.hint,
+  });
+
+  const stopMission = useCallback(() => {
+    runToken.current++;
+    if (demoTimer.current) clearTimeout(demoTimer.current);
+    demoTimer.current = null;
+    fxRef.current?.dispose();
+    fxRef.current = null;
+    setActive(null);
+    setRun(null);
+    engineRef.current?.setOrbitEnabled(true);
+  }, []);
+
+  const startMission = (m: MissionDef) => {
+    stopMission();
+    runToken.current++;
+    const engine = engineRef.current;
+    if (!engine) return;
+    const r = createRun(m);
+    setActive(m);
+    setRun(r);
+    setShowHint(false);
+    setClock(0);
+    failReported.current = false;
+    applyStart({ ...m.start, ...r.rounds[0].start });
+    handleCameraChange('perspective');
+    engine.setOrbitEnabled(false);
+    fxRef.current = new MissionFx(engine.getFxContext(), reducedMotion, accentHex);
+  };
+
+  const handleSolved = (tag?: string) => {
+    if (runRef.current?.phase !== 'playing') return;
+    const fx = fxRef.current;
+    fx?.punchZoom();
+    fx?.bounce(tag ?? '');
+    fx?.burst({ x: 0, y: 1.4, z: 0 });
+    sfx.success();
+    vibrate(30);
+    dispatch({ type: 'solved', now: performance.now() });
+  };
+
+  const handleWrong = () => {
+    const r = runRef.current;
+    const m = active;
+    if (!r || !m || r.phase !== 'playing') return;
+    const rd = r.rounds[r.round];
+    sfx.fail();
+    vibrate([20, 40, 20]);
+    dispatch({ type: 'wrong', now: performance.now() });
+    if (!failReported.current) {
+      failReported.current = true;
+      onMissionFailed?.(missionResult(m, 0, elapsedMs(r, performance.now())));
+    }
+    const fx = fxRef.current;
+    const token = runToken.current;
+    const finish = () => {
+      if (token !== runToken.current) return;
+      fx?.clearHighlights();
+      if (r.rounds.length === 1) applyStart(rd.start);
+      dispatch({ type: 'demoDone', now: performance.now() });
+    };
+    if (rd.solution && fx) {
+      // Démonstration : la scène s'anime jusqu'à la bonne réponse
+      const from = { ...paramsRef.current };
+      const keys = Object.keys(rd.solution) as ParamKey[];
+      fx.tween(
+        0.9,
+        (k) => keys.forEach((p) => setParam(p, Math.round(from[p] + ((rd.solution![p] as number) - from[p]) * k))),
+        ease.inOutSine,
+        () => {
+          demoTimer.current = window.setTimeout(finish, 900);
+        }
+      );
+    } else if (rd.targetTag && fx) {
+      fx.highlight(rd.targetTag, '#f59e0b');
+      demoTimer.current = window.setTimeout(finish, 1400);
+    } else finish();
+  };
+
+  // Chaque nouvelle manche repart de son état initial
+  useEffect(() => {
+    if (run && run.round > 0 && run.phase === 'playing') applyStart(run.rounds[run.round].start);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run?.round]);
+
+  // Gestes actifs seulement pendant le jeu
+  useEffect(() => {
+    const el = mountRef.current;
+    const engine = engineRef.current;
+    if (!el || !engine || !active || run?.phase !== 'playing') return;
+    const controls = active.kind === 'adjust' ? active.controls ?? [] : [];
+    const detach = attachGestures(
+      el,
+      controls,
+      {
+        getValue: (p) => paramsRef.current[p],
+        onChange: (p, v) => {
+          setParam(p, v);
+          sfx.tick();
+        },
+        onTap: (tag) => {
+          const r = runRef.current;
+          if (!r) return;
+          if (active.kind === 'identify') {
+            if (tag === r.rounds[r.round].targetTag) handleSolved(tag);
+            else handleWrong();
+          } else fxRef.current?.bounce(tag);
+        },
+        onEnd: () => {
+          const r = runRef.current;
+          // Victoire automatique au niveau 1 seulement ; aux niveaux 2-3 l'élève valide
+          if (active.level === 1 && active.kind === 'adjust' && r?.phase === 'playing' && r.rounds[r.round].goal?.(paramsRef.current)) handleSolved();
+        },
+        pick: (x, y) => engine.pick(x, y),
+        dialCenter: () => {
+          const n = engine.findByTag('normal');
+          if (n) return engine.projectToScreen(n);
+          const rect = el.getBoundingClientRect();
+          return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        },
+      },
+      active.kind === 'identify' ? engine.listTags() : []
+    );
+    // Entrée valide (comme le bouton « Valider ») pour les missions d'ajustement
+    const onEnter = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.repeat || active.kind !== 'adjust') return;
+      const r = runRef.current;
+      if (r?.phase !== 'playing') return;
+      e.preventDefault();
+      if (r.rounds[r.round].goal?.(paramsRef.current)) handleSolved();
+      else handleWrong();
+    };
+    el.addEventListener('keydown', onEnter);
+    return () => {
+      detach();
+      el.removeEventListener('keydown', onEnter);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, run?.phase]);
+
+  // Chrono
+  useEffect(() => {
+    if (!active?.timeLimitS || run?.phase !== 'playing') return;
+    const id = window.setInterval(() => {
+      const now = performance.now();
+      setClock(now);
+      const r = runRef.current;
+      if (r && elapsedMs(r, now) >= active.timeLimitS! * 1000) dispatch({ type: 'timeUp', now });
+    }, 250);
+    return () => clearInterval(id);
+  }, [active, run?.phase, dispatch]);
+
+  // Pause : onglet masqué ou contexte WebGL perdu
+  useEffect(() => {
+    const onVis = () => {
+      if (document.hidden && runRef.current?.phase !== 'playing') return;
+      dispatch({ type: document.hidden ? 'pause' : 'resume', now: performance.now() });
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [dispatch]);
+  useEffect(() => {
+    if (contextLost && runRef.current?.phase !== 'playing') return;
+    dispatch({ type: contextLost ? 'pause' : 'resume', now: performance.now() });
+  }, [contextLost, dispatch]);
+
+  // Fin de mission : étoiles, XP affichées, sauvegarde locale, résultat au parent
+  const stars = run?.phase === 'done' ? computeStars(run) : null;
+  const xp = active && stars ? missionXp(active.level, stars) : null;
+  useEffect(() => {
+    if (!active || !run || run.phase !== 'done') return;
+    const s = computeStars(run);
+    for (let i = 0; i < s; i++) setTimeout(() => sfx.star(i), 250 + i * 250);
+    if (s > 0) {
+      setBest(saveBest(active.id, s));
+      onMissionComplete?.(missionResult(active, s, elapsedMs(run, performance.now())));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run?.phase]);
+
+  // Changement de chapitre : abandon propre, sans pénalité
+  useEffect(() => {
+    stopMission();
+    setMissionsOpen(false);
+  }, [preset, stopMission]);
+
+  const timeLeftS =
+    active?.timeLimitS && run && run.phase !== 'intro'
+      ? active.timeLimitS - elapsedMs(run, clock || performance.now()) / 1000
+      : null;
+
   return (
     <div
       className={`relative w-full ${heightClass} rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 select-none`}
+      style={{ touchAction: active ? 'none' : undefined }}
     >
       {/* Conteneur WebGL isolé */}
-      <div ref={mountRef} className="w-full h-full" />
+      <div
+        ref={mountRef}
+        className="w-full h-full"
+        tabIndex={active ? 0 : -1}
+        aria-label={active ? 'Scène de mission : utilise les flèches du clavier ou glisse' : undefined}
+      />
 
       {/* En-tête minimaliste en haut à gauche (surface opaque/rgba sans backdrop-blur sur WebGL) */}
       <div className="pointer-events-none absolute top-3 left-3 right-3 flex items-start justify-between gap-3">
@@ -176,6 +431,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
       )}
 
       {/* Dock inférieur repliable unifié (aucun panneau latéral obstruant le centre) */}
+      {!missionsOpen && (
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[95%] max-w-[820px] flex flex-col items-center">
         <button
           type="button"
@@ -305,6 +561,56 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
           </div>
         )}
       </div>
+      )}
+
+      {missions.length > 0 && !missionsOpen && (
+        <button
+          type="button"
+          onClick={() => setMissionsOpen(true)}
+          className="absolute top-16 right-3 z-10 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium px-3 py-2 min-h-[44px] shadow-lg cursor-pointer"
+        >
+          <Gamepad2 className="w-4 h-4" /> Missions
+        </button>
+      )}
+      {missionsOpen && (
+        <MissionHUD
+          missions={missions}
+          best={best}
+          active={active}
+          run={run}
+          timeLeftS={timeLeftS}
+          stars={stars}
+          xp={missionXpEnabled ? xp : null}
+          showHint={showHint}
+          soundOn={soundOn}
+          onPick={startMission}
+          onBegin={() => {
+            dispatch({ type: 'begin', now: performance.now() });
+            mountRef.current?.focus();
+          }}
+          onHint={() => {
+            setShowHint(true);
+            dispatch({ type: 'hint' });
+          }}
+          onValidate={() => {
+            const r = runRef.current;
+            if (r?.phase !== 'playing') return;
+            if (r.rounds[r.round].goal?.(paramsRef.current)) handleSolved();
+            else handleWrong();
+          }}
+          onRetry={() => active && startMission(active)}
+          onQuit={() => {
+            if (active) {
+              stopMission();
+              handleReset();
+            } else setMissionsOpen(false);
+          }}
+          onToggleSound={() => {
+            setSoundOn(!soundOn);
+            setSoundOnState(!soundOn);
+          }}
+        />
+      )}
     </div>
   );
 };
