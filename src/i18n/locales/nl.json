@@ -4255,5 +4255,11 @@
  "L’erreur du point milieu diminue comme 1 / n².": "De middelpuntsfout neemt af zoals 1 / n².",
  "Intégrales chrono": "Integralen op tijd",
  "Pour diviser l’erreur par 4, double le nombre de rectangles.": "Om de fout door 4 te delen, verdubbel je het aantal rechthoeken.",
- "Obtiens une erreur inférieure à {0}": "Krijg een fout kleiner dan {0}"
+ "Obtiens une erreur inférieure à {0}": "Krijg een fout kleiner dan {0}",
+ "Prédiction en x = 1": "Voorspelling bij x = 1",
+ "Seuil 50 % (x = −b / w)": "Drempel 50 % (x = −b / w)",
+ "Produit scalaire u · v": "Inwendig product u · v",
+ "Angle θ": "Hoek θ",
+ "Angle θ · vecteurs orthogonaux": "Hoek θ · loodrechte vectoren",
+ "{0} × {1} × cos({2}°) = {3}": "{0} × {1} × cos({2}°) = {3}"
 }

@@ -4255,5 +4255,11 @@
  "L’erreur du point milieu diminue comme 1 / n².": "The midpoint error shrinks like 1 / n².",
  "Intégrales chrono": "Integrals time trial",
  "Pour diviser l’erreur par 4, double le nombre de rectangles.": "To divide the error by 4, double the number of rectangles.",
- "Obtiens une erreur inférieure à {0}": "Get an error below {0}"
+ "Obtiens une erreur inférieure à {0}": "Get an error below {0}",
+ "Prédiction en x = 1": "Prediction at x = 1",
+ "Seuil 50 % (x = −b / w)": "50 % threshold (x = −b / w)",
+ "Produit scalaire u · v": "Dot product u · v",
+ "Angle θ": "Angle θ",
+ "Angle θ · vecteurs orthogonaux": "Angle θ · orthogonal vectors",
+ "{0} × {1} × cos({2}°) = {3}": "{0} × {1} × cos({2}°) = {3}"
 }
