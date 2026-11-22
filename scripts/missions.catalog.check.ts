@@ -18,6 +18,7 @@ const rounds = (m: MissionDef): MissionRound[] =>
 const PILOTS = [
   'fractions_3d', 'pc_optics_3d', 'svt_dna_3d', 'hg_timeline_3d', 'fr_narrative_3d', 'en_tense_3d',
   'volumes_6e', 'angles_5e', 'pythagore_4e', 'trigonometrie_3e', 'sphere_3e', 'integrales_term',
+  'prisme_5e', 'parabole_2nde', 'produit_scalaire_1ere', 'probabilites_1ere', 'prediction_term',
 ];
 for (const preset of PILOTS) {
   const ms = getMissionsForPreset(preset);

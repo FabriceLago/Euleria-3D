@@ -1,4 +1,5 @@
-// Missions des scènes de mathématiques (lot 2) : volumes, angles, Pythagore, trigonométrie, sphère, intégrales.
+// Missions des scènes de mathématiques : volumes, angles, Pythagore, trigonométrie, sphère, intégrales,
+// prisme, parabole, produit scalaire, probabilités, prédiction.
 // Les objectifs portent sur les paramètres a/b/c de chaque scène (mêmes conventions que MathSceneEngine).
 import type { MissionDef, MissionParams } from '../types.ts';
 import { pickN, r } from './helpers.ts';
@@ -280,7 +281,214 @@ const integralesMissions: MissionDef[] = [
   },
 ];
 
+// ---- Prisme (5ᵉ) : a = r, b = n côtés de la base, c = h ; V = B × h (même calcul que la scène)
+// Même formule que prismBaseArea (MathSceneEngine) : polygone régulier à n côtés inscrit dans le cercle de rayon r
+const prismBaseArea = (rad: number, n: number) => (n / 2) * rad * rad * Math.sin((2 * Math.PI) / n);
+const prismVol = (p: MissionParams) => prismBaseArea(p.a, Math.max(3, r(p.b))) * p.c;
+const hControl = { param: 'c' as const, gesture: 'drag-x' as const, min: 1, max: 8, step: 0.25, pxPerStep: 16 };
+
+const prismeMissions: MissionDef[] = [
+  {
+    id: 'prisme-1', preset: 'prisme_5e', level: 1, kind: 'adjust',
+    prompt: 'Règle la hauteur pour obtenir un prisme de 24 cm³',
+    hint: 'La base est un carré d’aire B = 8 cm² : h = 24 ÷ 8.',
+    start: { a: 2, b: 4, c: 1 }, solution: { c: 3 },
+    controls: [hControl], goal: (p) => near(prismVol(p), 24, 0.01),
+  },
+  {
+    id: 'prisme-2', preset: 'prisme_5e', level: 2, kind: 'adjust',
+    prompt: 'Ajoute des côtés jusqu’à ce que le prisme atteigne 99 % du volume du cylindre',
+    hint: 'Plus la base a de côtés, plus le prisme ressemble au cylindre.',
+    start: { a: 2, b: 4, c: 3 }, solution: { b: 26 },
+    controls: [{ param: 'b', gesture: 'drag-x', min: 3, max: 40, step: 1, pxPerStep: 10 }],
+    goal: (p) => prismVol(p) >= 0.99 * Math.PI * p.a * p.a * p.c,
+  },
+  {
+    id: 'prisme-3', preset: 'prisme_5e', level: 3, kind: 'adjust',
+    prompt: 'Prismes chrono',
+    hint: 'Base carrée d’aire 8 cm² : h = V ÷ 8.',
+    start: { a: 2, b: 4, c: 1 },
+    controls: [hControl],
+    timeLimitS: 60,
+    rounds: (rand) =>
+      pickN([2, 2.5, 4, 5, 6], 4, rand).map((h) => ({
+        prompt: `Obtiens un prisme de ${8 * h} cm³`,
+        start: { c: 1 },
+        solution: { c: h },
+        goal: (p: MissionParams) => near(prismVol(p), 8 * h, 0.01),
+      })),
+  },
+];
+
+// ---- Parabole (2nde) : f(x) = ax² + bx + c, sommet α = −b / 2a, β = f(α)
+const vertexX = (p: MissionParams) => (Math.abs(p.a) < 0.05 ? NaN : -p.b / (2 * p.a));
+const vertexY = (p: MissionParams) => p.c - (p.b * p.b) / (4 * p.a);
+const bControl = { param: 'b' as const, gesture: 'drag-x' as const, min: -4, max: 4, step: 0.1, pxPerStep: 8 };
+const decimal = (x: number) => fr(x, 2).replace(/0$/, '').replace(/,0$/, '');
+
+const paraboleMissions: MissionDef[] = [
+  {
+    id: 'parabole-1', preset: 'parabole_2nde', level: 1, kind: 'adjust',
+    prompt: 'Déplace le sommet de la parabole en x = 2',
+    hint: 'α = −b / (2a) : avec a = 1, il faut b = −4.',
+    start: { a: 1, b: 0, c: 0 }, solution: { b: -4 },
+    controls: [bControl], goal: (p) => near(vertexX(p), 2, 0.01),
+  },
+  {
+    id: 'parabole-2', preset: 'parabole_2nde', level: 2, kind: 'adjust',
+    prompt: 'Retourne la parabole pour qu’elle ait un maximum égal à 2',
+    hint: 'a < 0 donne un maximum ; avec b = 0, le sommet est en (0 ; c).',
+    start: { a: 1, b: 0, c: -1 }, solution: { a: -1, c: 2 },
+    controls: [
+      { param: 'a', gesture: 'drag-y', min: -3, max: 3, step: 0.1, pxPerStep: 8 },
+      { param: 'c', gesture: 'drag-x', min: -4, max: 4, step: 0.1, pxPerStep: 8 },
+    ],
+    goal: (p) => p.a <= -0.05 && near(vertexY(p), 2, 0.01),
+  },
+  {
+    id: 'parabole-3', preset: 'parabole_2nde', level: 3, kind: 'adjust',
+    prompt: 'Paraboles chrono',
+    hint: 'a = 1 : b = −2 × l’abscisse demandée.',
+    start: { a: 1, b: 0, c: 0 },
+    controls: [bControl],
+    timeLimitS: 60,
+    rounds: (rand) =>
+      pickN([-1.5, -1, -0.5, 0.5, 1, 1.5], 4, rand).map((t) => ({
+        prompt: `Place le sommet en x = ${decimal(t)}`,
+        start: { b: 0 },
+        solution: { b: -2 * t },
+        goal: (p: MissionParams) => near(vertexX(p), t, 0.01),
+      })),
+  },
+];
+
+// ---- Produit scalaire (1re) : a = θ en degrés, b = ‖u‖, c = ‖v‖
+const dot = (p: MissionParams) => p.b * p.c * Math.cos(toRad(p.a));
+const thetaControl = { param: 'a' as const, gesture: 'drag-x' as const, min: 0, max: 180, step: 5, pxPerStep: 8 };
+
+const scalaireMissions: MissionDef[] = [
+  {
+    id: 'scalaire-1', preset: 'produit_scalaire_1ere', level: 1, kind: 'adjust',
+    prompt: 'Rends les vecteurs u et v orthogonaux',
+    hint: 'u · v = 0 quand cos θ = 0, c’est-à-dire θ = 90°.',
+    start: { a: 30, b: 3, c: 2.5 }, solution: { a: 90 },
+    controls: [thetaControl], goal: (p) => near(dot(p), 0, 0.01),
+  },
+  {
+    id: 'scalaire-2', preset: 'produit_scalaire_1ere', level: 2, kind: 'adjust',
+    prompt: 'Obtiens u · v = 6',
+    hint: 'À 60°, cos θ = 0,5 : il faut ‖u‖ × ‖v‖ = 12.',
+    start: { a: 60, b: 3, c: 1.5 }, solution: { c: 4 },
+    controls: [thetaControl, { param: 'c', gesture: 'drag-y', min: 1, max: 6, step: 0.25, pxPerStep: 16 }],
+    goal: (p) => near(dot(p), 6, 0.01),
+  },
+  {
+    id: 'scalaire-3', preset: 'produit_scalaire_1ere', level: 3, kind: 'adjust',
+    prompt: 'Produit scalaire chrono',
+    hint: '‖u‖ × ‖v‖ = 8 : u · v = 8 cos θ.',
+    start: { a: 30, b: 4, c: 2 },
+    controls: [thetaControl],
+    timeLimitS: 60,
+    rounds: (rand) =>
+      pickN([0, 60, 90, 120, 180], 4, rand).map((deg) => {
+        const t = Math.round(8 * Math.cos(toRad(deg)));
+        return {
+          prompt: `Obtiens u · v = ${t}`,
+          start: { a: 30 },
+          solution: { a: deg },
+          goal: (p: MissionParams) => near(dot(p), t, 0.01),
+        };
+      }),
+  },
+];
+
+// ---- Probabilités (1re) : a = P(A), b = P(B|A), c = P(B|¬A) ; P(A|B) par la formule de Bayes
+const posterior = (p: MissionParams) => (p.b * p.a) / (p.b * p.a + p.c * (1 - p.a));
+const fpControl = { param: 'c' as const, gesture: 'drag-x' as const, min: 0.05, max: 0.95, step: 0.05, pxPerStep: 14 };
+
+const bayesMissions: MissionDef[] = [
+  {
+    id: 'bayes-1', preset: 'probabilites_1ere', level: 1, kind: 'adjust',
+    prompt: 'Obtiens P(A | B) = 50 %',
+    hint: 'Si P(B | ¬A) = P(B | A), observer B n’apprend rien : P(A | B) = P(A).',
+    start: { a: 0.5, b: 0.8, c: 0.4 }, solution: { c: 0.8 },
+    controls: [fpControl], goal: (p) => near(posterior(p), 0.5, 0.005),
+  },
+  {
+    id: 'bayes-2', preset: 'probabilites_1ere', level: 2, kind: 'adjust',
+    prompt: 'Maladie rare (P(A) = 10 %) : fais dépasser 60 % à P(A | B)',
+    hint: 'Avec un prior faible, ce sont les faux positifs P(B | ¬A) qu’il faut réduire.',
+    start: { a: 0.1, b: 0.9, c: 0.5 }, solution: { c: 0.05 },
+    controls: [fpControl, { param: 'b', gesture: 'drag-y', min: 0.05, max: 0.95, step: 0.05, pxPerStep: 14 }],
+    goal: (p) => posterior(p) > 0.6,
+  },
+  {
+    id: 'bayes-3', preset: 'probabilites_1ere', level: 3, kind: 'adjust',
+    prompt: 'Bayes chrono',
+    hint: 'P(A) = 0,5 et P(B | A) = 0,8 : moins de faux positifs, P(A | B) plus grand.',
+    start: { a: 0.5, b: 0.8, c: 0.95 },
+    controls: [fpControl],
+    timeLimitS: 60,
+    rounds: (rand) =>
+      pickN([0.1, 0.2, 0.4, 0.6, 0.8], 4, rand).map((fp) => {
+        const t = 0.4 / (0.4 + 0.5 * fp);
+        return {
+          prompt: `Obtiens P(A | B) ≈ ${Math.round(t * 100)} %`,
+          start: { c: 0.95 },
+          solution: { c: fp },
+          goal: (p: MissionParams) => near(posterior(p), t, 0.005),
+        };
+      }),
+  },
+];
+
+// ---- Prédiction (Terminale) : a = w, b = biais ; σ(w·x + b), seuil 50 % en x = −b / w
+const threshold = (p: MissionParams) => -p.b / p.a;
+const sigmoidAt1 = (p: MissionParams) => 1 / (1 + Math.exp(-(p.a + p.b)));
+const biasControl = { param: 'b' as const, gesture: 'drag-x' as const, min: -1.5, max: 1.5, step: 0.1, pxPerStep: 10 };
+
+const predictionMissions: MissionDef[] = [
+  {
+    id: 'prediction-1', preset: 'prediction_term', level: 1, kind: 'adjust',
+    prompt: 'Place le seuil de décision en x = 0',
+    hint: 'Le seuil vaut x = −b / w : il faut un biais b = 0.',
+    start: { a: 1.8, b: 0.4, c: 0.38 }, solution: { b: 0 },
+    controls: [biasControl], goal: (p) => near(threshold(p), 0, 0.01),
+  },
+  {
+    id: 'prediction-2', preset: 'prediction_term', level: 2, kind: 'adjust',
+    prompt: 'Obtiens une prédiction de 50 % en x = 1',
+    hint: 'σ(z) = 0,5 quand z = 0 : il faut w + b = 0.',
+    start: { a: 1.8, b: 0.4, c: 0.38 }, solution: { a: 1, b: -1 },
+    controls: [
+      { param: 'a', gesture: 'drag-y', min: 0.5, max: 4, step: 0.1, pxPerStep: 10 },
+      biasControl,
+    ],
+    goal: (p) => near(sigmoidAt1(p), 0.5, 0.005),
+  },
+  {
+    id: 'prediction-3', preset: 'prediction_term', level: 3, kind: 'adjust',
+    prompt: 'Prédiction chrono',
+    hint: 'w = 2 : b = −2 × la position du seuil.',
+    start: { a: 2, b: 0, c: 0.38 },
+    controls: [biasControl],
+    timeLimitS: 60,
+    rounds: (rand) =>
+      pickN([-0.5, -0.25, 0.25, 0.5, 0.75], 4, rand).map((t) => ({
+        prompt: `Place le seuil 50 % en x = ${decimal(t)}`,
+        start: { b: 0 },
+        solution: { b: -2 * t },
+        goal: (p: MissionParams) => near(threshold(p), t, 0.01),
+      })),
+  },
+];
+
 export const mathsMissions: MissionDef[] = [
+  ...prismeMissions,
+  ...paraboleMissions,
+  ...scalaireMissions,
+  ...bayesMissions,
+  ...predictionMissions,
   ...volumesMissions,
   ...anglesMissions,
   ...pythagoreMissions,

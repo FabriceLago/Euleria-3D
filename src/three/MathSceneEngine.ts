@@ -172,15 +172,15 @@ export function getParamMetadataForPreset(preset: string): ParamMetadata {
       };
     case 'prisme_5e':
       return {
-        labelA: 'Rayon / base a',
+        labelA: 'Rayon r (cm)',
         minA: 1,
-        maxA: 6,
+        maxA: 4,
         stepA: 0.25,
-        labelB: 'Largeur / profondeur b',
-        minB: 1,
-        maxB: 6,
-        stepB: 0.25,
-        labelC: 'Hauteur prisme h',
+        labelB: 'Côtés de la base n',
+        minB: 3,
+        maxB: 40,
+        stepB: 1,
+        labelC: 'Hauteur h (cm)',
         minC: 1,
         maxC: 8,
         stepC: 0.25,
@@ -788,6 +788,11 @@ export function getParamMetadataForPreset(preset: string): ParamMetadata {
   }
 }
 
+/** Aire de la base d'un prisme droit à base polygone régulier à n côtés inscrit dans un cercle de rayon r. */
+export function prismBaseArea(r: number, n: number): number {
+  return (n / 2) * r * r * Math.sin((2 * Math.PI) / n);
+}
+
 export function computeReadout(params: SceneParams): LiveMathReadout {
   const { preset, a, b, c } = params;
   switch (preset) {
@@ -879,6 +884,38 @@ export function computeReadout(params: SceneParams): LiveMathReadout {
         secondaryLabel: 'Seuil 50 % (x = −b / w)',
         secondaryValue: `x = ${(-b / a).toFixed(2)} · α = ${c.toFixed(2)}`,
         formulaLive: `σ(${a.toFixed(1)}×1 + ${b.toFixed(1)}) = σ(${z.toFixed(2)}) = ${sig.toFixed(3)}`,
+      };
+    }
+    case 'prisme_5e': {
+      const n = Math.max(3, Math.round(b));
+      const base = prismBaseArea(a, n);
+      const vol = base * c;
+      return {
+        primaryLabel: 'Volume V = B × h',
+        primaryValue: `${vol.toFixed(2)} cm³`,
+        secondaryLabel: 'Cylindre π r² h',
+        secondaryValue: `${(Math.PI * a * a * c).toFixed(2)} cm³`,
+        formulaLive: `B = ${base.toFixed(2)} cm² (n = ${n}) × ${c.toFixed(2)} cm`,
+      };
+    }
+    case 'parabole_2nde': {
+      if (Math.abs(a) < 0.05) {
+        return {
+          primaryLabel: 'Droite (a = 0)',
+          primaryValue: `y = ${b.toFixed(1)}x + ${c.toFixed(1)}`,
+          secondaryLabel: 'Sommet',
+          secondaryValue: '—',
+          formulaLive: `f(x) = ${b.toFixed(1)}x + ${c.toFixed(1)}`,
+        };
+      }
+      const alpha = -b / (2 * a);
+      const beta = c - (b * b) / (4 * a);
+      return {
+        primaryLabel: 'Sommet S(α ; β)',
+        primaryValue: `S(${alpha.toFixed(2)} ; ${beta.toFixed(2)})`,
+        secondaryLabel: a > 0 ? 'Minimum' : 'Maximum',
+        secondaryValue: `${beta.toFixed(2)}`,
+        formulaLive: `α = −(${b.toFixed(1)}) / (2 × ${a.toFixed(1)}) = ${alpha.toFixed(2)}`,
       };
     }
     case 'produit_scalaire_1ere': {
@@ -2346,8 +2383,92 @@ export class MathSceneEngine {
         break;
       }
 
-      case 'pyramide_4e':
       case 'prisme_5e': {
+        // Prisme droit à base polygone régulier (n côtés, inscrit dans le cercle de rayon r) dans son cylindre.
+        const R = a * 0.5;
+        const H = c * 0.4;
+        const n = Math.max(3, Math.round(b));
+        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(R, R, H, 48), glassMat);
+        cyl.position.y = H / 2 + 0.1 + explode * 0.6;
+        cyl.renderOrder = 2;
+        this.modelGroup.add(cyl);
+
+        const prismGeo = new THREE.CylinderGeometry(R, R, H, n);
+        const prism = new THREE.Mesh(prismGeo, accentMat);
+        prism.position.y = H / 2 + 0.1;
+        prism.castShadow = true;
+        prism.userData.tag = 'prisme';
+        this.modelGroup.add(prism);
+        const edges = new THREE.LineSegments(
+          new THREE.EdgesGeometry(prismGeo, 1),
+          new THREE.LineBasicMaterial({ color: 0x1e293b })
+        );
+        edges.position.copy(prism.position);
+        this.modelGroup.add(edges);
+        break;
+      }
+
+      case 'parabole_2nde': {
+        // Courbe de f(x) = ax² + bx + c dans le plan vertical, axe des abscisses et axe de symétrie.
+        const sx = 0.8;
+        const sy = 0.35;
+        const y0 = 1.6;
+        const toWorld = (x: number, y: number) => new THREE.Vector3(x * sx, y0 + y * sy, 0);
+        const inView = (y: number) => y0 + y * sy >= 0.05 && y0 + y * sy <= 4.4;
+
+        const axis = new THREE.Mesh(new THREE.BoxGeometry(6.4 * sx, 0.025, 0.025), brushedMetalMat);
+        axis.position.set(0, y0, 0);
+        this.modelGroup.add(axis);
+
+        // Morceaux de courbe visibles (la parabole sort du cadre pour les grandes valeurs)
+        const runs: THREE.Vector3[][] = [];
+        let run: THREE.Vector3[] = [];
+        for (let x = -3.2; x <= 3.2001; x += 0.05) {
+          const y = a * x * x + b * x + c;
+          if (inView(y)) {
+            run.push(toWorld(x, y));
+          } else if (run.length) {
+            runs.push(run);
+            run = [];
+          }
+        }
+        if (run.length) runs.push(run);
+        for (const pts of runs) {
+          if (pts.length < 2) continue;
+          const tube = new THREE.Mesh(
+            new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), pts.length * 2, 0.05, 8, false),
+            accentMat
+          );
+          tube.castShadow = true;
+          this.modelGroup.add(tube);
+        }
+
+        if (Math.abs(a) >= 0.05) {
+          const alpha = -b / (2 * a);
+          const beta = c - (b * b) / (4 * a);
+          if (Math.abs(alpha) <= 3.2) {
+            const sym = new THREE.Line(
+              new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(alpha * sx, 0.05, 0),
+                new THREE.Vector3(alpha * sx, 4.4, 0),
+              ]),
+              new THREE.LineDashedMaterial({ color: 0x94a3b8, dashSize: 0.12, gapSize: 0.08 })
+            );
+            sym.computeLineDistances();
+            this.modelGroup.add(sym);
+            if (inView(beta)) {
+              const vertex = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 20), warmBrassMat);
+              vertex.position.copy(toWorld(alpha, beta));
+              vertex.position.z += explode * 0.4;
+              vertex.userData.tag = 'sommet';
+              this.modelGroup.add(vertex);
+            }
+          }
+        }
+        break;
+      }
+
+      case 'pyramide_4e': {
         const radius = Math.max(0.8, Math.min(2.0, a * 0.7));
         const height = Math.max(1.4, Math.min(3.6, b * 0.95));
         const isPyramid = preset === 'pyramide_4e';
