@@ -94,7 +94,7 @@ export const MissionHUD: React.FC<MissionHUDProps> = (p) => {
             </div>
             <p className="text-base font-semibold text-slate-900 dark:text-white">{round.prompt}</p>
             {active.kind === 'identify' && run.phase === 'playing' && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Au clavier : touches numériques 1, 2, 3…</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Au clavier : touches 1, 2, 3… de gauche à droite</p>
             )}
             {active.level === 1 && run.phase === 'playing' && (
               <p className="text-xs text-indigo-600 dark:text-indigo-300 mt-1">

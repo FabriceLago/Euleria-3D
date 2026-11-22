@@ -112,6 +112,9 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
 
     return () => {
       ro.disconnect();
+      runToken.current++;
+      if (demoTimer.current) clearTimeout(demoTimer.current);
+      demoTimer.current = null;
       fxRef.current?.dispose();
       fxRef.current = null;
       engine.dispose();
@@ -162,6 +165,8 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
   const runRef = useRef<RunState | null>(null);
   runRef.current = run;
   const failReported = useRef(false);
+  const demoTimer = useRef<number | null>(null);
+  const runToken = useRef(0);
   const reducedMotion = useMemo(
     () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
     []
@@ -187,6 +192,9 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
   });
 
   const stopMission = useCallback(() => {
+    runToken.current++;
+    if (demoTimer.current) clearTimeout(demoTimer.current);
+    demoTimer.current = null;
     fxRef.current?.dispose();
     fxRef.current = null;
     setActive(null);
@@ -196,6 +204,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
 
   const startMission = (m: MissionDef) => {
     stopMission();
+    runToken.current++;
     const engine = engineRef.current;
     if (!engine) return;
     const r = createRun(m);
@@ -210,6 +219,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
   };
 
   const handleSolved = (tag?: string) => {
+    if (runRef.current?.phase !== 'playing') return;
     const fx = fxRef.current;
     fx?.punchZoom();
     fx?.bounce(tag ?? '');
@@ -232,7 +242,9 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
       onMissionFailed?.(missionResult(m, 0, elapsedMs(r, performance.now())));
     }
     const fx = fxRef.current;
+    const token = runToken.current;
     const finish = () => {
+      if (token !== runToken.current) return;
       fx?.clearHighlights();
       if (r.rounds.length === 1) applyStart(rd.start);
       dispatch({ type: 'demoDone', now: performance.now() });
@@ -245,11 +257,13 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
         0.9,
         (k) => keys.forEach((p) => setParam(p, Math.round(from[p] + ((rd.solution![p] as number) - from[p]) * k))),
         ease.inOutSine,
-        () => setTimeout(finish, 900)
+        () => {
+          demoTimer.current = window.setTimeout(finish, 900);
+        }
       );
     } else if (rd.targetTag && fx) {
       fx.highlight(rd.targetTag, '#f59e0b');
-      setTimeout(finish, 1400);
+      demoTimer.current = window.setTimeout(finish, 1400);
     } else finish();
   };
 
@@ -313,11 +327,15 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
 
   // Pause : onglet masqué ou contexte WebGL perdu
   useEffect(() => {
-    const onVis = () => dispatch({ type: document.hidden ? 'pause' : 'resume', now: performance.now() });
+    const onVis = () => {
+      if (document.hidden && runRef.current?.phase !== 'playing') return;
+      dispatch({ type: document.hidden ? 'pause' : 'resume', now: performance.now() });
+    };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [dispatch]);
   useEffect(() => {
+    if (contextLost && runRef.current?.phase !== 'playing') return;
     dispatch({ type: contextLost ? 'pause' : 'resume', now: performance.now() });
   }, [contextLost, dispatch]);
 
