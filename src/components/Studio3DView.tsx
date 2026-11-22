@@ -3,6 +3,7 @@ import { ArrowRight, Atom, Calculator, Dna, Feather, Landmark, Languages } from 
 import { GRADE_LEVELS, SUBJECTS } from '../db/curriculumData.ts';
 import type { AccentColor, ChapterItem, GradeLevel, SubjectId, ThemeMode } from '../types/learning.ts';
 import { MathViewport3D } from './MathViewport3D.tsx';
+import type { MissionResult } from '../missions/types.ts';
 
 interface Studio3DViewProps {
   chapters: ChapterItem[];
@@ -13,6 +14,8 @@ interface Studio3DViewProps {
   accentColor: AccentColor;
   showGrid: boolean;
   onOpenChapterInCourse: (chapter: ChapterItem) => void;
+  onMissionComplete?: (r: MissionResult) => void;
+  onMissionFailed?: (r: MissionResult, chapter: ChapterItem) => void;
 }
 
 export const Studio3DView: React.FC<Studio3DViewProps> = ({
@@ -24,6 +27,8 @@ export const Studio3DView: React.FC<Studio3DViewProps> = ({
   accentColor,
   showGrid,
   onOpenChapterInCourse,
+  onMissionComplete,
+  onMissionFailed,
 }) => {
   const [grade, setGrade] = useState<GradeLevel>(initialGrade);
   const subjectChapters = useMemo(
@@ -142,6 +147,8 @@ export const Studio3DView: React.FC<Studio3DViewProps> = ({
       </div>
 
       <MathViewport3D
+        onMissionComplete={onMissionComplete}
+        onMissionFailed={(r) => onMissionFailed?.(r, activeChapter)}
         preset={activeChapter.scenePreset}
         chapterTitle={activeChapter.title}
         defaultParams={activeChapter.defaultParams}

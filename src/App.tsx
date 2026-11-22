@@ -29,6 +29,7 @@ import type {
   SubjectId,
   ThemeMode,
 } from './types/learning.ts';
+import type { MissionResult } from './missions/types.ts';
 
 const DynamicQuizView = lazy(() =>
   import('./components/DynamicQuizView.tsx').then((m) => ({ default: m.DynamicQuizView }))
@@ -454,6 +455,49 @@ const PlatformShell: React.FC = () => {
     );
   }, []);
 
+  const handleMissionComplete = useCallback(
+    async (r: MissionResult) => {
+      if (!backendAvailable || !profile) return; // mode local : étoiles gardées sur l'appareil, pas d'XP (comme les exercices)
+      try {
+        const res = await apiFetch('/api/missions/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ missionId: r.missionId, stars: r.stars, timeMs: r.timeMs }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (typeof data.userXp === 'number') applyXpAndBadges(data.userXp, data.newlyUnlockedBadges ?? []);
+      } catch {
+        // hors ligne : la mission reste jouable, seules les XP ne sont pas créditées
+      }
+    },
+    [backendAvailable, profile, apiFetch, applyXpAndBadges]
+  );
+
+  const handleMissionFailed = useCallback(
+    (r: MissionResult, chapter: ChapterItem) => {
+      handleRecordMistake({
+        key: `mission-${r.missionId}`,
+        exerciseId: null,
+        chapterId: chapter.id,
+        chapterTitle: chapter.title,
+        subject: chapter.subject || 'mathematics',
+        gradeLevel: chapter.gradeLevel,
+        exerciseType: 'practice',
+        prompt: r.prompt,
+        hint: r.hint,
+        options: null,
+        explanation: r.hint,
+        lastSubmittedAnswer: '',
+        wrongCount: 1,
+        lastWrongAt: new Date().toISOString(),
+        resolved: false,
+        source: 'mission',
+      });
+    },
+    [handleRecordMistake]
+  );
+
   const sendDuelMessage = useCallback((payload: Record<string, unknown>) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(payload));
@@ -614,6 +658,8 @@ const PlatformShell: React.FC = () => {
             }}
             onPrintDocument={handlePrintDocument}
             onMistakeRecorded={handleRecordMistake}
+            onMissionComplete={handleMissionComplete}
+            onMissionFailed={handleMissionFailed}
           />
         ) : (
           <Suspense
@@ -655,6 +701,8 @@ const PlatformShell: React.FC = () => {
                 accentColor={accentColor}
                 showGrid={show3DHints}
                 onOpenChapterInCourse={handleOpenChapter}
+                onMissionComplete={handleMissionComplete}
+                onMissionFailed={handleMissionFailed}
               />
             ) : activeSection === 'leaderboard' ? (
               <LeaderboardView

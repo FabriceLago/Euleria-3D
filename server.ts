@@ -52,6 +52,7 @@ import {
   type FlashcardRating,
 } from './src/services/flashcardEngine.ts';
 import type { ChapterItem, GradeLevel, SubjectId } from './src/types/learning.ts';
+import { validateMissionCompletion } from './src/missions/serverValidation.ts';
 import { parseLang, reverseDict, translateDeep, type Dict, type Lang } from './src/i18n/core.ts';
 import enDict from './src/i18n/locales/en.json' with { type: 'json' };
 import nlDict from './src/i18n/locales/nl.json' with { type: 'json' };
@@ -544,6 +545,7 @@ async function startServer() {
   const attemptLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 40, keyPrefix: 'attempt' });
   const quizGenerateLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 20, keyPrefix: 'quiz-gen' });
   const quizAnswerLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 60, keyPrefix: 'quiz-ans' });
+  const missionLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 20, keyPrefix: 'mission' });
   const examStartLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 12, keyPrefix: 'exam-start' });
   const examSubmitLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 12, keyPrefix: 'exam-sub' });
   const flashcardLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 60, keyPrefix: 'fc-rev' });
@@ -883,6 +885,26 @@ async function startServer() {
         userXp,
         newlyUnlockedBadges,
       });
+    } catch (error: unknown) {
+      sendRouteError(res, error, 'Erreur serveur');
+    }
+  });
+
+  app.post('/api/missions/complete', missionLimiter, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: 'Utilisateur non authentifié.' });
+      const check = validateMissionCompletion(req.body);
+      if (!check.ok) return res.status(400).json({ error: 'Résultat de mission invalide.' });
+      const user = await getOrCreateUser(
+        req.user.uid,
+        req.user.email || `${req.user.uid}@euleria.local`,
+        req.user.name,
+        req.user.picture
+      );
+      const xpEarned = capDailyXp(user.id, check.xp); // même plafond quotidien que les quiz rejouables
+      const awarded = await awardDynamicQuizXp(user.id, xpEarned);
+      broadcastEvent('leaderboard:updated', { leaderboard: await getLeaderboard(25) });
+      return res.json({ xpEarned, userXp: awarded.userXp, newlyUnlockedBadges: awarded.newlyUnlockedBadges });
     } catch (error: unknown) {
       sendRouteError(res, error, 'Erreur serveur');
     }

@@ -195,7 +195,7 @@ export interface MistakeItem {
   wrongCount: number;
   lastWrongAt: string;
   resolved: boolean;
-  source: 'exercise' | 'quiz' | 'exam';
+  source: 'exercise' | 'quiz' | 'exam' | 'mission';
 }
 
 export interface MistakesNotebookData {
