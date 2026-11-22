@@ -3547,6 +3547,15 @@ export class MathSceneEngine {
           river.position.set(0, 2.02 + explode * 0.45, 0);
           this.modelGroup.add(river);
         }
+        if (mode !== 3) {
+          // Déplacement d = v × t (même calcul que l'affichage), 4 000 km = toute la largeur du bloc
+          const driftKm = Math.round(speed * 10 * Math.max(5, Math.round(b)));
+          const len = Math.max(0.08, Math.min(1, driftKm / 4000) * 4.4);
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(len, 0.06, 0.06), warmBrassMat);
+          bar.position.set(-2.2 + len / 2, 2.6, 1.4);
+          bar.userData.tag = 'deplacement';
+          this.modelGroup.add(bar);
+        }
         break;
       }
 
@@ -3565,8 +3574,10 @@ export class MathSceneEngine {
         soil.receiveShadow = true;
         this.modelGroup.add(soil);
 
+        // La largeur de la pyramide suit la biomasse des producteurs (b, 200 à 2 000 kg)
+        const bioScale = 0.55 + 0.45 * Math.sqrt(Math.max(200, b) / 2000);
         for (let lv = 0; lv < levels; lv++) {
-          const w = 3.2 - lv * 0.72;
+          const w = (3.2 - lv * 0.72) * bioScale;
           const h = 0.48;
           const tier = new THREE.Mesh(
             new THREE.BoxGeometry(w, h, w),
@@ -3785,6 +3796,17 @@ export class MathSceneEngine {
             amp: 0.08,
           });
           this.modelGroup.add(ves);
+        }
+        // Règle graduée sous l'axone : longueur L (b, en m), un cran tous les 0,2 m
+        const axonLen = Math.max(0.4, b);
+        const ruler = new THREE.Mesh(new THREE.BoxGeometry(axonLen * 2, 0.05, 0.05), warmBrassMat);
+        ruler.position.set(-1.45 + axonLen, 0.75, 0.6);
+        ruler.userData.tag = 'axone';
+        this.modelGroup.add(ruler);
+        for (let t = 0; t <= Math.round(axonLen / 0.2); t++) {
+          const tick = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.16, 0.03), warmBrassMat);
+          tick.position.set(-1.45 + t * 0.4, 0.75, 0.6);
+          this.modelGroup.add(tick);
         }
         break;
       }
