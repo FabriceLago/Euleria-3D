@@ -471,6 +471,14 @@ async function startServer() {
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
 
+  // Adresse unique : www.<domaine> → <domaine> (301), chemin et paramètres conservés
+  app.use((req, res, next) => {
+    if (req.hostname.startsWith('www.')) {
+      return res.redirect(301, `https://${req.hostname.slice(4)}${req.originalUrl}`);
+    }
+    next();
+  });
+
   // En-têtes de sécurité HTTP (sans X-Frame-Options pour préserver l'aperçu en iframe)
   app.use((_req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
