@@ -74,6 +74,8 @@ export function computeStars(s: RunState): 0 | 1 | 2 | 3 {
 }
 
 export function missionXp(level: 1 | 2 | 3, stars: number): number {
+  const base = LEVEL_XP[level - 1];
+  if (base === undefined || !Number.isFinite(stars)) return 0;
   const st = Math.max(0, Math.min(3, Math.round(stars)));
-  return Math.min(MAX_MISSION_XP, Math.round(LEVEL_XP[level - 1] * STAR_FACTOR[st]));
+  return Math.min(MAX_MISSION_XP, Math.round(base * STAR_FACTOR[st]));
 }

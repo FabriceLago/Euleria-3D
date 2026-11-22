@@ -69,4 +69,8 @@ assert.equal(missionXp(1, 3), 20);
 assert.equal(missionXp(2, 2), 23);
 assert.equal(missionXp(1, 0), 0);
 assert.equal(missionXp(3, 9), MAX_MISSION_XP, 'étoiles hors bornes plafonnées');
+assert.equal(missionXp(2, NaN), 0, 'étoiles NaN = 0');
+assert.equal(missionXp(2, Infinity), 0, 'étoiles non finies = 0');
+assert.equal(missionXp(4 as 1, 3), 0, 'niveau inconnu = 0');
+assert.equal(missionXp(0 as 1, 3), 0, 'niveau inconnu = 0');
 console.log('missions runner OK');
