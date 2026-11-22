@@ -481,7 +481,7 @@ export const SEED_CHAPTERS: SeedChapter[] = [
       'Un prisme droit possède deux bases polygonales superposables et des faces latérales rectangulaires. Un cylindre de révolution est engendré par la rotation d’un rectangle autour d’un axe. Pour les deux solides, le volume vaut V = Aire_base × h.',
     formulaDisplay: 'V_cylindre = π × r² × h',
     scenePreset: 'prisme_5e',
-    defaultParams: { a: 1.5, b: 3.2, c: 6 },
+    defaultParams: { a: 1.5, b: 4, c: 6 },
     xpReward: 140,
     estimatedMinutes: 20,
     exercises: [
