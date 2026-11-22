@@ -218,16 +218,16 @@ export function getParamMetadataForPreset(preset: string): ParamMetadata {
     case 'probabilites_1ere':
       return {
         labelA: 'Prior P(A)',
-        minA: 0.1,
-        maxA: 5,
-        stepA: 0.1,
+        minA: 0.05,
+        maxA: 0.95,
+        stepA: 0.05,
         labelB: 'Vraisemblance P(B|A)',
-        minB: 0.1,
-        maxB: 5,
-        stepB: 0.1,
+        minB: 0.05,
+        maxB: 0.95,
+        stepB: 0.05,
         labelC: 'Faux positifs P(B|¬A)',
         minC: 0.05,
-        maxC: 1,
+        maxC: 0.95,
         stepC: 0.05,
       };
     case 'pc_states_matter':
@@ -870,13 +870,37 @@ export function computeReadout(params: SceneParams): LiveMathReadout {
       };
     }
     case 'prediction_term': {
-      const sig = 1 / (1 + Math.exp(-(a * 0.8 + b)));
+      // Même modèle que la scène : z = w·x + b, courbe σ(z) le long de x.
+      const z = a * 1 + b;
+      const sig = 1 / (1 + Math.exp(-z));
       return {
-        primaryLabel: 'Prédiction σ(z)',
+        primaryLabel: 'Prédiction en x = 1',
         primaryValue: `${Math.round(sig * 100)} %`,
-        secondaryLabel: 'Taux d’oubli / EWMA α',
-        secondaryValue: `${c.toFixed(2)}`,
-        formulaLive: `σ(${(a * 0.8 + b).toFixed(2)}) = ${sig.toFixed(3)}`,
+        secondaryLabel: 'Seuil 50 % (x = −b / w)',
+        secondaryValue: `x = ${(-b / a).toFixed(2)} · α = ${c.toFixed(2)}`,
+        formulaLive: `σ(${a.toFixed(1)}×1 + ${b.toFixed(1)}) = σ(${z.toFixed(2)}) = ${sig.toFixed(3)}`,
+      };
+    }
+    case 'produit_scalaire_1ere': {
+      const dot = b * c * Math.cos(THREE.MathUtils.degToRad(a));
+      const r = Math.abs(dot) < 0.005 ? 0 : dot;
+      return {
+        primaryLabel: 'Produit scalaire u · v',
+        primaryValue: `${r.toFixed(2)}`,
+        secondaryLabel: Math.round(a) === 90 ? 'Angle θ · vecteurs orthogonaux' : 'Angle θ',
+        secondaryValue: `${Math.round(a)}°`,
+        formulaLive: `${b.toFixed(2)} × ${c.toFixed(2)} × cos(${Math.round(a)}°) = ${r.toFixed(2)}`,
+      };
+    }
+    case 'probabilites_1ere': {
+      const pB = b * a + c * (1 - a);
+      const post = (b * a) / pB;
+      return {
+        primaryLabel: 'P(A | B)',
+        primaryValue: `${Math.round(post * 100)} %`,
+        secondaryLabel: 'P(B)',
+        secondaryValue: `${pB.toFixed(3)}`,
+        formulaLive: `${b.toFixed(2)} × ${a.toFixed(2)} / ${pB.toFixed(3)} = ${post.toFixed(3)}`,
       };
     }
     case 'pc_states_matter': {
@@ -2226,8 +2250,7 @@ export class MathSceneEngine {
 
         for (let i = 0; i < posAttr.count; i++) {
           const x = posAttr.getX(i);
-          const z = posAttr.getZ(i);
-          const logit = a * (x * 0.65) + b + 0.35 * Math.sin(z * 1.1);
+          const logit = a * x + b;
           const sig = 1 / (1 + Math.exp(-logit));
           const y = 0.25 + sig * 2.4;
           posAttr.setY(i, y);
@@ -2249,9 +2272,18 @@ export class MathSceneEngine {
         this.modelGroup.add(surface);
 
         // Gradient trajectory spheres along sigmoid slice z=0
+        // Seuil de décision σ = 50 % en x = −b / w (repère vertical)
+        const xThr = -b / a;
+        if (Math.abs(xThr) <= size / 2) {
+          const thr = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.6, size), glassMat);
+          thr.position.set(xThr, 1.45, 0);
+          thr.userData.tag = 'seuil';
+          this.modelGroup.add(thr);
+        }
+
         for (let k = -2; k <= 2; k++) {
           const x = k * 0.85;
-          const logit = a * (x * 0.65) + b;
+          const logit = a * x + b;
           const sig = 1 / (1 + Math.exp(-logit));
           const y = 0.25 + sig * 2.4 + 0.14 + explode * 0.4;
           const node = new THREE.Mesh(new THREE.SphereGeometry(0.14, 20, 20), warmBrassMat);
@@ -2263,10 +2295,39 @@ export class MathSceneEngine {
         break;
       }
 
-      case 'vecteurs_2nde':
       case 'produit_scalaire_1ere': {
+        // u (‖u‖ = b) horizontal, v (‖v‖ = c) à l'angle θ = a degrés, dans le plan vertical face caméra.
+        const k = 0.75;
+        const th = THREE.MathUtils.degToRad(a);
+        const origin = new THREE.Vector3(0, 0.3, 0);
+        const uTip = origin.clone().add(new THREE.Vector3(b * k, 0, 0));
+        const vTip = origin.clone().add(new THREE.Vector3(Math.cos(th) * c * k, Math.sin(th) * c * k, 0));
+        const projTip = new THREE.Vector3(vTip.x, origin.y, 0);
+
+        this.modelGroup.add(createVectorArrowGroup(origin, uTip, accent.getHex(), 0.065));
+        this.modelGroup.add(createVectorArrowGroup(origin, vTip, 0xf59e0b, 0.065));
+        // Projection de v sur u : positive (vert) ou négative (rouge) → signe de u·v
+        if (Math.abs(projTip.x) > 0.1) {
+          const proj = createVectorArrowGroup(origin, projTip, projTip.x > 0 ? 0x10b981 : 0xef4444, 0.04);
+          proj.position.z = 0.12;
+          this.modelGroup.add(proj);
+        }
+        const drop = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([vTip, projTip]),
+          new THREE.LineDashedMaterial({ color: 0x94a3b8, dashSize: 0.1, gapSize: 0.07 })
+        );
+        drop.computeLineDistances();
+        this.modelGroup.add(drop);
+
+        const pivot = new THREE.Mesh(new THREE.SphereGeometry(0.12, 20, 20), brushedMetalMat);
+        pivot.position.copy(origin);
+        this.modelGroup.add(pivot);
+        break;
+      }
+
+      case 'vecteurs_2nde': {
         const u = new THREE.Vector3(a * 0.9, c * 0.8, 0.6);
-        const angleRad = preset === 'produit_scalaire_1ere' ? THREE.MathUtils.degToRad(a * 12) : 0.9;
+        const angleRad = 0.9;
         const v = new THREE.Vector3(
           Math.cos(angleRad) * b * 0.9,
           0.6,
@@ -4880,6 +4941,34 @@ export class MathSceneEngine {
             link.rotation.z = Math.PI / 2;
             link.position.set((x + nextX) / 2, 0.75, 0);
             this.modelGroup.add(link);
+          }
+        }
+        break;
+      }
+
+      case 'probabilites_1ere': {
+        // Carré unité (côté S) : largeur P(A) | P(¬A), profondeur P(B|·). Aire au sol = probabilité jointe.
+        // Blocs hauts = événement B ; P(A|B) = aire orange / aire de tous les blocs hauts.
+        const S = 4;
+        const x0 = -S / 2;
+        const z0 = -S / 2;
+        const cols = [
+          { x: x0, w: a * S, pB: b, matB: accentMat, tag: 'A∩B' },
+          { x: x0 + a * S, w: (1 - a) * S, pB: c, matB: warmBrassMat, tag: '¬A∩B' },
+        ];
+        for (const col of cols) {
+          const dB = col.pB * S;
+          const parts = [
+            { z: z0, d: dB, h: 1.4, mat: col.matB, tag: col.tag },
+            { z: z0 + dB, d: S - dB, h: 0.25, mat: glassMat, tag: '' },
+          ];
+          for (const p of parts) {
+            const box = new THREE.Mesh(new THREE.BoxGeometry(col.w * 0.97, p.h, p.d * 0.97), p.mat);
+            box.position.set(col.x + col.w / 2, 0.1 + p.h / 2 + (p.tag ? explode * 0.4 : 0), p.z + p.d / 2);
+            box.castShadow = true;
+            box.receiveShadow = true;
+            if (p.tag) box.userData.tag = p.tag;
+            this.modelGroup.add(box);
           }
         }
         break;
