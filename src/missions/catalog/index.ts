@@ -7,6 +7,7 @@ import { narratifMissions } from './narratif.ts';
 import { physiqueMissions } from './physique.ts';
 import { svtMissions } from './svt.ts';
 import { histoireMissions } from './histoire.ts';
+import { languesMissions } from './langues.ts';
 import { refractionMissions } from './refraction.ts';
 import { tempsMissions } from './temps.ts';
 
@@ -21,6 +22,7 @@ export const ALL_MISSIONS: MissionDef[] = [
   ...physiqueMissions,
   ...svtMissions,
   ...histoireMissions,
+  ...languesMissions,
 ];
 
 export const getMissionsForPreset = (preset: string): MissionDef[] =>
