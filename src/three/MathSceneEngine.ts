@@ -185,6 +185,36 @@ export function getParamMetadataForPreset(preset: string): ParamMetadata {
         maxC: 8,
         stepC: 0.25,
       };
+    case 'pyramide_4e':
+      return {
+        labelA: 'Côté / rayon de base (cm)',
+        minA: 1,
+        maxA: 6,
+        stepA: 0.5,
+        labelB: 'Hauteur h (cm)',
+        minB: 1,
+        maxB: 10,
+        stepB: 0.5,
+        labelC: 'Solide (1 = pyramide, 2 = cône)',
+        minC: 1,
+        maxC: 2,
+        stepC: 1,
+      };
+    case 'vecteurs_2nde':
+      return {
+        labelA: 'Abscisse x de u',
+        minA: -5,
+        maxA: 5,
+        stepA: 1,
+        labelB: 'Ordonnée y de u',
+        minB: -5,
+        maxB: 5,
+        stepB: 1,
+        labelC: 'Abscisse de v(x ; 2)',
+        minC: -4,
+        maxC: 4,
+        stepC: 1,
+      };
     case 'parabole_2nde':
       return {
         labelA: 'Coefficient a',
@@ -896,6 +926,33 @@ export function computeReadout(params: SceneParams): LiveMathReadout {
         secondaryLabel: 'Cylindre π r² h',
         secondaryValue: `${(Math.PI * a * a * c).toFixed(2)} cm³`,
         formulaLive: `B = ${base.toFixed(2)} cm² (n = ${n}) × ${c.toFixed(2)} cm`,
+      };
+    }
+    case 'pyramide_4e': {
+      const isCone = Math.round(c) >= 2;
+      const base = isCone ? Math.PI * a * a : a * a;
+      const vol = (base * b) / 3;
+      return {
+        primaryLabel: 'Volume V = (1/3) × B × h',
+        primaryValue: `${vol.toFixed(2)} cm³`,
+        secondaryLabel: isCone ? 'Cylindre π r² h' : 'Pavé B × h',
+        secondaryValue: `${(base * b).toFixed(2)} cm³`,
+        formulaLive: isCone
+          ? `B = π × ${a.toFixed(1)}² · génératrice g = √(r² + h²) = ${Math.hypot(a, b).toFixed(2)} cm`
+          : `B = ${a.toFixed(1)}² = ${base.toFixed(2)} cm² · V = ${base.toFixed(2)} × ${b.toFixed(1)} ÷ 3`,
+      };
+    }
+    case 'vecteurs_2nde': {
+      // u(a ; b), v(c ; 2)
+      const [x, y, xv] = [Math.round(a), Math.round(b), Math.round(c)];
+      const det = x * 2 - y * xv;
+      const n = (k: number) => (k < 0 ? `(${k})` : `${k}`);
+      return {
+        primaryLabel: 'Somme u + v',
+        primaryValue: `(${x + xv} ; ${y + 2})`,
+        secondaryLabel: 'Norme ‖u‖ · det(u, v)',
+        secondaryValue: `${Math.hypot(x, y).toFixed(2)} · ${det}`,
+        formulaLive: `u(${x} ; ${y}) · v(${xv} ; 2) · det = ${n(x)}×2 − ${n(y)}×${n(xv)} = ${det}`,
       };
     }
     case 'parabole_2nde': {
@@ -2386,21 +2443,37 @@ export class MathSceneEngine {
       }
 
       case 'vecteurs_2nde': {
-        const u = new THREE.Vector3(a * 0.9, c * 0.8, 0.6);
-        const angleRad = 0.9;
-        const v = new THREE.Vector3(
-          Math.cos(angleRad) * b * 0.9,
-          0.6,
-          Math.sin(angleRad) * b * 0.9
-        );
-        const sum = u.clone().add(v);
-        const origin = new THREE.Vector3(0, 0.2, 0);
+        // Plan vertical : u(a ; b), v(c ; 2), u + v par la règle du parallélogramme (mêmes valeurs que computeReadout)
+        const s = 0.38;
+        const origin = new THREE.Vector3(0, 2.0, 0);
+        const toWorld = (x: number, y: number) => new THREE.Vector3(origin.x + x * s, origin.y + y * s, 0);
+        const [x, y, xv] = [Math.round(a), Math.round(b), Math.round(c)];
+        const arrow = (from: THREE.Vector3, to: THREE.Vector3, color: number, radius: number) => {
+          if (to.distanceTo(from) > 0.01) this.modelGroup.add(createVectorArrowGroup(from, to, color, radius));
+        };
 
-        this.modelGroup.add(createVectorArrowGroup(origin, origin.clone().add(u), accent.getHex(), 0.065));
-        this.modelGroup.add(createVectorArrowGroup(origin, origin.clone().add(v), 0xf59e0b, 0.065));
-        this.modelGroup.add(createVectorArrowGroup(origin, origin.clone().add(sum), 0x10b981, 0.075));
+        for (const [w, h, px, py] of [[16 * s, 0.02, 2 * s, 0], [0.02, 12 * s, 0, 1 * s]]) {
+          const axisBar = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.02), brushedMetalMat);
+          axisBar.position.copy(toWorld(px / s, py / s));
+          this.modelGroup.add(axisBar);
+        }
 
-        const pivot = new THREE.Mesh(new THREE.SphereGeometry(0.15, 20, 20), brushedMetalMat);
+        const uTip = toWorld(x, y);
+        const sumTip = toWorld(x + xv, y + 2);
+        arrow(origin, uTip, accent.getHex(), 0.065);
+        arrow(origin, toWorld(xv, 2), 0xf59e0b, 0.065);
+        arrow(origin, sumTip, 0x10b981, 0.075);
+        // Côtés du parallélogramme en pointillés : v reporté au bout de u (Chasles) et u au bout de v
+        for (const [from, color] of [[uTip, 0xf59e0b], [toWorld(xv, 2), accent.getHex()]] as const) {
+          const side = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([from, sumTip]),
+            new THREE.LineDashedMaterial({ color, dashSize: 0.1, gapSize: 0.07 })
+          );
+          side.computeLineDistances();
+          this.modelGroup.add(side);
+        }
+
+        const pivot = new THREE.Mesh(new THREE.SphereGeometry(0.1, 20, 20), brushedMetalMat);
         pivot.position.copy(origin);
         this.modelGroup.add(pivot);
         break;
@@ -2492,14 +2565,15 @@ export class MathSceneEngine {
       }
 
       case 'pyramide_4e': {
-        const radius = Math.max(0.8, Math.min(2.0, a * 0.7));
-        const height = Math.max(1.4, Math.min(3.6, b * 0.95));
-        const isPyramid = preset === 'pyramide_4e';
+        // a = côté (pyramide) ou rayon (cône), b = hauteur, c = 1 pyramide dans son pavé / 2 cône dans son cylindre
+        const radius = a * 0.3;
+        const height = b * 0.35;
+        const isPyramid = Math.round(c) < 2;
 
-        // Outer translucent bounding prism/cylinder
+        // Outer translucent bounding prism/cylinder (même base et même hauteur : V = 3 × V_solide)
         const outerGeo = isPyramid
           ? new THREE.BoxGeometry(radius * 2, height, radius * 2)
-          : new THREE.CylinderGeometry(radius, radius, height, 32);
+          : new THREE.CylinderGeometry(radius, radius, height, 48);
         const outer = new THREE.Mesh(outerGeo, glassMat);
         outer.position.y = height / 2 + 0.1 + explode * 0.6;
         outer.renderOrder = 2;
@@ -2507,8 +2581,8 @@ export class MathSceneEngine {
 
         // Inner solid core
         const innerGeo = isPyramid
-          ? new THREE.ConeGeometry(radius * 1.38, height, 4)
-          : new THREE.CylinderGeometry(radius * 0.72, radius * 0.72, height * 0.96, 32);
+          ? new THREE.ConeGeometry(radius * Math.SQRT2, height, 4)
+          : new THREE.ConeGeometry(radius, height, 48);
         const inner = new THREE.Mesh(innerGeo, accentMat);
         inner.position.y = height / 2 + 0.1;
         if (isPyramid) inner.rotation.y = Math.PI / 4;

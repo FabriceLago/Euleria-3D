@@ -483,7 +483,86 @@ const predictionMissions: MissionDef[] = [
   },
 ];
 
+// ---- Pyramides et cônes (4ᵉ) : a = côté / rayon, b = h, c = 1 pyramide / 2 cône ; V = (1/3) × B × h (comme computeReadout)
+const pyrVol = (p: MissionParams) => ((r(p.c) >= 2 ? Math.PI * p.a * p.a : p.a * p.a) * p.b) / 3;
+const pyrHControl = { param: 'b' as const, gesture: 'drag-y' as const, min: 1, max: 10, step: 0.5, pxPerStep: 14 };
+
+const pyramideMissions: MissionDef[] = [
+  {
+    id: 'pyramide-1', preset: 'pyramide_4e', level: 1, kind: 'adjust',
+    prompt: 'Base carrée de 6 cm : règle la hauteur pour obtenir une pyramide de 60 cm³',
+    hint: 'V = (1/3) × 6 × 6 × h = 12 × h.',
+    start: { a: 6, b: 2, c: 1 }, solution: { b: 5 },
+    controls: [pyrHControl], goal: (p) => r(p.c) === 1 && near(pyrVol(p), 60, 0.01),
+  },
+  {
+    id: 'pyramide-2', preset: 'pyramide_4e', level: 2, kind: 'adjust',
+    prompt: 'Construis un cône de volume 12π ≈ 37,70 cm³ et de génératrice 5 cm',
+    hint: 'r² × h = 36 et r² + h² = 25 (Pythagore) : cherche un triangle 3-4-5.',
+    start: { a: 2, b: 6, c: 2 }, solution: { a: 3, b: 4 },
+    controls: [{ param: 'a', gesture: 'drag-x', min: 1, max: 6, step: 0.5, pxPerStep: 16 }, pyrHControl],
+    goal: (p) => r(p.c) === 2 && near(pyrVol(p), 12 * Math.PI, 0.01) && near(Math.hypot(p.a, p.b), 5, 0.01),
+  },
+  {
+    id: 'pyramide-3', preset: 'pyramide_4e', level: 3, kind: 'adjust',
+    prompt: 'Pyramides chrono',
+    hint: 'Base carrée de 3 cm : B = 9 cm², donc V = 3 × h.',
+    start: { a: 3, b: 1, c: 1 },
+    controls: [pyrHControl],
+    timeLimitS: 60,
+    rounds: (rand) =>
+      pickN([2, 4, 5, 6, 8, 10], 4, rand).map((h) => ({
+        prompt: `Base carrée de 3 cm : obtiens une pyramide de ${3 * h} cm³`,
+        start: { b: 1 },
+        solution: { b: h },
+        goal: (p: MissionParams) => near(pyrVol(p), 3 * h, 0.01),
+      })),
+  },
+];
+
+// ---- Vecteurs (2nde) : u(a ; b), v(c ; 2) ; det(u, v) = 2a − bc (comme computeReadout)
+const det = (p: MissionParams) => r(p.a) * 2 - r(p.b) * r(p.c);
+const uControls = [
+  { param: 'a' as const, gesture: 'drag-x' as const, min: -5, max: 5, step: 1, pxPerStep: 24 },
+  { param: 'b' as const, gesture: 'drag-y' as const, min: -5, max: 5, step: 1, pxPerStep: 24 },
+];
+const SUMS: Array<[number, number]> = [[4, 6], [2, 5], [6, 3], [5, 7], [3, 4], [1, 6]];
+
+const vecteursMissions: MissionDef[] = [
+  {
+    id: 'vecteurs-1', preset: 'vecteurs_2nde', level: 1, kind: 'adjust',
+    prompt: 'Donne au vecteur u une norme de 5',
+    hint: '‖u‖ = √(x² + y²) : pense au triangle 3-4-5.',
+    start: { a: 1, b: 1, c: 2 }, solution: { a: 3, b: 4 },
+    controls: uControls, goal: (p) => Math.hypot(r(p.a), r(p.b)) === 5,
+  },
+  {
+    id: 'vecteurs-2', preset: 'vecteurs_2nde', level: 2, kind: 'adjust',
+    prompt: 'Rends u colinéaire à v(3 ; 2), sans le rendre nul',
+    hint: 'det(u, v) = x × 2 − y × 3 doit valoir 0.',
+    start: { a: 1, b: 3, c: 3 }, solution: { a: 3, b: 2 },
+    controls: uControls, goal: (p) => r(p.c) === 3 && det(p) === 0 && (r(p.a) !== 0 || r(p.b) !== 0),
+  },
+  {
+    id: 'vecteurs-3', preset: 'vecteurs_2nde', level: 3, kind: 'adjust',
+    prompt: 'Vecteurs chrono',
+    hint: 'v(1 ; 2) : u = (u + v) − v.',
+    start: { a: 0, b: 0, c: 1 },
+    controls: uControls,
+    timeLimitS: 60,
+    rounds: (rand) =>
+      pickN(SUMS, 4, rand).map(([sx, sy]) => ({
+        prompt: `Avec v(1 ; 2), obtiens u + v = (${sx} ; ${sy})`,
+        start: { a: 0, b: 0 },
+        solution: { a: sx - 1, b: sy - 2 },
+        goal: (p: MissionParams) => r(p.c) === 1 && r(p.a) + 1 === sx && r(p.b) + 2 === sy,
+      })),
+  },
+];
+
 export const mathsMissions: MissionDef[] = [
+  ...pyramideMissions,
+  ...vecteursMissions,
   ...prismeMissions,
   ...paraboleMissions,
   ...scalaireMissions,
