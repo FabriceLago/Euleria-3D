@@ -21,6 +21,7 @@ const PILOTS = [
   'prisme_5e', 'parabole_2nde', 'produit_scalaire_1ere', 'probabilites_1ere', 'prediction_term',
   'pc_states_matter', 'pc_projectile_3d', 'pc_circuit_3d', 'pc_molecule_3d', 'pc_wave_3d', 'pc_atom_3d', 'pc_gravity_3d', 'pc_titration_3d',
   'svt_cell_3d', 'svt_ecosystem_3d', 'svt_climate_3d', 'svt_organ_3d', 'svt_tectonics_3d', 'svt_neuron_3d',
+  'hg_monument_3d', 'hg_city_urban_3d', 'hg_globe_routes_3d', 'hg_demography_3d', 'hg_industry_3d', 'hg_geopolitics_3d',
 ];
 for (const preset of PILOTS) {
   const ms = getMissionsForPreset(preset);
