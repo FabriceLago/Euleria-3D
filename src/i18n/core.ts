@@ -50,8 +50,10 @@ export const normalizeText = (s: string) => s.replace(/\s+/g, ' ').trim();
 /**
  * Traducteur de textes affichés : correspondance exacte, sinon gabarits « {0} exercices » extraits du code.
  * Les morceaux variables sont eux-mêmes traduits s'ils sont connus (ex. nom de matière).
+ * En anglais, un décimal français inséré dans un gabarit (« 19,3 ») passe au point (« 19.3 ») ; le néerlandais garde la virgule.
  */
-export function makeTextTranslator(dict: Dict): (text: string) => string | null {
+export function makeTextTranslator(dict: Dict, lang?: Lang): (text: string) => string | null {
+  const localize = (v: string) => (lang === 'en' && /^-?\d+,\d+$/.test(v) ? v.replace(',', '.') : v);
   const patterns: Array<[RegExp, string]> = [];
   for (const [fr, tr] of Object.entries(dict)) {
     if (!/\{\d+\}/.test(fr)) continue;
@@ -70,7 +72,7 @@ export function makeTextTranslator(dict: Dict): (text: string) => string | null 
       for (const [re, tr] of patterns) {
         const m = re.exec(key);
         if (m) {
-          const vals = m.slice(1).map((v) => dict[v] ?? v);
+          const vals = m.slice(1).map((v) => dict[v] ?? localize(v));
           res = tr.replace(/\{(\d+)\}/g, (_, i) => vals[Number(i)] ?? '');
           break;
         }

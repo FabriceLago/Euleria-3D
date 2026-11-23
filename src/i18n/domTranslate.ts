@@ -1,4 +1,4 @@
-import { makeTextTranslator, type Dict } from './core.ts';
+import { makeTextTranslator, type Dict, type Lang } from './core.ts';
 
 const ATTRS = ['placeholder', 'title', 'aria-label', 'alt'];
 const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'CODE', 'PRE', 'NOSCRIPT']);
@@ -9,8 +9,8 @@ const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'CODE', 'PRE', 'NOSCRI
  * Le MutationObserver s'exécute avant l'affichage : aucun flash de français.
  * Exclure une zone (messages saisis par les élèves…) : attribut translate="no".
  */
-export function startDomTranslation(dict: Dict, root: Node = document.body) {
-  const translate = makeTextTranslator(dict);
+export function startDomTranslation(dict: Dict, lang: Lang, root: Node = document.body) {
+  const translate = makeTextTranslator(dict, lang);
   const skip = (el: Element | null) =>
     !el || SKIP_TAGS.has(el.tagName) || !!el.closest('[translate="no"],[contenteditable="true"]');
 

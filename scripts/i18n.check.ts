@@ -34,6 +34,10 @@ const tr = makeTextTranslator({
 assert.equal(tr('  Envoyer\n '), 'Send');
 assert.equal(tr('Moyenne d’examen blanc 14.5/20 en Mathématiques'), 'Mock exam average 14.5/20 in Mathematics');
 assert.equal(tr('Texte libre d’un élève'), null);
+// Décimaux insérés dans un gabarit : point en anglais, virgule conservée en néerlandais
+const days = { 'Relie l’Asie à l’Europe en {0} jours': 'Link Asia to Europe in {0} days' };
+assert.equal(makeTextTranslator(days, 'en')('Relie l’Asie à l’Europe en 19,3 jours'), 'Link Asia to Europe in 19.3 days');
+assert.equal(makeTextTranslator(days, 'nl')('Relie l’Asie à l’Europe en 19,3 jours'), 'Link Asia to Europe in 19,3 days');
 
 // 5. Dictionnaires réels : chaque traduction garde les mêmes variables que la phrase source
 for (const [lang, d] of Object.entries({ en: enDict, nl: nlDict }) as [string, Record<string, string>][])

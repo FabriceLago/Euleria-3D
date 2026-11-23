@@ -16,7 +16,7 @@ loadDict(lang)
   .catch(() => ({}))
   .then((dict) => {
     // Interface entière (textes en dur des composants) traduite à l'affichage
-    if (lang !== 'fr') startDomTranslation(dict);
+    if (lang !== 'fr') startDomTranslation(dict, lang);
     createRoot(document.getElementById('root')!).render(
       <I18nProvider lang={lang} dict={dict}>
         <App />
