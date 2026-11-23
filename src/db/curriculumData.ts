@@ -588,7 +588,7 @@ export const SEED_CHAPTERS: SeedChapter[] = [
       'Le volume d’une pyramide ou d’un cône de révolution est égal au tiers du produit de l’aire de sa base par sa hauteur : V = (1/3) × Aire_base × h. Pour un cône, la génératrice g, le rayon r et la hauteur h forment un triangle rectangle vérifiant g² = r² + h².',
     formulaDisplay: 'V = (1/3) × Aire_base × h',
     scenePreset: 'pyramide_4e',
-    defaultParams: { a: 2.2, b: 3.6, c: 4 },
+    defaultParams: { a: 6, b: 5, c: 1 },
     xpReward: 150,
     estimatedMinutes: 20,
     exercises: [
@@ -847,7 +847,7 @@ export const SEED_CHAPTERS: SeedChapter[] = [
       'Un vecteur caractérise une translation par sa direction, son sens et sa norme. La somme u + v suit la règle du parallélogramme (relation de Chasles). Deux vecteurs u(x, y) et v(x’, y’) sont colinéaires si et seulement si leur déterminant det(u, v) = xy’ - x’y est nul.',
     formulaDisplay: 'det(u, v) = x·y’ - x’·y = 0 ⇔ u et v colinéaires',
     scenePreset: 'vecteurs_2nde',
-    defaultParams: { a: 2.5, b: 1.5, c: 1.8 },
+    defaultParams: { a: 3, b: 4, c: -3 },
     xpReward: 170,
     estimatedMinutes: 24,
     exercises: [
