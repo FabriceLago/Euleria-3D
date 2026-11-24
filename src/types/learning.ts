@@ -53,6 +53,9 @@ export interface UserProfile {
   layoutDensity: LayoutDensity;
   show3DHints: boolean;
   weeklyXpGoal?: number;
+  /** Classement public : désactivé par défaut */
+  leaderboardOptIn?: boolean;
+  pseudonym?: string | null;
 }
 
 export interface StudyPlanDailyActivity {
@@ -146,14 +149,11 @@ export interface PredictionMetrics {
   recommendedAction: string;
 }
 
+/** Entrée publique du classement : pseudonyme + XP + rang, rien qui identifie l'élève. */
 export interface LeaderboardEntry {
-  id: number;
-  displayName: string;
-  avatarUrl: string | null;
-  gradeLevel: GradeLevel;
+  rank: number;
+  pseudonym: string;
   xp: number;
-  streakDays: number;
-  lastActiveAt: string;
 }
 
 export interface StudyRoom {

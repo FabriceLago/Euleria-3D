@@ -406,6 +406,20 @@ const PlatformShell: React.FC = () => {
     }
   };
 
+  // Classement public : opt-in explicite (désactivé par défaut), sous pseudonyme
+  const handleToggleLeaderboard = async (optIn: boolean) => {
+    if (!profile || !backendAvailable) return;
+    try {
+      const res = await apiFetch('/api/me/leaderboard', { method: 'PUT', body: JSON.stringify({ optIn }) });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.user) setProfileState(data.user);
+      if (Array.isArray(data.leaderboard)) setLeaderboard(data.leaderboard);
+    } catch (err) {
+      console.error('Failed to update leaderboard opt-in:', err);
+    }
+  };
+
   const handleOpenChapter = (chapter: ChapterItem) => {
     setSelectedSubject(chapter.subject || 'mathematics');
     setSelectedGrade(chapter.gradeLevel);
@@ -748,6 +762,7 @@ const PlatformShell: React.FC = () => {
                   }
                 }}
                 onPrintDocument={handlePrintDocument}
+                onToggleLeaderboard={handleToggleLeaderboard}
               />
             ) : (
               <CollaborationView

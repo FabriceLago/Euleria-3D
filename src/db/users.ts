@@ -1,6 +1,9 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull } from 'drizzle-orm';
 import { db } from './index.ts';
+import { makePseudonym, toPublicLeaderboard, type PublicLeaderboardEntry } from './leaderboard.ts';
 import { users } from './schema.ts';
+
+export type { PublicLeaderboardEntry };
 
 function sanitizeAvatarUrl(raw?: string): string | null {
   if (!raw || typeof raw !== 'string') return null;
@@ -93,23 +96,48 @@ export async function updateUserPreferences(
   }
 }
 
-export async function getLeaderboard(limit = 25) {
+/** Classement public : uniquement les élèves qui l'ont activé, sous pseudonyme (rang + pseudonyme + XP). */
+export async function getLeaderboard(limit = 25): Promise<PublicLeaderboardEntry[]> {
   try {
-    return await db
-      .select({
-        id: users.id,
-        displayName: users.displayName,
-        avatarUrl: users.avatarUrl,
-        gradeLevel: users.gradeLevel,
-        xp: users.xp,
-        streakDays: users.streakDays,
-        lastActiveAt: users.lastActiveAt,
-      })
+    const rows = await db
+      .select({ pseudonym: users.pseudonym, xp: users.xp })
       .from(users)
-      .orderBy(desc(users.xp), desc(users.streakDays))
+      .where(and(eq(users.leaderboardOptIn, true), isNotNull(users.pseudonym)))
+      .orderBy(desc(users.xp), asc(users.id))
       .limit(limit);
+    return toPublicLeaderboard(rows);
   } catch (error) {
     console.error('Database error in getLeaderboard:', error);
     throw new Error('Impossible de charger le classement.', { cause: error });
   }
+}
+
+const isUniqueViolation = (error: unknown) => {
+  const e = error as { code?: string; cause?: { code?: string } };
+  return e?.code === '23505' || e?.cause?.code === '23505';
+};
+
+/**
+ * Active / désactive l'apparition dans le classement.
+ * Un pseudonyme est tiré au sort à la première activation, puis conservé (il ne dit rien de l'élève).
+ */
+export async function setLeaderboardOptIn(uid: string, optIn: boolean) {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const current = await getUserByUid(uid);
+    if (!current) return null;
+    const newPseudonym = optIn && !current.pseudonym ? makePseudonym() : null;
+    try {
+      const rows = await db
+        .update(users)
+        .set({ leaderboardOptIn: optIn, ...(newPseudonym ? { pseudonym: newPseudonym } : {}) })
+        .where(eq(users.uid, uid))
+        .returning();
+      return rows[0] || null;
+    } catch (error) {
+      if (newPseudonym && isUniqueViolation(error)) continue; // pseudonyme déjà pris : on en tire un autre
+      console.error('Database error in setLeaderboardOptIn:', error);
+      throw new Error('Impossible de mettre à jour le classement.', { cause: error });
+    }
+  }
+  throw new Error('Impossible d’attribuer un pseudonyme, réessaie.');
 }

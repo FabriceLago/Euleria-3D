@@ -24,6 +24,9 @@ export const users = pgTable('users', {
   layoutDensity: text('layout_density').notNull().default('comfortable'),
   show3DHints: boolean('show_3d_hints').notNull().default(true),
   weeklyXpGoal: integer('weekly_xp_goal').notNull().default(400),
+  // Classement public : opt-in explicite, sous un pseudonyme tiré au sort (jamais le nom ni la photo)
+  leaderboardOptIn: boolean('leaderboard_opt_in').notNull().default(false),
+  pseudonym: text('pseudonym').unique(),
   lastActiveAt: timestamp('last_active_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

@@ -250,9 +250,10 @@ export async function updateSupabasePreferences(
 export async function fetchSupabaseLeaderboard(limit = 25): Promise<LeaderboardEntry[]> {
   if (!supabase) return [];
 
+  // Vue publique : uniquement les élèves volontaires, sous pseudonyme (voir supabase/schema.sql)
   const { data, error } = await supabase
     .from('public_leaderboard')
-    .select('id, display_name, avatar_url, grade_level, xp, streak_days, last_active_at')
+    .select('rank, pseudonym, xp')
     .limit(Math.max(1, Math.min(50, limit)));
 
   if (error || !Array.isArray(data)) {
@@ -260,15 +261,9 @@ export async function fetchSupabaseLeaderboard(limit = 25): Promise<LeaderboardE
   }
 
   return data.map((row) => ({
-    id: Number(row.id),
-    displayName: String(row.display_name || 'Élève'),
-    avatarUrl: row.avatar_url ? String(row.avatar_url) : null,
-    gradeLevel: VALID_GRADES.has(row.grade_level as GradeLevel)
-      ? (row.grade_level as GradeLevel)
-      : '6e',
+    rank: Number(row.rank),
+    pseudonym: String(row.pseudonym),
     xp: Number(row.xp) || 0,
-    streakDays: Number(row.streak_days) || 1,
-    lastActiveAt: String(row.last_active_at || new Date().toISOString()),
   }));
 }
 
@@ -309,25 +304,20 @@ export async function fetchSupabaseRoomsAndMessages(roomSlug: string): Promise<{
     return { rooms, messages: [] };
   }
 
-  const leaderboard = await fetchSupabaseLeaderboard(50);
-  const authorMap = new Map(leaderboard.map((u) => [u.id, u]));
-
-  const messages: ChatMessageItem[] = msgRows.map((m) => {
-    const author = authorMap.get(Number(m.user_id));
-    return {
-      id: Number(m.id),
-      roomId: Number(m.room_id),
-      roomSlug: activeRoom.slug,
-      content: String(m.content),
-      sharedChapterId: m.shared_chapter_id ? Number(m.shared_chapter_id) : null,
-      createdAt: String(m.created_at),
-      authorId: Number(m.user_id),
-      authorName: author?.displayName || 'Élève',
-      authorGrade: author?.gradeLevel || '6e',
-      authorAvatar: author?.avatarUrl || null,
-      authorXp: author?.xp || 0,
-    };
-  });
+  // Le classement public ne contient plus d'identité : en mode de repli, les auteurs restent anonymes
+  const messages: ChatMessageItem[] = msgRows.map((m) => ({
+    id: Number(m.id),
+    roomId: Number(m.room_id),
+    roomSlug: activeRoom.slug,
+    content: String(m.content),
+    sharedChapterId: m.shared_chapter_id ? Number(m.shared_chapter_id) : null,
+    createdAt: String(m.created_at),
+    authorId: Number(m.user_id),
+    authorName: 'Élève',
+    authorGrade: '6e',
+    authorAvatar: null,
+    authorXp: 0,
+  }));
 
   return { rooms, messages };
 }
