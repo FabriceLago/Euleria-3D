@@ -4601,5 +4601,11 @@
  "Ton nom, ta photo et ta classe ne sont jamais affichés.": "Je naam, foto en klas worden nooit getoond.",
  "{0} élèves classés": "{0} leerlingen in het klassement",
  "Aucun élève classé pour le moment. Active le classement ci-dessus pour y apparaître.": "Nog geen leerlingen in het klassement. Zet het klassement hierboven aan om erin te verschijnen.",
- "(toi)": "(jij)"
+ "(toi)": "(jij)",
+ "Signaler": "Melden",
+ "Signalé": "Gemeld",
+ "Signalement impossible pour le moment.": "Melden is nu niet mogelijk.",
+ "Message introuvable.": "Bericht niet gevonden.",
+ "Tu ne peux pas signaler ton propre message.": "Je kunt je eigen bericht niet melden.",
+ "Identifiant de message invalide.": "Ongeldige bericht-ID."
 }

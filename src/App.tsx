@@ -337,6 +337,10 @@ const PlatformShell: React.FC = () => {
                 return [...prev, incoming];
               });
             }
+          } else if (msg.event === 'chat:hidden' && typeof msg.payload?.id === 'number') {
+            // Message masqué après signalements : retiré en direct chez tout le monde
+            const hiddenId = msg.payload.id as number;
+            setMessages((prev) => prev.filter((m) => m.id !== hiddenId));
           } else if (msg.event === 'duel:lobby' && Array.isArray(msg.payload?.rooms)) {
             setDuelLobby(msg.payload.rooms as DuelLobbyItem[]);
           } else if (msg.event === 'duel:state' && msg.payload) {

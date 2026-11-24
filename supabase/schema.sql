@@ -113,6 +113,20 @@ CREATE TABLE IF NOT EXISTS public.chat_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Modération du chat : message masqué (signalements ou modérateur) + signalements, un par élève et par message
+ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS hidden_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS public.chat_message_reports (
+  id SERIAL PRIMARY KEY,
+  message_id INTEGER NOT NULL REFERENCES public.chat_messages(id) ON DELETE CASCADE,
+  reporter_user_id INTEGER NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS chat_message_reports_unique_idx
+  ON public.chat_message_reports (message_id, reporter_user_id);
+-- RLS sans politique : table réservée au serveur (aucun accès anon / authenticated)
+ALTER TABLE public.chat_message_reports ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS public.exam_sessions (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -254,7 +268,7 @@ CREATE POLICY "flashcard_reviews_own" ON public.flashcard_reviews
 -- Politiques : Messages d'entraide (lecture publique, écriture authentifiée pour soi-même)
 DROP POLICY IF EXISTS "chat_messages_read_all" ON public.chat_messages;
 CREATE POLICY "chat_messages_read_all" ON public.chat_messages
-  FOR SELECT USING (true);
+  FOR SELECT USING (hidden_at IS NULL);
 
 DROP POLICY IF EXISTS "chat_messages_insert_own" ON public.chat_messages;
 CREATE POLICY "chat_messages_insert_own" ON public.chat_messages

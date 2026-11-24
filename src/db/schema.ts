@@ -150,7 +150,25 @@ export const chatMessages = pgTable('chat_messages', {
     onDelete: 'set null',
   }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  // Masqué (signalements ou modération) : n'est plus jamais renvoyé ni diffusé
+  hiddenAt: timestamp('hidden_at'),
 });
+
+// Signalements du chat : un seul par élève et par message
+export const chatMessageReports = pgTable(
+  'chat_message_reports',
+  {
+    id: serial('id').primaryKey(),
+    messageId: integer('message_id')
+      .references(() => chatMessages.id, { onDelete: 'cascade' })
+      .notNull(),
+    reporterUserId: integer('reporter_user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex('chat_message_reports_unique_idx').on(table.messageId, table.reporterUserId)]
+);
 
 export const examSessions = pgTable('exam_sessions', {
   id: serial('id').primaryKey(),

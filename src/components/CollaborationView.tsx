@@ -85,6 +85,43 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
+  // Messages masqués par cet élève (pour lui seul, mémorisé sur cet appareil) et déjà signalés
+  const HIDDEN_KEY = 'euleria:hidden-chat';
+  const [hiddenIds, setHiddenIds] = useState<Set<number>>(() => {
+    try {
+      return new Set<number>(JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]'));
+    } catch {
+      return new Set<number>();
+    }
+  });
+  const [reportedIds, setReportedIds] = useState<Set<number>>(new Set());
+  const hideLocally = (id: number) =>
+    setHiddenIds((prev) => {
+      const next = new Set(prev).add(id);
+      try {
+        localStorage.setItem(HIDDEN_KEY, JSON.stringify([...next].slice(-500)));
+      } catch {
+        // stockage indisponible : masqué pour la session seulement
+      }
+      return next;
+    });
+  const reportMessage = async (id: number) => {
+    if (!backendAvailable) return;
+    try {
+      const res = await apiFetch(`/api/rooms/messages/${id}/report`, { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data?.error || 'Signalement impossible pour le moment.');
+        return;
+      }
+      setReportedIds((prev) => new Set(prev).add(id));
+      hideLocally(id);
+    } catch {
+      setError('Signalement impossible pour le moment.');
+    }
+  };
+  const visibleMessages = messages.filter((m) => !hiddenIds.has(m.id));
+
   useEffect(() => {
     if (activeDuel) {
       setSubView('duels');
@@ -296,12 +333,12 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
           </div>
 
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            {messages.length === 0 ? (
+            {visibleMessages.length === 0 ? (
               <div className="h-full flex items-center justify-center text-center text-sm text-slate-500 dark:text-slate-400">
                 Aucun message dans ce salon pour l’instant. Posez une question sur un théorème ou partagez un chapitre 3D.
               </div>
             ) : (
-              messages.map((msg) => {
+              visibleMessages.map((msg) => {
                 const isMine = !!profile?.pseudonym && profile.pseudonym === msg.authorName;
                 const sharedChap = msg.sharedChapterId
                   ? chapterMap.get(msg.sharedChapterId)
@@ -363,6 +400,25 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
                         </button>
                       )}
                     </div>
+                    {!isMine && profile && (
+                      <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+                        <button
+                          type="button"
+                          onClick={() => hideLocally(msg.id)}
+                          className="hover:text-slate-800 dark:hover:text-slate-200 underline-offset-2 hover:underline cursor-pointer"
+                        >
+                          Masquer
+                        </button>
+                        <button
+                          type="button"
+                          disabled={reportedIds.has(msg.id) || !backendAvailable}
+                          onClick={() => reportMessage(msg.id)}
+                          className="hover:text-rose-600 dark:hover:text-rose-400 underline-offset-2 hover:underline cursor-pointer disabled:cursor-default disabled:no-underline"
+                        >
+                          {reportedIds.has(msg.id) ? 'Signalé' : 'Signaler'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })

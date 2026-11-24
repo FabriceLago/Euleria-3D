@@ -1,8 +1,9 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 import { db } from './index.ts';
 import {
   badges,
   chapters,
+  chatMessageReports,
   chatMessages,
   examSessions,
   exercises,
@@ -532,7 +533,7 @@ export async function getStudyRoomsWithMessages(roomSlug?: string) {
       })
       .from(chatMessages)
       .innerJoin(users, eq(chatMessages.userId, users.id))
-      .where(eq(chatMessages.roomId, activeRoom.id))
+      .where(and(eq(chatMessages.roomId, activeRoom.id), isNull(chatMessages.hiddenAt)))
       .orderBy(desc(chatMessages.createdAt))
       .limit(60);
 
@@ -620,6 +621,46 @@ export async function createChatMessage(params: {
     if (error instanceof ValidationError) throw error;
     console.error('Database error in createChatMessage:', error);
     throw new Error('Impossible d’envoyer le message.', { cause: error });
+  }
+}
+
+/** Nombre d'élèves différents qui doivent signaler un message pour qu'il soit masqué pour tous. */
+export const CHAT_REPORT_HIDE_THRESHOLD = 3;
+
+/**
+ * Signale un message (un signalement par élève et par message, sans effet sur ses propres messages).
+ * Au seuil de signalements distincts, le message est masqué pour tout le monde.
+ */
+export async function reportChatMessage(messageId: number, reporterUserId: number) {
+  try {
+    const [message] = await db
+      .select({ id: chatMessages.id, userId: chatMessages.userId, hiddenAt: chatMessages.hiddenAt, roomId: chatMessages.roomId })
+      .from(chatMessages)
+      .where(eq(chatMessages.id, messageId))
+      .limit(1);
+    if (!message) throw new ValidationError('Message introuvable.', 404);
+    if (message.userId === reporterUserId) throw new ValidationError('Tu ne peux pas signaler ton propre message.', 400);
+    if (message.hiddenAt) return { hidden: true, roomId: message.roomId };
+
+    await db
+      .insert(chatMessageReports)
+      .values({ messageId, reporterUserId })
+      .onConflictDoNothing();
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(chatMessageReports)
+      .where(eq(chatMessageReports.messageId, messageId));
+
+    if (count >= CHAT_REPORT_HIDE_THRESHOLD) {
+      await db.update(chatMessages).set({ hiddenAt: new Date() }).where(eq(chatMessages.id, messageId));
+      return { hidden: true, roomId: message.roomId };
+    }
+    return { hidden: false, roomId: message.roomId };
+  } catch (error) {
+    if (error instanceof ValidationError) throw error;
+    console.error('Database error in reportChatMessage:', error);
+    throw new Error('Impossible d’enregistrer le signalement.', { cause: error });
   }
 }
 
