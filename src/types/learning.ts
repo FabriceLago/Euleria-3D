@@ -171,11 +171,8 @@ export interface ChatMessageItem {
   content: string;
   sharedChapterId: number | null;
   createdAt: string;
-  authorId: number;
+  /** Pseudonyme de l'auteur (identité publique), jamais son nom réel */
   authorName: string;
-  authorGrade: string;
-  authorAvatar: string | null;
-  authorXp: number;
 }
 
 export interface MistakeItem {

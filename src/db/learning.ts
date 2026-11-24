@@ -527,11 +527,8 @@ export async function getStudyRoomsWithMessages(roomSlug?: string) {
         content: chatMessages.content,
         sharedChapterId: chatMessages.sharedChapterId,
         createdAt: chatMessages.createdAt,
-        authorId: users.id,
-        authorName: users.displayName,
-        authorGrade: users.gradeLevel,
-        authorAvatar: users.avatarUrl,
-        authorXp: users.xp,
+        // Lecture publique : seul le pseudonyme de l'auteur sort (ni nom, ni photo, ni classe, ni identifiant)
+        authorName: users.pseudonym,
       })
       .from(chatMessages)
       .innerJoin(users, eq(chatMessages.userId, users.id))
@@ -542,7 +539,7 @@ export async function getStudyRoomsWithMessages(roomSlug?: string) {
     return {
       rooms,
       activeRoom,
-      messages: rawMessages.reverse(),
+      messages: rawMessages.reverse().map((m) => ({ ...m, authorName: m.authorName ?? 'Élève' })),
     };
   } catch (error) {
     console.error('Database error in getStudyRoomsWithMessages:', error);
@@ -600,7 +597,7 @@ export async function createChatMessage(params: {
       .returning();
 
     const [author] = await db
-      .select()
+      .select({ pseudonym: users.pseudonym })
       .from(users)
       .where(eq(users.id, params.userId))
       .limit(1);
@@ -615,11 +612,7 @@ export async function createChatMessage(params: {
         content: inserted.content,
         sharedChapterId: inserted.sharedChapterId,
         createdAt: inserted.createdAt,
-        authorId: author?.id ?? params.userId,
-        authorName: author?.displayName ?? 'Élève',
-        authorGrade: author?.gradeLevel ?? '6e',
-        authorAvatar: author?.avatarUrl ?? null,
-        authorXp: author?.xp ?? 0,
+        authorName: author?.pseudonym ?? 'Élève',
       },
       newlyUnlockedBadges,
     };

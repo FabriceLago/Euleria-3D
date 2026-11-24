@@ -17,7 +17,7 @@ export const SKIP_KEYS = new Set([
   'id', 'slug', 'subject', 'subjects', 'gradeLevel', 'scenePreset', 'exerciseType', 'status',
   'iconName', 'conditionType', 'roomSlug', 'uid', 'email', 'avatarUrl', 'authorAvatar',
   'displayName', 'authorName', 'hostName', 'content', 'themeMode', 'accentColor', 'layoutDensity',
-  'code', 'examSlug', 'cardKey', 'lastRating', 'clientId', 'myClientId', 'difficulty', 'mode',
+  'code', 'examSlug', 'cardKey', 'lastRating', 'clientId', 'myClientId', 'difficulty', 'mode', 'pseudonym',
 ]);
 
 /** Remplace récursivement chaque chaîne connue du dictionnaire (structure inchangée). */

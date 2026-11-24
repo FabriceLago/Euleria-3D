@@ -130,7 +130,7 @@ const PlatformShell: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [onlineCount, setOnlineCount] = useState<number>(1);
   const [activePeers, setActivePeers] = useState<
-    Array<{ displayName: string; gradeLevel: string; roomSlug: string }>
+    Array<{ pseudonym: string; roomSlug: string }>
   >([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [backendAvailable, setBackendAvailable] = useState<boolean>(true);
