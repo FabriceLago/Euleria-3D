@@ -4594,5 +4594,12 @@
  "Chaque partie ajoute environ 70 mots : 4 parties ≈ 200 mots.": "Each part adds about 70 words: 4 parts ≈ 200 words.",
  "Longueur chrono": "Length time trial",
  "≈ 60 + 70 × (parties − 2) mots.": "≈ 60 + 70 × (parts − 2) words.",
- "Vise un essay d’environ {0} mots": "Aim for an essay of about {0} words"
+ "Vise un essay d’environ {0} mots": "Aim for an essay of about {0} words",
+ "Apparaître dans le classement": "Appear in the leaderboard",
+ "Tu es classé sous le pseudonyme": "You are ranked under the nickname",
+ "Désactivé. Si tu l’actives, un pseudonyme te sera attribué au hasard.": "Off. If you turn it on, you will be given a random nickname.",
+ "Ton nom, ta photo et ta classe ne sont jamais affichés.": "Your name, photo and class are never shown.",
+ "{0} élèves classés": "{0} students ranked",
+ "Aucun élève classé pour le moment. Active le classement ci-dessus pour y apparaître.": "No students ranked yet. Turn on the leaderboard above to appear in it.",
+ "(toi)": "(you)"
 }

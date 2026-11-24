@@ -10,6 +10,7 @@ import { adminAuth } from './src/lib/firebase-admin.ts';
 import {
   getLeaderboard,
   getOrCreateUser,
+  setLeaderboardOptIn,
   updateUserPreferences,
 } from './src/db/users.ts';
 import {
@@ -574,7 +575,8 @@ async function startServer() {
     }
   });
 
-  // Classement temps réel (lecture publique depuis Cloud SQL)
+  // Classement public : uniquement les élèves volontaires, sous pseudonyme → { rank, pseudonym, xp }.
+  // Jamais de nom, photo, classe, identifiant ni heure d'activité (public mineur).
   app.get('/api/leaderboard', async (_req, res) => {
     try {
       const rows = await getLeaderboard(25);
@@ -612,6 +614,30 @@ async function startServer() {
       );
       const dashboard = await getUserDashboardData(user.id);
       res.json({ user, ...dashboard });
+    } catch (error: unknown) {
+      sendRouteError(res, error, 'Erreur serveur');
+    }
+  });
+
+  // Opt-in / opt-out du classement public (pseudonyme tiré au sort à la première activation)
+  app.put('/api/me/leaderboard', preferencesLimiter, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Utilisateur non authentifié.' });
+      }
+      if (typeof req.body?.optIn !== 'boolean') {
+        return res.status(400).json({ error: 'Le champ optIn (booléen) est requis.' });
+      }
+      await getOrCreateUser(
+        req.user.uid,
+        req.user.email || `${req.user.uid}@euleria.local`,
+        req.user.name,
+        req.user.picture
+      );
+      const updated = await setLeaderboardOptIn(req.user.uid, req.body.optIn);
+      const leaderboard = await getLeaderboard(25);
+      broadcastEvent('leaderboard:updated', { leaderboard });
+      res.json({ user: updated, leaderboard });
     } catch (error: unknown) {
       sendRouteError(res, error, 'Erreur serveur');
     }

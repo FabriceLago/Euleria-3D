@@ -21,7 +21,6 @@ import {
   TrendingUp,
   Trophy,
 } from 'lucide-react';
-import { GRADE_LEVELS } from '../db/curriculumData.ts';
 import type {
   AccentColor,
   BadgeItem,
@@ -58,6 +57,7 @@ interface LeaderboardViewProps {
   onMarkSessionMistakeResolved: (key: string) => void;
   onAttemptRecorded: (prog: ChapterProgress, newXp: number, newBadges?: BadgeItem[]) => void;
   onPrintDocument: (doc: PrintableDocument) => void;
+  onToggleLeaderboard: (optIn: boolean) => Promise<void>;
 }
 
 const BADGE_ICONS: Record<string, React.FC<{ className?: string }>> = {
@@ -102,11 +102,21 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   onMarkSessionMistakeResolved,
   onAttemptRecorded,
   onPrintDocument,
+  onToggleLeaderboard,
 }) => {
   const [activeSubView, setActiveSubView] = useState<'plan' | 'mistakes' | 'ranking'>('plan');
+  const [savingOptIn, setSavingOptIn] = useState(false);
   const completedCount = progress.filter((p) => p.status === 'completed').length;
   const unresolvedSessionCount = sessionMistakes.filter((m) => !m.resolved).length;
-  const gradeLabelMap = new Map<string, string>(GRADE_LEVELS.map((g) => [g.id, g.label]));
+  const optedIn = !!profile?.leaderboardOptIn;
+  const toggleOptIn = async () => {
+    setSavingOptIn(true);
+    try {
+      await onToggleLeaderboard(!optedIn);
+    } finally {
+      setSavingOptIn(false);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8">
@@ -254,58 +264,69 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
               <span>Classement académique en direct</span>
             </div>
             <span className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
-              {leaderboard.length} élèves inscrits
+              {leaderboard.length} élèves classés
             </span>
           </div>
 
+          {/* Opt-in : le classement est désactivé par défaut, et n'affiche qu'un pseudonyme tiré au sort */}
+          {profile && (
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
+              <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                <div className="font-semibold text-slate-900 dark:text-white">Apparaître dans le classement</div>
+                {optedIn && profile.pseudonym ? (
+                  <span>
+                    Tu es classé sous le pseudonyme <strong>{profile.pseudonym}</strong>.
+                  </span>
+                ) : (
+                  <span>Désactivé. Si tu l’actives, un pseudonyme te sera attribué au hasard.</span>
+                )}{' '}
+                Ton nom, ta photo et ta classe ne sont jamais affichés.
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={optedIn}
+                aria-label="Apparaître dans le classement"
+                disabled={savingOptIn || !backendAvailable}
+                onClick={toggleOptIn}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  optedIn ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    optedIn ? 'translate-x-5' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
+
           {leaderboard.length === 0 ? (
             <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-              Aucun élève classé pour le moment. Connectez-vous et complétez un premier exercice pour apparaître en tête.
+              Aucun élève classé pour le moment. Active le classement ci-dessus pour y apparaître.
             </div>
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {leaderboard.map((entry, idx) => {
-                const isMe = profile?.id === entry.id;
+              {leaderboard.map((entry) => {
+                const isMe = optedIn && !!profile?.pseudonym && profile.pseudonym === entry.pseudonym;
                 return (
                   <div
-                    key={entry.id}
+                    key={entry.pseudonym}
                     className={`px-5 py-3.5 flex items-center justify-between gap-4 ${
                       isMe ? 'bg-indigo-50/70 dark:bg-indigo-950/30' : ''
                     }`}
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
-                      <span className="w-6 text-xs font-mono tabular-nums font-bold text-slate-500 dark:text-slate-400">
-                        #{idx + 1}
+                      <span className="w-8 text-xs font-mono tabular-nums font-bold text-slate-500 dark:text-slate-400">
+                        #{entry.rank}
                       </span>
-                      {entry.avatarUrl ? (
-                        <img
-                          src={entry.avatarUrl}
-                          alt={entry.displayName}
-                          referrerPolicy="no-referrer"
-                          className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-200 shrink-0">
-                          {entry.displayName.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                          {entry.displayName} {isMe ? '(Vous)' : ''}
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          Classe : {gradeLabelMap.get(entry.gradeLevel) || entry.gradeLevel}
-                        </div>
+                      <div className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                        {entry.pseudonym} {isMe ? '(toi)' : ''}
                       </div>
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="text-sm font-mono tabular-nums font-bold text-slate-900 dark:text-white">
-                        {entry.xp} XP
-                      </div>
-                      <div className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
-                        {entry.streakDays} j. série
-                      </div>
+                    <div className="text-sm font-mono tabular-nums font-bold text-slate-900 dark:text-white shrink-0">
+                      {entry.xp} XP
                     </div>
                   </div>
                 );

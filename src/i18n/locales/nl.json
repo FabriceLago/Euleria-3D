@@ -4594,5 +4594,12 @@
  "Chaque partie ajoute environ 70 mots : 4 parties ≈ 200 mots.": "Elk deel voegt ongeveer 70 woorden toe: 4 delen ≈ 200 woorden.",
  "Longueur chrono": "Lengte tegen de klok",
  "≈ 60 + 70 × (parties − 2) mots.": "≈ 60 + 70 × (delen − 2) woorden.",
- "Vise un essay d’environ {0} mots": "Mik op een essay van ongeveer {0} woorden"
+ "Vise un essay d’environ {0} mots": "Mik op een essay van ongeveer {0} woorden",
+ "Apparaître dans le classement": "Verschijnen in het klassement",
+ "Tu es classé sous le pseudonyme": "Je staat in het klassement onder de schuilnaam",
+ "Désactivé. Si tu l’actives, un pseudonyme te sera attribué au hasard.": "Uit. Als je het aanzet, krijg je een willekeurige schuilnaam.",
+ "Ton nom, ta photo et ta classe ne sont jamais affichés.": "Je naam, foto en klas worden nooit getoond.",
+ "{0} élèves classés": "{0} leerlingen in het klassement",
+ "Aucun élève classé pour le moment. Active le classement ci-dessus pour y apparaître.": "Nog geen leerlingen in het klassement. Zet het klassement hierboven aan om erin te verschijnen.",
+ "(toi)": "(jij)"
 }

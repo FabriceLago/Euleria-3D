@@ -150,20 +150,24 @@ INSERT INTO public.study_rooms (slug, name, grade_level, topic) VALUES
   ('atelier-3d', 'Atelier Modélisation 3D', 'Tous niveaux', 'Partage de scènes WebGL et visualisations scientifiques')
 ON CONFLICT (slug) DO NOTHING;
 
--- 3. Vue publique sécurisée pour le classement (n'expose jamais les adresses e-mail)
-CREATE OR REPLACE VIEW public.public_leaderboard AS
+-- 3. Classement public : opt-in explicite, sous pseudonyme tiré au sort (public mineur).
+--    N'expose que rang + pseudonyme + XP : ni nom, ni photo, ni classe, ni identifiant, ni heure d'activité.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS leaderboard_opt_in BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS pseudonym TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS users_pseudonym_key ON public.users (pseudonym);
+
+DROP VIEW IF EXISTS public.public_leaderboard;
+CREATE VIEW public.public_leaderboard AS
 SELECT
-  id,
-  display_name,
-  avatar_url,
-  grade_level,
-  xp,
-  streak_days,
-  last_active_at
+  (ROW_NUMBER() OVER (ORDER BY xp DESC, id ASC))::INTEGER AS rank,
+  pseudonym,
+  xp
 FROM public.users
-ORDER BY xp DESC, last_active_at DESC
+WHERE leaderboard_opt_in AND pseudonym IS NOT NULL
+ORDER BY xp DESC, id ASC
 LIMIT 50;
 
+REVOKE ALL ON public.public_leaderboard FROM anon, authenticated;
 GRANT SELECT ON public.public_leaderboard TO anon, authenticated;
 
 -- 4. Fonction utilitaire d'identité pour les politiques RLS
