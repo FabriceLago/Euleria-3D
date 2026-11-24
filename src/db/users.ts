@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNotNull } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { db } from './index.ts';
 import { makePseudonym, toPublicLeaderboard, type PublicLeaderboardEntry } from './leaderboard.ts';
 import { users } from './schema.ts';
@@ -50,7 +50,8 @@ export async function getOrCreateUser(
       })
       .returning();
 
-    return result[0];
+    // Identité publique (chat, présence, duels, classement) : toujours le pseudonyme, jamais le nom réel
+    return result[0]?.pseudonym ? result[0] : await assignPseudonymIfMissing(uid);
   } catch (error) {
     console.error('Database error in getOrCreateUser:', error);
     throw new Error('Impossible de synchroniser le profil utilisateur.', { cause: error });
@@ -117,27 +118,32 @@ const isUniqueViolation = (error: unknown) => {
   return e?.code === '23505' || e?.cause?.code === '23505';
 };
 
-/**
- * Active / désactive l'apparition dans le classement.
- * Un pseudonyme est tiré au sort à la première activation, puis conservé (il ne dit rien de l'élève).
- */
-export async function setLeaderboardOptIn(uid: string, optIn: boolean) {
+/** Tire au sort un pseudonyme unique pour l'élève s'il n'en a pas encore (conservé ensuite). */
+async function assignPseudonymIfMissing(uid: string) {
   for (let attempt = 0; attempt < 6; attempt++) {
-    const current = await getUserByUid(uid);
-    if (!current) return null;
-    const newPseudonym = optIn && !current.pseudonym ? makePseudonym() : null;
     try {
       const rows = await db
         .update(users)
-        .set({ leaderboardOptIn: optIn, ...(newPseudonym ? { pseudonym: newPseudonym } : {}) })
-        .where(eq(users.uid, uid))
+        .set({ pseudonym: makePseudonym() })
+        .where(and(eq(users.uid, uid), isNull(users.pseudonym)))
         .returning();
-      return rows[0] || null;
+      return rows[0] ?? (await getUserByUid(uid)); // déjà attribué entre-temps : on relit
     } catch (error) {
-      if (newPseudonym && isUniqueViolation(error)) continue; // pseudonyme déjà pris : on en tire un autre
-      console.error('Database error in setLeaderboardOptIn:', error);
-      throw new Error('Impossible de mettre à jour le classement.', { cause: error });
+      if (isUniqueViolation(error)) continue; // pseudonyme déjà pris : on en tire un autre
+      throw error;
     }
   }
   throw new Error('Impossible d’attribuer un pseudonyme, réessaie.');
+}
+
+/** Active / désactive l'apparition dans le classement (sous le pseudonyme de l'élève). */
+export async function setLeaderboardOptIn(uid: string, optIn: boolean) {
+  try {
+    await assignPseudonymIfMissing(uid);
+    const rows = await db.update(users).set({ leaderboardOptIn: optIn }).where(eq(users.uid, uid)).returning();
+    return rows[0] || null;
+  } catch (error) {
+    console.error('Database error in setLeaderboardOptIn:', error);
+    throw new Error('Impossible de mettre à jour le classement.', { cause: error });
+  }
 }

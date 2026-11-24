@@ -21,7 +21,7 @@ interface CollaborationViewProps {
   messages: ChatMessageItem[];
   chapters: ChapterItem[];
   onlineCount: number;
-  activePeers: Array<{ displayName: string; gradeLevel: string; roomSlug: string }>;
+  activePeers: Array<{ pseudonym: string; roomSlug: string }>;
   profile: UserProfile | null;
   accentColor: AccentColor;
   backendAvailable: boolean;
@@ -271,13 +271,10 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
               <ul className="space-y-2 text-xs">
                 {activePeers.map((peer, i) => (
                   <li
-                    key={`${peer.displayName}-${i}`}
+                    key={`${peer.pseudonym}-${i}`}
                     className="flex items-center justify-between text-slate-700 dark:text-slate-200"
                   >
-                    <span className="font-medium truncate">{peer.displayName}</span>
-                    <span className="text-slate-500 dark:text-slate-400 font-mono">
-                      {peer.gradeLevel}
-                    </span>
+                    <span className="font-medium truncate">{peer.pseudonym}</span>
                   </li>
                 ))}
               </ul>
@@ -305,7 +302,7 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
               </div>
             ) : (
               messages.map((msg) => {
-                const isMine = profile?.id === msg.authorId;
+                const isMine = !!profile?.pseudonym && profile.pseudonym === msg.authorName;
                 const sharedChap = msg.sharedChapterId
                   ? chapterMap.get(msg.sharedChapterId)
                   : undefined;
@@ -319,7 +316,7 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
                       <span className="font-semibold text-slate-700 dark:text-slate-200">
                         {msg.authorName}
                       </span>{' '}
-                      · {msg.authorGrade} ·{' '}
+                      ·{' '}
                       <span className="font-mono tabular-nums">
                         {new Date(msg.createdAt).toLocaleTimeString(document.documentElement.lang, {
                           hour: '2-digit',

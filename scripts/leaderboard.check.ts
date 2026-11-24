@@ -8,7 +8,7 @@ const polluted = [
   { pseudonym: 'Renard Curieux 42', xp: 230, displayName: 'Prénom Nom', avatarUrl: 'https://x/photo', gradeLevel: '6e', id: 91 },
   { pseudonym: null, xp: 180, displayName: 'Sans opt-in' },
   { pseudonym: 'Hibou Calme 17', xp: 125, lastActiveAt: '2026-11-24T00:00:00Z' },
-] as Array<{ pseudonym: string | null; xp: number }>;
+] as unknown as Array<{ pseudonym: string | null; xp: number }>;
 
 const out = toPublicLeaderboard(polluted);
 assert.deepEqual(out, [

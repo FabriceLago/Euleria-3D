@@ -312,11 +312,7 @@ export async function fetchSupabaseRoomsAndMessages(roomSlug: string): Promise<{
     content: String(m.content),
     sharedChapterId: m.shared_chapter_id ? Number(m.shared_chapter_id) : null,
     createdAt: String(m.created_at),
-    authorId: Number(m.user_id),
     authorName: 'Élève',
-    authorGrade: '6e',
-    authorAvatar: null,
-    authorXp: 0,
   }));
 
   return { rooms, messages };
@@ -356,10 +352,6 @@ export async function sendSupabaseChatMessage(opts: {
     content: String(data.content),
     sharedChapterId: data.shared_chapter_id ? Number(data.shared_chapter_id) : null,
     createdAt: String(data.created_at),
-    authorId: opts.author.id,
-    authorName: opts.author.displayName,
-    authorGrade: opts.author.gradeLevel,
-    authorAvatar: opts.author.avatarUrl,
-    authorXp: opts.author.xp,
+    authorName: opts.author.pseudonym || 'Élève',
   };
 }

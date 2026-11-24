@@ -320,13 +320,13 @@ function broadcastEvent(event: string, payload: unknown, filterRoomSlug?: string
   }
 }
 
+// Diffusé à tous les clients, connectés ou non : uniquement le pseudonyme et le salon (public mineur)
 function broadcastPresence() {
-  const activeUsersMap = new Map<string, { displayName: string; gradeLevel: string; roomSlug: string }>();
+  const activeUsersMap = new Map<string, { pseudonym: string; roomSlug: string }>();
   for (const client of clients) {
     if (client.userUid) {
       activeUsersMap.set(client.userUid, {
-        displayName: client.displayName,
-        gradeLevel: client.gradeLevel,
+        pseudonym: client.displayName,
         roomSlug: client.roomSlug,
       });
     }
@@ -1435,7 +1435,8 @@ async function startServer() {
             );
             client.userUid = dbUser.uid;
             client.dbUserId = dbUser.id;
-            client.displayName = dbUser.displayName;
+            // Nom visible des autres (présence, duels) : le pseudonyme, jamais le nom Google
+            client.displayName = dbUser.pseudonym || client.displayName;
             client.gradeLevel = dbUser.gradeLevel;
             broadcastPresence();
             if (client.duelCode) {
