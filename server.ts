@@ -1701,6 +1701,10 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     app.use(express.static(DIST_DIR));
+    // Fichier de build absent (page restée sur une ancienne version) : vraie 404, jamais la page HTML
+    app.use('/assets', (_req, res) => {
+      res.status(404).type('text/plain').send('Not found');
+    });
     app.get('*', (_req, res) => {
       res.sendFile(path.join(DIST_DIR, 'index.html'));
     });
