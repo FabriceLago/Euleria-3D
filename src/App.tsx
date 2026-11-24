@@ -1,4 +1,5 @@
-import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazyWithReload } from './utils/lazyWithReload.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { AppSection, TopBar } from './components/TopBar.tsx';
 import { ChapterWorkspace } from './components/ChapterWorkspace.tsx';
@@ -31,16 +32,17 @@ import type {
 } from './types/learning.ts';
 import type { MissionResult } from './missions/types.ts';
 
-const DynamicQuizView = lazy(() =>
+// Écrans chargés à la demande ; un rechargement unique récupère la nouvelle version après un déploiement
+const DynamicQuizView = lazyWithReload(() =>
   import('./components/DynamicQuizView.tsx').then((m) => ({ default: m.DynamicQuizView }))
 );
-const Studio3DView = lazy(() =>
+const Studio3DView = lazyWithReload(() =>
   import('./components/Studio3DView.tsx').then((m) => ({ default: m.Studio3DView }))
 );
-const LeaderboardView = lazy(() =>
+const LeaderboardView = lazyWithReload(() =>
   import('./components/LeaderboardView.tsx').then((m) => ({ default: m.LeaderboardView }))
 );
-const CollaborationView = lazy(() =>
+const CollaborationView = lazyWithReload(() =>
   import('./components/CollaborationView.tsx').then((m) => ({ default: m.CollaborationView }))
 );
 
