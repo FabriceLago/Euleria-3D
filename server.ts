@@ -28,6 +28,7 @@ import {
   recordExamSession,
   recordExerciseAttempt,
   recordFlashcardReview,
+  reportChatMessage,
   ValidationError,
 } from './src/db/learning.ts';
 import {
@@ -378,6 +379,8 @@ function createRateLimiter(options: {
   windowMs: number;
   maxRequests: number;
   keyPrefix: string;
+  /** Par défaut : adresse IP. 'user' : élève authentifié (à placer après requireAuth). */
+  keyBy?: 'ip' | 'user';
 }): express.RequestHandler {
   const hits = new Map<string, number[]>();
   let opCount = 0;
@@ -386,7 +389,8 @@ function createRateLimiter(options: {
     const now = Date.now();
     const cutoff = now - options.windowMs;
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
-    const key = `${options.keyPrefix}:${ip}`;
+    const uid = (req as AuthRequest).user?.uid;
+    const key = `${options.keyPrefix}:${options.keyBy === 'user' && uid ? `u:${uid}` : ip}`;
 
     const timestamps = (hits.get(key) || []).filter((ts) => ts > cutoff);
     if (timestamps.length >= options.maxRequests) {
@@ -558,7 +562,10 @@ async function startServer() {
   const examStartLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 12, keyPrefix: 'exam-start' });
   const examSubmitLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 12, keyPrefix: 'exam-sub' });
   const flashcardLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 60, keyPrefix: 'fc-rev' });
-  const chatMessageLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 15, keyPrefix: 'chat-msg' });
+  // Chat : plafond large par IP (une classe entière derrière le réseau d'un collège) + plafond strict par élève
+  const chatMessageLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 60, keyPrefix: 'chat-msg' });
+  const chatUserLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 10, keyPrefix: 'chat-user', keyBy: 'user' });
+  const chatReportLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 10, keyPrefix: 'chat-report', keyBy: 'user' });
 
   // Santé API
   app.get('/api/health', (_req, res) => {
@@ -1317,7 +1324,31 @@ async function startServer() {
   });
 
   // Envoi d'un message collaboratif dans un salon d'entraide
-  app.post('/api/rooms/:slug/messages', chatMessageLimiter, requireAuth, async (req: AuthRequest, res) => {
+  // Signalement d'un message : au 3e élève différent, le message est masqué pour tous et retiré en direct
+  app.post('/api/rooms/messages/:id/report', chatMessageLimiter, requireAuth, chatReportLimiter, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Utilisateur non authentifié.' });
+      }
+      const messageId = Number(req.params.id);
+      if (!Number.isInteger(messageId) || messageId <= 0) {
+        return res.status(400).json({ error: 'Identifiant de message invalide.' });
+      }
+      const user = await getOrCreateUser(
+        req.user.uid,
+        req.user.email || `${req.user.uid}@euleria.local`,
+        req.user.name,
+        req.user.picture
+      );
+      const result = await reportChatMessage(messageId, user.id);
+      if (result.hidden) broadcastEvent('chat:hidden', { id: messageId });
+      res.json({ reported: true, hidden: result.hidden });
+    } catch (error: unknown) {
+      sendRouteError(res, error, 'Erreur serveur');
+    }
+  });
+
+  app.post('/api/rooms/:slug/messages', chatMessageLimiter, requireAuth, chatUserLimiter, async (req: AuthRequest, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Utilisateur non authentifié.' });
