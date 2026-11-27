@@ -1,0 +1,2 @@
+# Scripts shell : toujours en fins de ligne LF (un retour chariot Windows casse bash)
+*.sh text eol=lf
