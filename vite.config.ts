@@ -53,6 +53,8 @@ export default defineConfig(() => {
         },
         workbox: {
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+          // Hors ligne, seule l'adresse de l'app est servie depuis le cache : une page inconnue garde sa vraie 404
+          navigateFallbackAllowlist: [/^\/(index\.html)?$/],
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           runtimeCaching: [
             {

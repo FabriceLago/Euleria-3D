@@ -1728,8 +1728,16 @@ async function startServer() {
     app.use('/assets', (_req, res) => {
       res.status(404).type('text/plain').send('Not found');
     });
-    app.get('*', (_req, res) => {
+    // Route d'API inconnue : 404 JSON (jamais la page de l'app)
+    app.use('/api', (_req, res) => {
+      res.status(404).json({ error: 'Route introuvable.' });
+    });
+    // L'app n'a qu'une adresse (pas encore de routeur) : toute autre page est une vraie 404
+    app.get(['/', '/index.html'], (_req, res) => {
       res.sendFile(path.join(DIST_DIR, 'index.html'));
+    });
+    app.use((_req, res) => {
+      res.status(404).sendFile(path.join(DIST_DIR, '404.html'));
     });
   }
 
