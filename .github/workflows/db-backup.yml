@@ -1,0 +1,70 @@
+# Sauvegarde nocturne de la base Supabase (schéma public), chiffrée, conservée 30 jours.
+# Le dépôt est public : la sauvegarde est chiffrée (AES-256) AVANT d'être stockée comme artefact.
+# Procédure complète et test de restauration : docs/sauvegarde-base.md
+name: Sauvegarde de la base
+
+on:
+  schedule:
+    - cron: '17 2 * * *' # chaque nuit, 02:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Vérifier les secrets
+        env:
+          PGHOST: ${{ secrets.BACKUP_PGHOST }}
+          PGPASSWORD: ${{ secrets.BACKUP_PGPASSWORD }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          missing=0
+          for v in PGHOST PGPASSWORD BACKUP_PASSPHRASE; do
+            if [ -z "${!v}" ]; then echo "::error::Secret manquant pour $v"; missing=1; fi
+          done
+          if [ "${#BACKUP_PASSPHRASE}" -lt 20 ]; then echo "::error::BACKUP_PASSPHRASE doit faire au moins 20 caractères"; missing=1; fi
+          exit $missing
+
+      - name: Dump (pg_dump 17, même version majeure que la base)
+        env:
+          PGHOST: ${{ secrets.BACKUP_PGHOST }}
+          PGPORT: ${{ secrets.BACKUP_PGPORT }}
+          PGUSER: ${{ secrets.BACKUP_PGUSER }}
+          PGPASSWORD: ${{ secrets.BACKUP_PGPASSWORD }}
+          PGDATABASE: ${{ secrets.BACKUP_PGDATABASE }}
+        run: |
+          docker run --rm \
+            -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGDATABASE -e PGSSLMODE=require \
+            postgres:17 \
+            pg_dump --format=custom --no-owner --no-privileges --schema=public > backup.dump
+          size=$(stat -c %s backup.dump)
+          echo "Taille du dump : $size octets"
+          if [ "$size" -lt 2048 ]; then echo "::error::Dump vide ou incomplet"; exit 1; fi
+
+      - name: Chiffrer (AES-256, PBKDF2) puis effacer la version en clair
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          name="euleria-$(date -u +%Y-%m-%dT%H%MZ).dump.enc"
+          openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -pass env:BACKUP_PASSPHRASE -in backup.dump -out "$name"
+          shred -u backup.dump
+          sha256sum "$name" | tee "$name.sha256"
+          echo "BACKUP_FILE=$name" >> "$GITHUB_ENV"
+
+      - name: Conserver 30 jours
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: |
+            ${{ env.BACKUP_FILE }}
+            ${{ env.BACKUP_FILE }}.sha256
+          retention-days: 30
+          if-no-files-found: error
