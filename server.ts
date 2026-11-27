@@ -484,13 +484,36 @@ async function startServer() {
     next();
   });
 
-  // En-têtes de sécurité HTTP (sans X-Frame-Options pour préserver l'aperçu en iframe)
-  app.use((_req, res, next) => {
+  // En-têtes de sécurité HTTP. La CSP n'autorise que ce que l'app charge réellement :
+  // ses propres fichiers, Google Fonts, la connexion Google (Firebase), Supabase et le websocket du site.
+  // Pas de CSP en développement : Vite y injecte des scripts inline.
+  app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    res.setHeader('X-Frame-Options', 'DENY'); // anti-clickjacking (anciens navigateurs ; frame-ancestors pour les autres)
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups'); // compatible avec la fenêtre de connexion Google
     if (IS_PROD) {
       res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+      res.setHeader(
+        'Content-Security-Policy',
+        [
+          "default-src 'self'",
+          "script-src 'self' https://apis.google.com",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // attributs style de React
+          "font-src 'self' https://fonts.gstatic.com data:",
+          "img-src 'self' data: blob: https://lh3.googleusercontent.com", // photo de profil (visible par l'élève seul)
+          `connect-src 'self' wss://${req.hostname} https://*.googleapis.com https://*.firebaseapp.com https://*.supabase.co wss://*.supabase.co`,
+          'frame-src https://*.firebaseapp.com https://accounts.google.com', // connexion Google
+          "worker-src 'self' blob:",
+          "manifest-src 'self'",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+          "frame-ancestors 'none'",
+          'upgrade-insecure-requests',
+        ].join('; ')
+      );
     }
     next();
   });
