@@ -25,8 +25,11 @@ function isValidHttpUrl(raw: string): boolean {
   }
 }
 
+// Une clé secrète (sb_secret_…) contourne la RLS : jamais utilisée côté navigateur (voir vite.config.ts)
 export const isSupabaseConfigured =
-  isValidHttpUrl(RAW_SUPABASE_URL) && RAW_SUPABASE_ANON_KEY.length >= 20;
+  isValidHttpUrl(RAW_SUPABASE_URL) &&
+  RAW_SUPABASE_ANON_KEY.length >= 20 &&
+  !RAW_SUPABASE_ANON_KEY.startsWith('sb_secret_');
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(RAW_SUPABASE_URL, RAW_SUPABASE_ANON_KEY, {

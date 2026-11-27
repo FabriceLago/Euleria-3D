@@ -2,11 +2,33 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
-import {defineConfig} from 'vite';
+import {defineConfig, loadEnv} from 'vite';
 import {VitePWA} from 'vite-plugin-pwa';
 
-export default defineConfig(() => {
+/** Clé Supabase qui ne doit jamais partir dans le navigateur (elle contourne la RLS). */
+function isSupabaseSecretKey(key: string): boolean {
+  if (key.startsWith('sb_secret_')) return true;
+  const payload = key.split('.')[1]; // ancienne clé JWT « service_role »
+  if (!payload) return false;
+  try {
+    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')).role === 'service_role';
+  } catch {
+    return false;
+  }
+}
+
+export default defineConfig(({mode}) => {
+  // Garde-fou : une clé secrète mise par erreur dans VITE_SUPABASE_ANON_KEY n'est jamais intégrée au bundle
+  const supabaseKey = (loadEnv(mode, process.cwd(), 'VITE_').VITE_SUPABASE_ANON_KEY || '').trim();
+  const secretKeyLeak = isSupabaseSecretKey(supabaseKey);
+  if (secretKeyLeak) {
+    console.warn(
+      '\n⚠️  VITE_SUPABASE_ANON_KEY contient une clé SECRÈTE Supabase : elle est retirée du bundle.\n' +
+        '    Mettez la clé publique (sb_publishable_…) ou supprimez la variable, puis révoquez la clé secrète.\n'
+    );
+  }
   return {
+    define: secretKeyLeak ? {'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('')} : {},
     plugins: [
       react(),
       tailwindcss(),
