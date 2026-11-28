@@ -408,7 +408,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
       <div className="pointer-events-none absolute top-3 left-3 right-3 flex items-start justify-between gap-3">
         <div className="pointer-events-auto rounded-lg px-3.5 py-2 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm max-w-md">
           <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-            Simulation WebGL 3D · {chapterTitle}
+            Modèle 3D · {chapterTitle}
           </div>
           <div className="mt-0.5 flex items-baseline gap-3">
             <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
@@ -431,7 +431,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
       {contextLost && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 text-white p-6 text-center">
           <div>
-            <p className="font-semibold">Contexte WebGL momentanément suspendu</p>
+            <p className="font-semibold">La 3D est momentanément interrompue</p>
             <p className="text-sm text-slate-300 mt-1">
               Le rendu 3D reprendra automatiquement dès la libération des ressources GPU.
             </p>

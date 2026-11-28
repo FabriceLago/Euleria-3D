@@ -151,7 +151,7 @@ export const CustomizationDrawer: React.FC<CustomizationDrawerProps> = ({
           ) : (
             <div className="mt-5 pb-5 border-b border-slate-200 dark:border-slate-800">
               <p className="text-sm text-slate-600 dark:text-slate-300">
-                Connectez-vous avec Google pour sauvegarder vos préférences et votre progression dans PostgreSQL.
+                Connectez-vous avec Google pour sauvegarder vos préférences et votre progression.
               </p>
               <button
                 type="button"

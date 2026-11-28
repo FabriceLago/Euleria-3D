@@ -529,7 +529,7 @@ const PlatformShell: React.FC = () => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(payload));
     } else {
-      setDuelError(t('Connexion WebSocket indisponible. Patientez un instant ou rechargez la page.'));
+      setDuelError(t('Connexion au direct indisponible. Patientez un instant ou rechargez la page.'));
     }
   }, [t]);
 
@@ -603,7 +603,7 @@ const PlatformShell: React.FC = () => {
       {!loadingCurriculum && !backendAvailable && !isSupabaseConfigured && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
           <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-xs text-amber-800 dark:text-amber-200">
-            {t('Mode autonome actif : les 126 chapitres, modèles 3D WebGL et 378 exercices sont pleinement utilisables. Configurez Supabase')} (<span className="font-mono">VITE_SUPABASE_URL</span> / <span className="font-mono">VITE_SUPABASE_ANON_KEY</span>) {t('ou')} <span className="font-mono">VITE_API_BASE_URL</span> {t('pour synchroniser comptes, classement et salons.')}
+            {t('Mode hors ligne : cours, scènes 3D, quiz et missions restent disponibles. Le compte, le classement et le chat reviendront dès que la connexion au serveur sera rétablie.')}
           </div>
         </div>
       )}

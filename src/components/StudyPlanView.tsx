@@ -220,7 +220,7 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
             <strong className="text-slate-900 dark:text-white">
               {gradeLabelMap.get(activePlan.gradeLevel) || activePlan.gradeLevel}
             </strong>
-            . Connectez-vous pour activer votre suivi hebdomadaire, vos flashcards SM-2 à revoir et vos priorités d’examen.
+            . Connectez-vous pour activer votre suivi hebdomadaire, vos fiches à revoir et vos priorités d’examen.
           </p>
           <button
             type="button"
@@ -243,7 +243,7 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
                 <span>Objectif de révision hebdomadaire</span>
               </div>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Exercices, examens blancs et flashcards SM-2 cumulés sur les 7 derniers jours.
+                Exercices, examens blancs et fiches de révision cumulés sur les 7 derniers jours.
               </p>
             </div>
             <div className="flex items-start gap-3">
@@ -449,7 +449,7 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
                 <Layers className="w-4 h-4 text-slate-500" />
-                <span>Répétition espacée (SM-2)</span>
+                <span>Fiches à revoir</span>
               </div>
               <span className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
                 {activePlan.masteredFlashcardsCount > 1

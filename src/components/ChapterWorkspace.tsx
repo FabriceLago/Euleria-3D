@@ -379,6 +379,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
                 key={subj.id}
                 type="button"
                 onClick={() => onSelectSubject(subj.id)}
+                aria-pressed={active}
                 className={`inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   active
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
@@ -387,8 +388,9 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{subj.shortLabel}</span>
-                <span className="font-mono tabular-nums text-[11px] opacity-65">
-                  {count}
+                {/* Nombre réel de chapitres de la matière, écrit en clair (audit 3.3) */}
+                <span className="text-[11px] font-normal opacity-75">
+                  {`${count} chapitres`}
                 </span>
               </button>
             );
@@ -525,7 +527,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
                 <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span>Prédiction de réussite (Modèle BKT)</span>
+                <span>Ta progression</span>
               </div>
               <span className="text-lg font-mono tabular-nums font-bold text-slate-900 dark:text-white">
                 {Math.round(
@@ -540,7 +542,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
               {feedback?.prediction?.recommendedAction ||
                 (isAuthenticated
                   ? 'Calculé en temps réel à partir de vos réponses et de votre temps de résolution.'
-                  : 'Connectez-vous pour activer le suivi bayésien et la sauvegarde PostgreSQL.')}
+                  : 'Connectez-vous pour enregistrer votre progression.')}
             </p>
             <div className="mt-3 grid grid-cols-3 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
               <div>

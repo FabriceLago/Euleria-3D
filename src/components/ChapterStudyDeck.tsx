@@ -647,7 +647,7 @@ export const ChapterStudyDeck: React.FC<ChapterStudyDeckProps> = ({
               {!isAuthenticated && (
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                   <span>
-                    Connectez-vous pour sauvegarder votre calendrier SM-2 en base, gagner +5 XP par carte et débloquer « Mémoire durable ».
+                    Connectez-vous pour enregistrer votre calendrier de révision, gagner +5 XP par carte et débloquer « Mémoire durable ».
                   </span>
                   <button
                     type="button"
