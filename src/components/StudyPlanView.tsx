@@ -267,7 +267,7 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
               <div className="text-right">
                 <div className="text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
                   {activePlan.weeklyXpEarned}{' '}
-                  <span className="text-sm font-medium text-slate-400">
+                  <span className="text-sm font-medium text-slate-500">
                     / {activePlan.weeklyXpGoal} XP
                   </span>
                 </div>
@@ -401,9 +401,9 @@ export const StudyPlanView: React.FC<StudyPlanViewProps> = ({
                         <span className="mx-1.5" aria-hidden="true">·</span>
                         <span>Maîtrise {item.masteryPct}%</span>
                       </div>
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                      <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
                         {item.title}
-                      </h3>
+                      </h2>
                       <p
                         className={`text-xs ${
                           item.priorityLevel === 'haute'

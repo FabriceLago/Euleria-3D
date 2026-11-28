@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
+import { useDialog } from '../hooks/useDialog.ts';
 
 // Écran d'âge (audit 2.3) : affiché après la connexion Google, avant toute création de compte.
 // Le mois et l'année servent uniquement au calcul côté serveur ; ils ne sont jamais enregistrés.
@@ -20,6 +21,8 @@ export const AgeGate: React.FC<AgeGateProps> = ({ onConfirm, onCancel }) => {
   const [year, setYear] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<'under_age' | 'error' | null>(null);
+  // Étape obligatoire : pas de fermeture par Échap (le bouton « Annuler » reste disponible)
+  const dialogRef = useDialog(true);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +36,7 @@ export const AgeGate: React.FC<AgeGateProps> = ({ onConfirm, onCancel }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4" role="presentation">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="age-gate-title"

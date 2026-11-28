@@ -690,7 +690,7 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
                         {checked && <Check className="w-3 h-3" />}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center justify-between gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
                           <span>
                             {subjectLabel} · {ch.gradeLevel}
                           </span>
@@ -699,7 +699,7 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
                         <div className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-white">
                           {ch.title}
                         </div>
-                        <div className="mt-1 text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+                        <div className="mt-1 text-[11px] font-mono text-slate-600 dark:text-slate-400 truncate">
                           {ch.formulaDisplay}
                         </div>
                       </div>
@@ -758,7 +758,7 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
                       }`}
                     >
                       <span className="text-xs font-semibold">{d.label}</span>
-                      <span className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                      <span className="text-[11px] font-mono tabular-nums text-slate-600 dark:text-slate-400">
                         {d.desc}
                       </span>
                     </button>

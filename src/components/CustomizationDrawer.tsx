@@ -9,6 +9,7 @@ import type {
   UserProfile,
 } from '../types/learning.ts';
 import { PWAInstallButton } from './PWAInstallPrompt.tsx';
+import { useDialog } from '../hooks/useDialog.ts';
 
 interface CustomizationDrawerProps {
   open: boolean;
@@ -71,6 +72,8 @@ export const CustomizationDrawer: React.FC<CustomizationDrawerProps> = ({
     setNameInput(profile?.displayName || '');
   }, [profile?.displayName]);
 
+  const panelRef = useDialog(open, onClose);
+
   if (!open) return null;
 
   const handleSaveName = async (e: React.FormEvent) => {
@@ -86,12 +89,17 @@ export const CustomizationDrawer: React.FC<CustomizationDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40">
-      <div className="w-full max-w-md h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 p-6 overflow-y-auto flex flex-col justify-between">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="drawer-title"
+        className="w-full max-w-md h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 p-6 overflow-y-auto flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+              <h2 id="drawer-title" className="text-lg font-semibold text-slate-900 dark:text-white">
                 Personnalisation & Profil
               </h2>
             </div>

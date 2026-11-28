@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, MessageSquare, Send, Swords, Users } from 'lucide-react';
+import { useDialog } from '../hooks/useDialog.ts';
 import type {
   AccentColor,
   ChapterItem,
@@ -92,6 +93,7 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
   onChatRulesAccepted,
 }) => {
   const [rulesOpen, setRulesOpen] = useState(false);
+  const rulesRef = useDialog(rulesOpen, () => setRulesOpen(false));
   const [acceptingRules, setAcceptingRules] = useState(false);
   const acceptRules = async () => {
     setAcceptingRules(true);
@@ -237,6 +239,7 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
       {rulesOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4" role="presentation">
           <div
+            ref={rulesRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="chat-rules-title"
