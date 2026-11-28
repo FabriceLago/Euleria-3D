@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient, type User as SupabaseAuthUser } from '@supabase/supabase-js';
+import type { SupabaseClient, User as SupabaseAuthUser } from '@supabase/supabase-js';
 import type {
   AccentColor,
   ChapterProgress,
@@ -31,15 +31,21 @@ export const isSupabaseConfigured =
   RAW_SUPABASE_ANON_KEY.length >= 20 &&
   !RAW_SUPABASE_ANON_KEY.startsWith('sb_secret_');
 
-export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(RAW_SUPABASE_URL, RAW_SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    })
-  : null;
+// Bibliothèque Supabase (~55 Ko) chargée seulement au premier usage, jamais au démarrage (audit 3.8)
+let clientPromise: Promise<SupabaseClient | null> | null = null;
+export function getSupabase(): Promise<SupabaseClient | null> {
+  if (!isSupabaseConfigured) return Promise.resolve(null);
+  clientPromise ??= import('@supabase/supabase-js').then(({ createClient }) =>
+    createClient(RAW_SUPABASE_URL, RAW_SUPABASE_ANON_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+        },
+      })
+  );
+  return clientPromise;
+}
 
 const VALID_GRADES = new Set<GradeLevel>(['6e', '5e', '4e', '3e', '2nde', '1ere', 'terminale']);
 const VALID_THEMES = new Set<ThemeMode>(['light', 'dark']);
@@ -92,6 +98,7 @@ function mapUserRow(row: DbUserRow): UserProfile {
 export async function ensureSupabaseUserProfile(
   authUser: SupabaseAuthUser
 ): Promise<UserProfile | null> {
+  const supabase = await getSupabase();
   if (!supabase) return null;
 
   const fallbackName =
@@ -140,6 +147,7 @@ export async function ensureSupabaseUserProfile(
 }
 
 export async function fetchSupabaseUserProgress(userId: number): Promise<ChapterProgress[]> {
+  const supabase = await getSupabase();
   if (!supabase) return [];
 
   const { data, error } = await supabase
@@ -173,6 +181,7 @@ export async function upsertSupabaseChapterProgress(
   prog: ChapterProgress,
   newXp: number
 ): Promise<void> {
+  const supabase = await getSupabase();
   if (!supabase) return;
   const nowIso = new Date().toISOString();
 
@@ -209,6 +218,7 @@ export async function updateSupabasePreferences(
     weeklyXpGoal?: number;
   }
 ): Promise<UserProfile | null> {
+  const supabase = await getSupabase();
   if (!supabase) return null;
 
   // last_active_at n'est plus modifiable par le client (il sert au rate-limit de l'XP)
@@ -251,6 +261,7 @@ export async function updateSupabasePreferences(
 }
 
 export async function fetchSupabaseLeaderboard(limit = 25): Promise<LeaderboardEntry[]> {
+  const supabase = await getSupabase();
   if (!supabase) return [];
 
   // Vue publique : uniquement les élèves volontaires, sous pseudonyme (voir supabase/schema.sql)
@@ -274,6 +285,7 @@ export async function fetchSupabaseRoomsAndMessages(roomSlug: string): Promise<{
   rooms: StudyRoom[];
   messages: ChatMessageItem[];
 }> {
+  const supabase = await getSupabase();
   if (!supabase) return { rooms: [], messages: [] };
 
   const { data: roomRows } = await supabase
@@ -328,6 +340,7 @@ export async function sendSupabaseChatMessage(opts: {
   content: string;
   sharedChapterId: number | null;
 }): Promise<ChatMessageItem | null> {
+  const supabase = await getSupabase();
   if (!supabase) return null;
   const clean = opts.content.trim().slice(0, 1000);
   if (!clean) return null;

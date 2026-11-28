@@ -12,10 +12,11 @@ import { apiUrl } from '../lib/api.ts';
 import {
   ensureSupabaseUserProfile,
   fetchSupabaseUserProgress,
+  getSupabase,
   isSupabaseConfigured,
-  supabase,
   upsertSupabaseChapterProgress,
 } from '../lib/supabase.ts';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   BadgeItem,
   ChapterProgress,
@@ -217,11 +218,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Synchronisation automatique Supabase Auth si configuré (déploiement statique Hostinger / Vercel)
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured) return;
     let active = true;
+    let unsubscribe: (() => void) | undefined;
 
-    async function syncSupabaseSession() {
-      if (!supabase || auth.currentUser) return;
+    async function syncSupabaseSession(supabase: SupabaseClient) {
+      if (auth.currentUser) return;
       const { data } = await supabase.auth.getSession();
       const sbUser = data.session?.user;
       if (!active || !sbUser) return;
@@ -234,9 +236,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }
 
-    syncSupabaseSession();
-
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // La bibliothèque Supabase se charge ici, en arrière-plan, après le premier affichage
+    void getSupabase().then((supabase) => {
+      if (!supabase || !active) return;
+      syncSupabaseSession(supabase);
+      const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!active || auth.currentUser) return;
       if (session?.user) {
         const mapped = await ensureSupabaseUserProfile(session.user);
@@ -251,11 +255,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setBadges([]);
         setOverallPrediction(null);
       }
+      });
+      unsubscribe = () => sub.subscription.unsubscribe();
     });
 
     return () => {
       active = false;
-      sub.subscription.unsubscribe();
+      unsubscribe?.();
     };
   }, [authProviderMode]);
 
@@ -273,7 +279,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const pending = (async () => {
       try {
         // Si Supabase est configuré et que le backend Express n'est pas actif, utiliser Supabase Auth OAuth
-        if (isSupabaseConfigured && supabase) {
+        if (isSupabaseConfigured) {
           let backendReachable = false;
           try {
             const probe = await fetch(apiUrl('/api/health'));
@@ -283,6 +289,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             backendReachable = false;
           }
           if (!backendReachable) {
+            const supabase = (await getSupabase())!; // configuré → client toujours créé
             const { error } = await supabase.auth.signInWithOAuth({
               provider: 'google',
               options: { redirectTo: window.location.origin },
@@ -348,8 +355,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (auth.currentUser) {
       await signOut(auth);
     }
-    if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signOut();
+    if (isSupabaseConfigured) {
+      await (await getSupabase())?.auth.signOut();
     }
     setProfile(null);
     setProgress([]);

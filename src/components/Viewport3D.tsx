@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Box } from 'lucide-react';
 import { lazyWithReload } from '../utils/lazyWithReload.ts';
 import type { MathViewport3D as MathViewport3DType } from './MathViewport3D.tsx';
@@ -27,6 +27,26 @@ const frame = 'relative w-full rounded-xl overflow-hidden border border-slate-20
 
 export const Viewport3D: React.FC<Props> = (props) => {
   const height = props.heightClass ?? DEFAULT_HEIGHT;
+  // Sur téléphone la scène est sous la ligne de flottaison : elle démarre seulement à l'approche de l'écran,
+  // pour ne pas bloquer le chargement de la page (Three.js + compilation des shaders)
+  const holderRef = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = holderRef.current;
+    if (near || !el) return;
+    if (!('IntersectionObserver' in window)) return setNear(true);
+    const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && setNear(true), {
+      rootMargin: '200px 0px',
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near]);
+
+  const placeholder = (
+    <div ref={holderRef} className={`${frame} ${height} flex items-center justify-center text-sm text-slate-500 dark:text-slate-400`}>
+      Chargement de la scène 3D…
+    </div>
+  );
 
   // Sans WebGL (vieil appareil, accélération désactivée) : le chapitre reste utilisable sans la scène
   if (!hasWebGL()) {
@@ -42,14 +62,9 @@ export const Viewport3D: React.FC<Props> = (props) => {
     );
   }
 
+  if (!near) return placeholder;
   return (
-    <Suspense
-      fallback={
-        <div className={`${frame} ${height} flex items-center justify-center text-sm text-slate-500 dark:text-slate-400`}>
-          Chargement de la scène 3D…
-        </div>
-      }
-    >
+    <Suspense fallback={placeholder}>
       <MathViewport3D {...props} />
     </Suspense>
   );
