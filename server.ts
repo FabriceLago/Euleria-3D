@@ -20,6 +20,7 @@ import {
   updateUserPreferences,
 } from './src/db/users.ts';
 import { hasMinimumAge, MIN_ACCOUNT_AGE } from './src/db/age.ts';
+import { APP_ROUTE_PATTERN } from './src/lib/routes.ts';
 import {
   assertValidChapterCardKey,
   awardDynamicQuizXp,
@@ -1809,8 +1810,8 @@ async function startServer() {
     app.use('/api', (_req, res) => {
       res.status(404).json({ error: 'Route introuvable.' });
     });
-    // L'app n'a qu'une adresse (pas encore de routeur) : toute autre page est une vraie 404
-    app.get(['/', '/index.html'], (_req, res) => {
+    // Adresses de l'app (/, /cours/…, /quiz…) : même page, l'app lit l'adresse. Toute autre page est une vraie 404
+    app.get(APP_ROUTE_PATTERN, (_req, res) => {
       res.sendFile(path.join(DIST_DIR, 'index.html'));
     });
     app.use((_req, res) => {
