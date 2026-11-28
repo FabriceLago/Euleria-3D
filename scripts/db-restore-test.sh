@@ -28,6 +28,11 @@ echo "2/4 Déchiffrement…"
 if [ -z "${BACKUP_PASSPHRASE:-}" ]; then
   read -rsp "   Phrase secrète de sauvegarde : " BACKUP_PASSPHRASE; echo
 fi
+# Un collage sous Windows ajoute souvent un retour chariot invisible : on retire \r et les espaces de bord
+BACKUP_PASSPHRASE="${BACKUP_PASSPHRASE//$'\r'/}"
+BACKUP_PASSPHRASE="${BACKUP_PASSPHRASE#"${BACKUP_PASSPHRASE%%[![:space:]]*}"}"
+BACKUP_PASSPHRASE="${BACKUP_PASSPHRASE%"${BACKUP_PASSPHRASE##*[![:space:]]}"}"
+echo "   (phrase reçue : ${#BACKUP_PASSPHRASE} caractères)"
 export BACKUP_PASSPHRASE
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -pass env:BACKUP_PASSPHRASE -in "$ENC" -out "$WORK/backup.dump"
 unset BACKUP_PASSPHRASE
