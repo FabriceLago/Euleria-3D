@@ -2,6 +2,7 @@ import React from 'react';
 import type { AccentColor, UserProfile } from '../types/learning.ts';
 import { LANGS, LANG_LABELS, parseLang } from '../i18n/core.ts';
 import { setLang, useI18n } from '../i18n/I18nProvider.tsx';
+import { isPlainLeftClick, toPath } from '../lib/routes.ts';
 
 export type AppSection = 'curriculum' | 'quiz' | 'studio3d' | 'leaderboard' | 'collaboration';
 
@@ -32,6 +33,15 @@ export const TopBar: React.FC<TopBarProps> = ({
   onSignIn,
 }) => {
   const { lang, t } = useI18n();
+  // Vrais liens : Ctrl/⌘-clic ouvre un nouvel onglet, le clic simple reste dans l'app
+  const linkProps = (id: AppSection) => ({
+    href: toPath({ section: id }),
+    onClick: (e: React.MouseEvent) => {
+      if (!isPlainLeftClick(e)) return;
+      e.preventDefault();
+      onNavigate(id);
+    },
+  });
   const navItems: Array<{ id: AppSection; label: string }> = [
     { id: 'curriculum', label: t('Programme') },
     { id: 'quiz', label: t('Quiz & Examens') },
@@ -44,23 +54,22 @@ export const TopBar: React.FC<TopBarProps> = ({
     <header className="sticky top-0 z-30 w-full bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3 sm:gap-8">
         {/* Zone 1 : Wordmark unique */}
-        <button
-          type="button"
-          onClick={() => onNavigate('curriculum')}
+        <a
+          {...linkProps('curriculum')}
           className="text-lg font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap shrink-0 cursor-pointer"
         >
           Euleria 3D
-        </button>
+        </a>
 
         {/* Zone 2 : Liens de navigation texte */}
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium">
           {navItems.map((item) => {
             const active = activeSection === item.id;
             return (
-              <button
+              <a
                 key={item.id}
-                type="button"
-                onClick={() => onNavigate(item.id)}
+                {...linkProps(item.id)}
+                aria-current={active ? 'page' : undefined}
                 className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   active
                     ? 'border-slate-900 dark:border-white text-slate-900 dark:text-white'
@@ -68,7 +77,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 }`}
               >
                 {item.label}
-              </button>
+              </a>
             );
           })}
         </nav>
@@ -126,18 +135,18 @@ export const TopBar: React.FC<TopBarProps> = ({
         {navItems.map((item) => {
           const active = activeSection === item.id;
           return (
-            <button
+            <a
               key={item.id}
-              type="button"
-              onClick={() => onNavigate(item.id)}
-              className={`min-h-11 px-1 py-1 rounded-md text-center ${
+              {...linkProps(item.id)}
+              aria-current={active ? 'page' : undefined}
+              className={`flex items-center justify-center min-h-11 px-1 py-1 rounded-md text-center ${
                 active
                   ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
                   : 'text-slate-600 dark:text-slate-400'
               }`}
             >
               {item.label}
-            </button>
+            </a>
           );
         })}
       </nav>

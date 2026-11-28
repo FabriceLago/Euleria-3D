@@ -2,6 +2,7 @@ import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react
 import { lazyWithReload } from './utils/lazyWithReload.ts';
 import { AgeGate } from './components/AgeGate.tsx';
 import { LegalFooter } from './components/LegalFooter.tsx';
+import { UpdatePrompt } from './components/UpdatePrompt.tsx';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { AppSection, TopBar } from './components/TopBar.tsx';
 import { ChapterWorkspace } from './components/ChapterWorkspace.tsx';
@@ -9,6 +10,7 @@ import { CustomizationDrawer } from './components/CustomizationDrawer.tsx';
 import { OfflineIndicator, PWAInstallButton } from './components/PWAInstallPrompt.tsx';
 import { PrintDocumentPortal, type PrintableDocument } from './utils/printExport.tsx';
 import { apiUrl, wsUrl } from './lib/api.ts';
+import { parsePath, toPath, type RouteState } from './lib/routes.ts';
 import {
   fetchSupabaseLeaderboard,
   fetchSupabaseRoomsAndMessages,
@@ -104,7 +106,11 @@ const PlatformShell: React.FC = () => {
     deleteAccount,
   } = useAuth();
 
-  const [activeSection, setActiveSection] = useState<AppSection>('curriculum');
+  // Adresse d'arrivée (lien partagé, favori, rechargement) : fixe la section, la matière, la classe et le chapitre
+  const [initialRoute] = useState<RouteState>(() => parsePath(window.location.pathname) ?? { section: 'curriculum' });
+  const pendingChapterSlugRef = useRef<string | null>(initialRoute.chapterSlug ?? null);
+  const urlPinnedGradeRef = useRef<boolean>(Boolean(initialRoute.grade));
+  const [activeSection, setActiveSection] = useState<AppSection>(initialRoute.section);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Préférences personnalisables (synchronisées avec PostgreSQL dès connexion)
@@ -112,8 +118,8 @@ const PlatformShell: React.FC = () => {
   const [accentColor, setAccentColor] = useState<AccentColor>('indigo');
   const [layoutDensity, setLayoutDensity] = useState<LayoutDensity>('comfortable');
   const [show3DHints, setShow3DHints] = useState<boolean>(true);
-  const [selectedSubject, setSelectedSubject] = useState<SubjectId>('mathematics');
-  const [selectedGrade, setSelectedGrade] = useState<GradeLevel>('6e');
+  const [selectedSubject, setSelectedSubject] = useState<SubjectId>(initialRoute.subject ?? 'mathematics');
+  const [selectedGrade, setSelectedGrade] = useState<GradeLevel>(initialRoute.grade ?? '6e');
   const [selectedChapterId, setSelectedChapterId] = useState<number | null>(null);
   const [quizSeedChapterIds, setQuizSeedChapterIds] = useState<number[] | undefined>(undefined);
   const [quizWorkspaceMode, setQuizWorkspaceMode] = useState<'quiz' | 'exam' | 'grand_oral'>('quiz');
@@ -164,7 +170,9 @@ const PlatformShell: React.FC = () => {
     const isNewUserSession = lastProfileUidRef.current !== profile.uid;
     const gradeChangedInProfile = lastProfileGradeRef.current !== profile.gradeLevel;
     if (isNewUserSession || gradeChangedInProfile) {
-      setSelectedGrade((profile.gradeLevel as GradeLevel) || '6e');
+      // Un lien partagé (/cours/…/3e) l'emporte sur la classe du profil à l'ouverture
+      if (urlPinnedGradeRef.current) urlPinnedGradeRef.current = false;
+      else setSelectedGrade((profile.gradeLevel as GradeLevel) || '6e');
       lastProfileUidRef.current = profile.uid;
       lastProfileGradeRef.current = profile.gradeLevel;
     }
@@ -430,6 +438,52 @@ const PlatformShell: React.FC = () => {
       console.error('Failed to update leaderboard opt-in:', err);
     }
   };
+
+  // ---- Adresses (audit 3.5) : l'état d'écran ⇄ l'URL ----
+  const selectedChapter = chapters.find(
+    (c) => c.id === selectedChapterId && (c.subject || 'mathematics') === selectedSubject && c.gradeLevel === selectedGrade
+  );
+
+  // Lien profond vers un chapitre : résolu dès que le programme est chargé
+  useEffect(() => {
+    const slug = pendingChapterSlugRef.current;
+    if (!slug || loadingCurriculum) return;
+    pendingChapterSlugRef.current = null;
+    const ch = chapters.find((c) => c.slug === slug);
+    if (ch) setSelectedChapterId(ch.id);
+    // Chapitre inconnu : on reste sur la classe et l'adresse est corrigée (aucun état ne change, donc rien d'autre ne le fera)
+    else window.history.replaceState(null, '', toPath({ ...initialRoute, chapterSlug: undefined }));
+  }, [chapters, loadingCurriculum, initialRoute]);
+
+  // L'état change → l'adresse suit. Changer de section ou de chapitre crée une entrée d'historique
+  // (bouton retour) ; changer de matière ou de classe la remplace seulement.
+  useEffect(() => {
+    if (pendingChapterSlugRef.current) return;
+    const target: RouteState =
+      activeSection === 'curriculum'
+        ? { section: 'curriculum', subject: selectedSubject, grade: selectedGrade, chapterSlug: selectedChapter?.slug }
+        : { section: activeSection };
+    const path = toPath(target);
+    if (path === window.location.pathname) return;
+    const current = parsePath(window.location.pathname);
+    const isNewPage = current?.section !== target.section || (current?.chapterSlug ?? null) !== (target.chapterSlug ?? null);
+    window.history[isNewPage ? 'pushState' : 'replaceState'](null, '', path);
+  }, [activeSection, selectedSubject, selectedGrade, selectedChapter?.slug]);
+
+  // Bouton retour / avancer du navigateur
+  useEffect(() => {
+    const onPopState = () => {
+      const route = parsePath(window.location.pathname) ?? { section: 'curriculum' as const };
+      setActiveSection(route.section);
+      if (route.subject) setSelectedSubject(route.subject);
+      if (route.grade) setSelectedGrade(route.grade);
+      if (route.section === 'curriculum') {
+        setSelectedChapterId(chapters.find((c) => c.slug === route.chapterSlug)?.id ?? null);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [chapters]);
 
   const handleOpenChapter = (chapter: ChapterItem) => {
     setSelectedSubject(chapter.subject || 'mathematics');
@@ -830,6 +884,7 @@ const PlatformShell: React.FC = () => {
 
       <PrintDocumentPortal document={printableDoc} />
       <OfflineIndicator />
+      <UpdatePrompt />
     </>
   );
 };

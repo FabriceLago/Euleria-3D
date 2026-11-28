@@ -24,6 +24,7 @@ import {
   SUBJECTS,
   SVT_GRADE_FOCUS,
 } from '../db/curriculumData.ts';
+import { isPlainLeftClick, toPath } from '../lib/routes.ts';
 import {
   computeRealTimePrediction,
   evaluateExerciseAnswer,
@@ -444,11 +445,16 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
           const mastery = Math.round(prog?.masteryScore ?? 0);
 
           return (
-            <button
+            <a
               key={ch.id}
-              type="button"
-              onClick={() => onSelectChapter(ch.id)}
-              className={`text-left rounded-xl border ${padClass} transition-colors cursor-pointer ${
+              href={toPath({ section: 'curriculum', subject: selectedSubject, grade: ch.gradeLevel, chapterSlug: ch.slug })}
+              onClick={(e) => {
+                if (!isPlainLeftClick(e)) return; // Ctrl/⌘-clic : nouvel onglet sur l'adresse du chapitre
+                e.preventDefault();
+                onSelectChapter(ch.id);
+              }}
+              aria-current={isSelected ? 'page' : undefined}
+              className={`block text-left rounded-xl border ${padClass} transition-colors cursor-pointer ${
                 isSelected
                   ? 'border-slate-900 dark:border-white bg-white dark:bg-slate-900 shadow-sm'
                   : 'border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-900'
@@ -484,7 +490,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
                   style={{ width: `${mastery}%` }}
                 />
               </div>
-            </button>
+            </a>
           );
         })}
       </div>

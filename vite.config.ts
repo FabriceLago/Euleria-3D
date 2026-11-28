@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
 import {VitePWA} from 'vite-plugin-pwa';
+import {APP_ROUTE_PATTERN} from './src/lib/routes.ts';
 
 /** Clé Supabase qui ne doit jamais partir dans le navigateur (elle contourne la RLS). */
 function isSupabaseSecretKey(key: string): boolean {
@@ -33,7 +34,9 @@ export default defineConfig(({mode}) => {
       react(),
       tailwindcss(),
       VitePWA({
-        registerType: 'autoUpdate',
+        // Nouvelle version : l'élève voit « Mise à jour disponible » et recharge quand il veut (audit 3.9)
+        registerType: 'prompt',
+        injectRegister: false, // enregistrement fait dans src/components/UpdatePrompt.tsx
         includeAssets: [
           'icon.svg',
           'apple-touch-icon.png',
@@ -75,8 +78,8 @@ export default defineConfig(({mode}) => {
         },
         workbox: {
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-          // Hors ligne, seule l'adresse de l'app est servie depuis le cache : une page inconnue garde sa vraie 404
-          navigateFallbackAllowlist: [/^\/(index\.html)?$/],
+          // Hors ligne, seules les adresses de l'app sont servies depuis le cache : une page inconnue garde sa vraie 404
+          navigateFallbackAllowlist: [APP_ROUTE_PATTERN],
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           runtimeCaching: [
             {
