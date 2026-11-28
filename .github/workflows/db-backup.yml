@@ -53,6 +53,9 @@ jobs:
         env:
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
+          # Même nettoyage que scripts/db-restore-test.sh : retours à la ligne et espaces de bord retirés
+          BACKUP_PASSPHRASE="$(printf '%s' "$BACKUP_PASSPHRASE" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+          export BACKUP_PASSPHRASE
           name="euleria-$(date -u +%Y-%m-%dT%H%MZ).dump.enc"
           openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -pass env:BACKUP_PASSPHRASE -in backup.dump -out "$name"
           shred -u backup.dump
