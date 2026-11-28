@@ -1,6 +1,7 @@
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { lazyWithReload } from './utils/lazyWithReload.ts';
 import { AgeGate } from './components/AgeGate.tsx';
+import { LegalFooter } from './components/LegalFooter.tsx';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { AppSection, TopBar } from './components/TopBar.tsx';
 import { ChapterWorkspace } from './components/ChapterWorkspace.tsx';
@@ -806,6 +807,8 @@ const PlatformShell: React.FC = () => {
           </Suspense>
         )}
       </main>
+
+      <LegalFooter />
 
       <CustomizationDrawer
         open={drawerOpen}
