@@ -308,7 +308,7 @@ export const ChapterStudyDeck: React.FC<ChapterStudyDeckProps> = ({
             <Layers className="w-3.5 h-3.5" />
             <span>Flashcards</span>
             {flashcards.length > 0 && (
-              <span className="font-mono tabular-nums text-[11px] opacity-75">
+              <span className="font-mono tabular-nums text-[11px]">
                 {masteredCount}/{flashcards.length}
               </span>
             )}

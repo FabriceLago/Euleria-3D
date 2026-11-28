@@ -390,7 +390,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
                 <Icon className="w-3.5 h-3.5" />
                 <span>{subj.shortLabel}</span>
                 {/* Nombre réel de chapitres de la matière, écrit en clair (audit 3.3) */}
-                <span className="text-[11px] font-normal opacity-75">
+                <span className="text-[11px] font-normal">
                   {`${count} chapitres`}
                 </span>
               </button>

@@ -22,6 +22,15 @@
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
+
+  /* Focus clavier bien visible partout (audit 3.7) ; la souris n'affiche rien (:focus-visible) */
+  :focus-visible {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+  }
+  .dark :focus-visible {
+    outline-color: #a5b4fc;
+  }
 }
 
 .tabular-nums {

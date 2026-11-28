@@ -636,6 +636,13 @@ const PlatformShell: React.FC = () => {
         id="euleria-app-shell"
         className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors"
       >
+      {/* Lien d'évitement (audit 3.7) : invisible jusqu'au premier Tab, saute le menu */}
+      <a
+        href="#contenu"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-white focus:text-slate-900 focus:shadow-lg"
+      >
+        {t('Aller au contenu')}
+      </a>
       <TopBar
         activeSection={activeSection}
         onNavigate={setActiveSection}
@@ -687,7 +694,7 @@ const PlatformShell: React.FC = () => {
         </div>
       </div>
 
-      <main className="pb-14">
+      <main id="contenu" tabIndex={-1} className="pb-14 focus:outline-none">
         {loadingCurriculum ? (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-sm text-slate-500 dark:text-slate-400">
             {t('Initialisation des programmes scientifiques et du moteur WebGL...')}

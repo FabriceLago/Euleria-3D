@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Smartphone, WifiOff, X } from 'lucide-react';
 import { useOnlineStatus, usePWAInstall } from '../hooks/usePWAInstall.ts';
+import { useDialog } from '../hooks/useDialog.ts';
 
 interface PWAInstallButtonProps {
   variant?: 'inline' | 'drawer';
@@ -9,6 +10,7 @@ interface PWAInstallButtonProps {
 export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 'inline' }) => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showGuide, setShowGuide] = useState(false);
+  const guideRef = useDialog(showGuide, () => setShowGuide(false));
 
   if (isInstalled) {
     return null;
@@ -51,9 +53,15 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 'i
 
       {showGuide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-          <div className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl">
+          <div
+            ref={guideRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pwa-guide-title"
+            className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl"
+          >
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+              <h3 id="pwa-guide-title" className="text-base font-semibold text-slate-900 dark:text-white">
                 {isIOS ? 'Installer sur iPhone / iPad' : 'Installer Euleria 3D (PWA)'}
               </h3>
               <button
