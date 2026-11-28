@@ -93,10 +93,10 @@ export const LiveDuelView: React.FC<LiveDuelViewProps> = ({
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center space-y-2">
         <Swords className="w-8 h-8 text-slate-400 mx-auto" />
         <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-          Duels WebSocket disponibles avec le serveur temps réel
+          Duels momentanément indisponibles
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-          Les duels chrono 1v1 et mini-tournois de classe reposent sur une synchronisation WebSocket serveur. Connectez un backend Cloud Run via <span className="font-mono">VITE_API_BASE_URL</span> pour activer les salles live.
+          Les duels en direct ont besoin de la connexion au serveur. Réessayez dans un instant.
         </p>
       </div>
     );
@@ -456,7 +456,7 @@ export const LiveDuelView: React.FC<LiveDuelViewProps> = ({
               Salles ouvertes en direct
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Synchronisation WebSocket instantanée avec les élèves connectés
+              En direct avec les élèves connectés
             </p>
           </div>
           <button

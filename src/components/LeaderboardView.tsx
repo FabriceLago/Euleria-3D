@@ -124,10 +124,10 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
         <div>
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
             {activeSubView === 'plan'
-              ? 'Tableau de bord personnalisé · Objectifs hebdomadaires, SM-2 & chapitres prioritaires'
+              ? 'Objectifs de la semaine, fiches à revoir et chapitres prioritaires'
               : activeSubView === 'mistakes'
                 ? 'Carnet d’erreurs intelligent · Pièges récurrents & remédiation ciblée'
-                : 'Gamification · Synchronisation temps réel PostgreSQL & WebSocket'}
+                : 'XP, badges et classement'}
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             {activeSubView === 'plan'
@@ -240,14 +240,14 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           </div>
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Prédiction de réussite globale
+              Réussite estimée
             </div>
             <div className="mt-1 text-2xl font-mono tabular-nums font-bold text-slate-900 dark:text-white">
               {overallPrediction?.predictedSuccessRate ?? 50}%
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-            <div className="text-xs text-slate-500 dark:text-slate-400">Indice de fluidité</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">Rapidité de réponse</div>
             <div className="mt-1 text-2xl font-mono tabular-nums font-bold text-slate-900 dark:text-white">
               {Math.round((overallPrediction?.fluencyFactor ?? 0.5) * 100)}%
             </div>
@@ -393,7 +393,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                     1. Mathématiques Appliquées (6ᵉ → Terminale)
                   </div>
                   <div className="text-slate-600 dark:text-slate-400">
-                    21 chapitres · 63 exercices · Modèles WebGL 3D & Prédiction BKT
+                    21 chapitres · 63 exercices · Géométrie, fonctions et probabilités en 3D
                   </div>
                 </div>
                 <span className="font-semibold text-emerald-700 dark:text-emerald-400 shrink-0">

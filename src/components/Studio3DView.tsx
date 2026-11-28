@@ -56,7 +56,7 @@ export const Studio3DView: React.FC<Studio3DViewProps> = ({
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Rendu WebGL PBR · Manipulation libre des modèles scientifiques 3D
+            Manipulation libre des modèles scientifiques 3D
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             Atelier de modélisation & simulation 3D

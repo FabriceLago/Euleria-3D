@@ -47,7 +47,7 @@ export const SUBJECTS: Array<{
     id: 'mathematics',
     label: 'Mathématiques Appliquées',
     shortLabel: 'Mathématiques',
-    tagline: 'Géométrie 3D, analyse, probabilités et prédiction bayésienne',
+    tagline: 'Géométrie, calcul, fonctions et probabilités en 3D',
   },
   {
     id: 'physics_chemistry',

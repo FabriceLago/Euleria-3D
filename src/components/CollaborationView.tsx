@@ -280,8 +280,8 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
         <div>
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
             {subView === 'duels'
-              ? 'Défis synchronisés par WebSocket · Duels 1v1 & Mini-Tournois (jusqu’à 6 joueurs)'
-              : 'Collaboration entre pairs (6ᵉ à Terminale) · WebSocket temps réel'}
+              ? 'Défis en direct · Duels à deux et mini-tournois (jusqu’à 6 joueurs)'
+              : 'Entraide entre élèves (6ᵉ à Terminale) · en direct'}
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             {subView === 'duels'

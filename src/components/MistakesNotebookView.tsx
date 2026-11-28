@@ -468,7 +468,7 @@ export const MistakesNotebookView: React.FC<MistakesNotebookViewProps> = ({
       {!profile && backendAvailable && (
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <p className="text-xs text-slate-600 dark:text-slate-300">
-            En mode exploration, vos erreurs de cette session apparaissent ici automatiquement. Connectez-vous pour retrouver tout votre historique d’erreurs sauvegardé dans PostgreSQL.
+            En mode exploration, vos erreurs de cette session apparaissent ici automatiquement. Connectez-vous pour retrouver tout votre historique d’erreurs.
           </p>
           <button
             type="button"
