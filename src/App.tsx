@@ -1,5 +1,6 @@
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { lazyWithReload } from './utils/lazyWithReload.ts';
+import { AgeGate } from './components/AgeGate.tsx';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { AppSection, TopBar } from './components/TopBar.tsx';
 import { ChapterWorkspace } from './components/ChapterWorkspace.tsx';
@@ -97,6 +98,9 @@ const PlatformShell: React.FC = () => {
     updateLocalProgress,
     applyXpAndBadges,
     setProfileState,
+    ageRequired,
+    confirmAge,
+    deleteAccount,
   } = useAuth();
 
   const [activeSection, setActiveSection] = useState<AppSection>('curriculum');
@@ -796,6 +800,7 @@ const PlatformShell: React.FC = () => {
                 apiFetch={apiFetch}
                 onOpenSharedChapter={handleOpenChapter}
                 onMessageSentOptimistic={handleMessageSentOptimistic}
+                onChatRulesAccepted={setProfileState}
               />
             )}
           </Suspense>
@@ -814,8 +819,11 @@ const PlatformShell: React.FC = () => {
         onUpdatePreferences={handleUpdatePreferences}
         onSignIn={signInWithGoogle}
         onLogout={logout}
+        onDeleteAccount={deleteAccount}
       />
       </div>
+
+      {ageRequired && <AgeGate onConfirm={confirmAge} onCancel={() => void logout()} />}
 
       <PrintDocumentPortal document={printableDoc} />
       <OfflineIndicator />

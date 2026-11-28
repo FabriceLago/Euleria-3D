@@ -27,6 +27,10 @@ export const users = pgTable('users', {
   // Classement public : opt-in explicite, sous un pseudonyme tiré au sort (jamais le nom ni la photo)
   leaderboardOptIn: boolean('leaderboard_opt_in').notNull().default(false),
   pseudonym: text('pseudonym').unique(),
+  // Âge minimum (15 ans) déclaré à la première connexion : seule la date de confirmation est gardée, jamais la date de naissance
+  ageConfirmedAt: timestamp('age_confirmed_at'),
+  // Règles du chat acceptées avant le premier message
+  chatRulesAcceptedAt: timestamp('chat_rules_accepted_at'),
   lastActiveAt: timestamp('last_active_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

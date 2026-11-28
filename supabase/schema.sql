@@ -170,6 +170,11 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS leaderboard_opt_in BOOLEAN NOT
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS pseudonym TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS users_pseudonym_key ON public.users (pseudonym);
 
+-- Âge minimum (15 ans) confirmé à la première connexion : seule la date de confirmation est gardée,
+-- jamais la date de naissance. Règles du chat acceptées avant le premier message.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS age_confirmed_at TIMESTAMPTZ;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS chat_rules_accepted_at TIMESTAMPTZ;
+
 DROP VIEW IF EXISTS public.public_leaderboard;
 CREATE VIEW public.public_leaderboard AS
 SELECT

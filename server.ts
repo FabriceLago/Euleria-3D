@@ -8,11 +8,18 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { requireAuth, type AuthRequest } from './src/middleware/auth.ts';
 import { adminAuth } from './src/lib/firebase-admin.ts';
 import {
+  acceptChatRules,
+  AgeRequiredError,
+  confirmAgeAndCreateUser,
+  deleteUserAccount,
   getLeaderboard,
   getOrCreateUser,
+  getUserByUid,
+  purgeInactiveUsers,
   setLeaderboardOptIn,
   updateUserPreferences,
 } from './src/db/users.ts';
+import { hasMinimumAge, MIN_ACCOUNT_AGE } from './src/db/age.ts';
 import {
   assertValidChapterCardKey,
   awardDynamicQuizXp,
@@ -451,6 +458,9 @@ async function tryVerifyOptionalAuth(req: express.Request): Promise<{
   }
   try {
     const decoded = await adminAuth.verifyIdToken(token);
+    // Compte sans âge minimum confirmé : traité comme visiteur (rien n'est enregistré)
+    const account = await getUserByUid(decoded.uid);
+    if (!account?.ageConfirmedAt) return null;
     return {
       uid: decoded.uid,
       email: decoded.email,
@@ -463,6 +473,9 @@ async function tryVerifyOptionalAuth(req: express.Request): Promise<{
 }
 
 function sendRouteError(res: express.Response, error: unknown, fallbackMessage: string) {
+  if (error instanceof AgeRequiredError) {
+    return res.status(403).json({ error: error.message, code: error.code });
+  }
   if (error instanceof ValidationError) {
     return res.status(error.statusCode).json({ error: error.message });
   }
@@ -644,6 +657,65 @@ async function startServer() {
       );
       const dashboard = await getUserDashboardData(user.id);
       res.json({ user, ...dashboard });
+    } catch (error: unknown) {
+      sendRouteError(res, error, 'Erreur serveur');
+    }
+  });
+
+  // Âge minimum (audit 2.3) : mois + année de naissance déclarés, jamais stockés.
+  // 15 ans ou plus → compte créé ; moins → aucun compte (et toute donnée existante effacée).
+  app.post('/api/me/age', preferencesLimiter, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Utilisateur non authentifié.' });
+      }
+      const birthYear = Number(req.body?.birthYear);
+      const birthMonth = Number(req.body?.birthMonth);
+      if (!Number.isInteger(birthYear) || !Number.isInteger(birthMonth) || birthMonth < 1 || birthMonth > 12) {
+        return res.status(400).json({ error: 'Mois et année de naissance requis.' });
+      }
+      if (!hasMinimumAge(birthYear, birthMonth)) {
+        await deleteUserAccount(req.user.uid);
+        return res.status(403).json({
+          error: `Il faut avoir au moins ${MIN_ACCOUNT_AGE} ans pour créer un compte.`,
+          code: 'under_age',
+        });
+      }
+      const user = await confirmAgeAndCreateUser(
+        req.user.uid,
+        req.user.email || `${req.user.uid}@euleria.local`,
+        req.user.name,
+        req.user.picture
+      );
+      res.json({ user });
+    } catch (error: unknown) {
+      sendRouteError(res, error, 'Erreur serveur');
+    }
+  });
+
+  // Suppression réelle du compte (audit 2.4) : toutes les données sont effacées de la base
+  app.delete('/api/me', preferencesLimiter, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Utilisateur non authentifié.' });
+      }
+      const deleted = await deleteUserAccount(req.user.uid);
+      broadcastEvent('leaderboard:updated', { leaderboard: await getLeaderboard(25) });
+      res.json({ deleted });
+    } catch (error: unknown) {
+      sendRouteError(res, error, 'Erreur serveur');
+    }
+  });
+
+  // Acceptation des règles du chat (audit 2.5)
+  app.post('/api/me/chat-rules', preferencesLimiter, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Utilisateur non authentifié.' });
+      }
+      await getOrCreateUser(req.user.uid, req.user.email || `${req.user.uid}@euleria.local`, req.user.name, req.user.picture);
+      const user = await acceptChatRules(req.user.uid);
+      res.json({ user });
     } catch (error: unknown) {
       sendRouteError(res, error, 'Erreur serveur');
     }
@@ -1400,6 +1472,10 @@ async function startServer() {
         req.user.name,
         req.user.picture
       );
+      // Règles du chat acceptées avant toute participation (audit 2.5)
+      if (!user.chatRulesAcceptedAt) {
+        return res.status(403).json({ error: 'Accepte d’abord les règles du chat.', code: 'chat_rules_required' });
+      }
 
       const result = await createChatMessage({
         roomSlug,
@@ -1521,6 +1597,7 @@ async function startServer() {
               }
               return;
             }
+            if (authErr instanceof AgeRequiredError) return; // âge non confirmé : reste visiteur, sans bruit
             console.error('WebSocket auth error:', authErr);
           }
         } else if (
@@ -1740,6 +1817,14 @@ async function startServer() {
       res.status(404).sendFile(path.join(DIST_DIR, '404.html'));
     });
   }
+
+  // Conservation limitée (politique de confidentialité) : comptes inactifs depuis 12 mois supprimés, chaque jour
+  const runPurge = async () => {
+    const removed = await purgeInactiveUsers();
+    if (removed > 0) console.log(`Comptes inactifs supprimés : ${removed}`);
+  };
+  setTimeout(runPurge, 60_000);
+  setInterval(runPurge, 24 * 60 * 60 * 1000);
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`Euleria 3D server listening on http://0.0.0.0:${PORT}`);

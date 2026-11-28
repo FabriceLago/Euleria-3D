@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull, isNull, lt } from 'drizzle-orm';
 import { db } from './index.ts';
 import { makePseudonym, toPublicLeaderboard, type PublicLeaderboardEntry } from './leaderboard.ts';
 import { users } from './schema.ts';
@@ -18,43 +18,104 @@ function sanitizeAvatarUrl(raw?: string): string | null {
   return null;
 }
 
+/** Aucun compte sans âge minimum confirmé (15 ans) : renvoyé au client pour afficher l'écran d'âge. */
+export class AgeRequiredError extends Error {
+  readonly code = 'age_required';
+  constructor() {
+    super('Confirmation de l’âge requise avant de créer un compte.');
+  }
+}
+
+/**
+ * Compte de l'élève connecté. Ne crée JAMAIS de compte : la création passe uniquement par
+ * confirmAgeAndCreateUser (âge minimum vérifié). Sans âge confirmé → AgeRequiredError.
+ */
 export async function getOrCreateUser(
   uid: string,
   email: string,
-  displayName?: string,
+  _displayName?: string,
   avatarUrl?: string
 ) {
+  let rows;
+  try {
+    const safeAvatar = sanitizeAvatarUrl(avatarUrl);
+    rows = await db
+      .update(users)
+      .set({ email, lastActiveAt: new Date(), ...(safeAvatar ? { avatarUrl: safeAvatar } : {}) })
+      .where(and(eq(users.uid, uid), isNotNull(users.ageConfirmedAt)))
+      .returning();
+  } catch (error) {
+    console.error('Database error in getOrCreateUser:', error);
+    throw new Error('Impossible de synchroniser le profil utilisateur.', { cause: error });
+  }
+  if (!rows[0]) throw new AgeRequiredError();
+  // Identité publique (chat, présence, duels, classement) : toujours le pseudonyme, jamais le nom réel
+  return rows[0].pseudonym ? rows[0] : (await assignPseudonymIfMissing(uid))!;
+}
+
+/** Crée (ou confirme) le compte une fois l'âge minimum vérifié. La date de naissance n'est jamais stockée. */
+export async function confirmAgeAndCreateUser(uid: string, email: string, displayName?: string, avatarUrl?: string) {
   try {
     const safeName =
       displayName && displayName.trim().length > 0
         ? displayName.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 40) || 'Élève'
         : email.split('@')[0] || 'Élève';
     const safeAvatar = sanitizeAvatarUrl(avatarUrl);
-
-    const result = await db
+    const now = new Date();
+    const [row] = await db
       .insert(users)
-      .values({
-        uid,
-        email,
-        displayName: safeName,
-        avatarUrl: safeAvatar,
-        lastActiveAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: users.uid,
-        set: {
-          email,
-          lastActiveAt: new Date(),
-          ...(safeAvatar ? { avatarUrl: safeAvatar } : {}),
-        },
-      })
+      .values({ uid, email, displayName: safeName, avatarUrl: safeAvatar, lastActiveAt: now, ageConfirmedAt: now })
+      .onConflictDoUpdate({ target: users.uid, set: { email, lastActiveAt: now, ageConfirmedAt: now } })
       .returning();
-
-    // Identité publique (chat, présence, duels, classement) : toujours le pseudonyme, jamais le nom réel
-    return result[0]?.pseudonym ? result[0] : await assignPseudonymIfMissing(uid);
+    return row.pseudonym ? row : (await assignPseudonymIfMissing(uid))!;
   } catch (error) {
-    console.error('Database error in getOrCreateUser:', error);
-    throw new Error('Impossible de synchroniser le profil utilisateur.', { cause: error });
+    console.error('Database error in confirmAgeAndCreateUser:', error);
+    throw new Error('Impossible de créer le compte.', { cause: error });
+  }
+}
+
+/**
+ * Suppression réelle du compte : la ligne users est effacée, et avec elle (ON DELETE CASCADE)
+ * progression, réponses, examens, révisions, badges, messages et signalements.
+ */
+export async function deleteUserAccount(uid: string) {
+  try {
+    const rows = await db.delete(users).where(eq(users.uid, uid)).returning({ id: users.id });
+    return rows.length > 0;
+  } catch (error) {
+    console.error('Database error in deleteUserAccount:', error);
+    throw new Error('Impossible de supprimer le compte.', { cause: error });
+  }
+}
+
+/** Règles du chat acceptées (obligatoire avant le premier message). */
+export async function acceptChatRules(uid: string) {
+  try {
+    const rows = await db
+      .update(users)
+      .set({ chatRulesAcceptedAt: new Date() })
+      .where(eq(users.uid, uid))
+      .returning();
+    return rows[0] || null;
+  } catch (error) {
+    console.error('Database error in acceptChatRules:', error);
+    throw new Error('Impossible d’enregistrer l’acceptation des règles.', { cause: error });
+  }
+}
+
+/** Durée de conservation d'un compte inactif (politique de confidentialité). */
+export const INACTIVE_ACCOUNT_MONTHS = 12;
+
+/** Supprime les comptes sans connexion depuis 12 mois (et toutes leurs données, par cascade). */
+export async function purgeInactiveUsers() {
+  try {
+    const cutoff = new Date();
+    cutoff.setUTCMonth(cutoff.getUTCMonth() - INACTIVE_ACCOUNT_MONTHS);
+    const rows = await db.delete(users).where(lt(users.lastActiveAt, cutoff)).returning({ id: users.id });
+    return rows.length;
+  } catch (error) {
+    console.error('Database error in purgeInactiveUsers:', error);
+    return 0;
   }
 }
 
