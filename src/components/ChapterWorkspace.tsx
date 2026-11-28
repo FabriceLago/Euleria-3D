@@ -43,7 +43,7 @@ import type {
   ThemeMode,
 } from '../types/learning.ts';
 import type { PrintableDocument } from '../utils/printExport.tsx';
-import { MathViewport3D } from './MathViewport3D.tsx';
+import { Viewport3D } from './Viewport3D.tsx';
 import type { MissionResult } from '../missions/types.ts';
 import { ChapterStudyDeck } from './ChapterStudyDeck.tsx';
 
@@ -499,7 +499,7 @@ export const ChapterWorkspace: React.FC<ChapterWorkspaceProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Colonne gauche : Scène 3D WebGL + Synthèse théorique */}
         <div className="lg:col-span-7 space-y-5">
-          <MathViewport3D
+          <Viewport3D
             onMissionComplete={onMissionComplete}
             onMissionFailed={(r) => onMissionFailed?.(r, activeChapter)}
             missionXpEnabled={missionXpEnabled}

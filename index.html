@@ -21,7 +21,16 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Coquille affichée tout de suite, remplacée par l'app au montage de React (audit 3.8 : premier affichage) -->
+    <div id="root">
+      <div style="min-height:100vh;background:#f8fafc;font-family:system-ui,-apple-system,sans-serif;color:#0f172a">
+        <div style="height:64px;display:flex;align-items:center;padding:0 16px;background:#fff;border-bottom:1px solid #e2e8f0;font-weight:700;font-size:18px">Euleria 3D</div>
+        <main style="max-width:1280px;margin:0 auto;padding:40px 16px">
+          <h1 style="margin:0;font-size:28px;line-height:1.2">Parcours interactif de la 6ᵉ à la Terminale</h1>
+          <p style="margin:12px 0 0;color:#475569;font-size:15px">Chargement des cours…</p>
+        </main>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

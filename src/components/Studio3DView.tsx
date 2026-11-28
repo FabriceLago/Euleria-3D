@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ArrowRight, Atom, Calculator, Dna, Feather, Landmark, Languages } from 'lucide-react';
 import { GRADE_LEVELS, SUBJECTS } from '../db/curriculumData.ts';
 import type { AccentColor, ChapterItem, GradeLevel, SubjectId, ThemeMode } from '../types/learning.ts';
-import { MathViewport3D } from './MathViewport3D.tsx';
+import { Viewport3D } from './Viewport3D.tsx';
 import type { MissionResult } from '../missions/types.ts';
 
 interface Studio3DViewProps {
@@ -148,7 +148,7 @@ export const Studio3DView: React.FC<Studio3DViewProps> = ({
         </button>
       </div>
 
-      <MathViewport3D
+      <Viewport3D
         onMissionComplete={onMissionComplete}
         onMissionFailed={(r) => onMissionFailed?.(r, activeChapter)}
         missionXpEnabled={missionXpEnabled}
