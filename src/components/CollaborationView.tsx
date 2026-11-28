@@ -43,7 +43,19 @@ interface CollaborationViewProps {
   apiFetch: (url: string, options?: RequestInit) => Promise<Response>;
   onOpenSharedChapter: (chapter: ChapterItem) => void;
   onMessageSentOptimistic: (msg: ChatMessageItem) => void;
+  onChatRulesAccepted: (user: UserProfile) => void;
 }
+
+// Règles affichées et acceptées avant la première participation (audit 2.5)
+const CHAT_RULES = [
+  'Sois respectueux : pas d’insultes, de moqueries ni de harcèlement.',
+  'Ne partage aucune information personnelle, ni la tienne ni celle des autres : nom, adresse, téléphone, école, réseaux sociaux, photos.',
+  'Ne donne jamais rendez-vous à quelqu’un rencontré ici.',
+  'Reste dans le sujet : l’entraide scolaire.',
+  'Pas de liens vers d’autres sites ni de publicité.',
+  'Un message te met mal à l’aise ? Clique sur « Signaler » : il est examiné sous 24 heures, et masqué pour tous au 3ᵉ signalement.',
+  'Si quelque chose te dérange ou t’inquiète, parles-en à un adulte de confiance.',
+];
 
 const ACCENT_SEND_MAP: Record<AccentColor, string> = {
   indigo: 'bg-indigo-600 hover:bg-indigo-700 text-white',
@@ -77,7 +89,28 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
   apiFetch,
   onOpenSharedChapter,
   onMessageSentOptimistic,
+  onChatRulesAccepted,
 }) => {
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [acceptingRules, setAcceptingRules] = useState(false);
+  const acceptRules = async () => {
+    setAcceptingRules(true);
+    try {
+      const res = await apiFetch('/api/me/chat-rules', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.user) {
+        onChatRulesAccepted(data.user);
+        setRulesOpen(false);
+        setError(null);
+      } else {
+        setError(data?.error || 'Impossible d’enregistrer ton accord. Réessaie.');
+      }
+    } catch {
+      setError('Impossible d’enregistrer ton accord. Réessaie.');
+    } finally {
+      setAcceptingRules(false);
+    }
+  };
   const [subView, setSubView] = useState<'rooms' | 'duels'>('rooms');
   const [content, setContent] = useState('');
   const [sharedChapterId, setSharedChapterId] = useState<string>('');
@@ -147,6 +180,10 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
       onSignIn();
       return;
     }
+    if (backendAvailable && !profile.chatRulesAcceptedAt) {
+      setRulesOpen(true);
+      return;
+    }
 
     setSending(true);
     setError(null);
@@ -176,6 +213,10 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
         }),
       });
       const data = await res.json();
+      if (res.status === 403 && data?.code === 'chat_rules_required') {
+        setRulesOpen(true);
+        return;
+      }
       if (!res.ok) {
         throw new Error(data.error || 'Envoi impossible.');
       }
@@ -193,6 +234,48 @@ export const CollaborationView: React.FC<CollaborationViewProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {rulesOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4" role="presentation">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="chat-rules-title"
+            className="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-xl"
+          >
+            <h2 id="chat-rules-title" className="text-lg font-bold text-slate-900 dark:text-white">
+              Les règles du chat
+            </h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              Avant ton premier message, lis et accepte ces règles. Elles protègent tout le monde.
+            </p>
+            <ol className="mt-4 space-y-2 list-decimal pl-5 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+              {CHAT_RULES.map((rule) => (
+                <li key={rule}>{rule}</li>
+              ))}
+            </ol>
+            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+              Tu apparais sous ton pseudonyme, jamais sous ton nom. Un message qui ne respecte pas ces règles peut être masqué.
+            </p>
+            <div className="mt-5 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setRulesOpen(false)}
+                className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Plus tard
+              </button>
+              <button
+                type="button"
+                onClick={acceptRules}
+                disabled={acceptingRules}
+                className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
+              >
+                {acceptingRules ? 'Enregistrement…' : 'J’accepte les règles'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="pb-5 border-b border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">

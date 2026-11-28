@@ -29,6 +29,7 @@ interface CustomizationDrawerProps {
   }) => Promise<void>;
   onSignIn: () => void;
   onLogout: () => void;
+  onDeleteAccount: () => Promise<boolean>;
 }
 
 export const CustomizationDrawer: React.FC<CustomizationDrawerProps> = ({
@@ -43,9 +44,28 @@ export const CustomizationDrawer: React.FC<CustomizationDrawerProps> = ({
   onUpdatePreferences,
   onSignIn,
   onLogout,
+  onDeleteAccount,
 }) => {
   const [nameInput, setNameInput] = useState(profile?.displayName || '');
   const [saving, setSaving] = useState(false);
+  // Suppression du compte (audit 2.4) : confirmation tapée, pas de boîte de dialogue du navigateur
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    const ok = await onDeleteAccount();
+    setDeleting(false);
+    if (ok) {
+      setDeleteOpen(false);
+      setDeleteConfirm('');
+      onClose();
+    } else {
+      setDeleteError('La suppression a échoué. Réessaie dans un instant.');
+    }
+  };
 
   useEffect(() => {
     setNameInput(profile?.displayName || '');
@@ -293,6 +313,61 @@ export const CustomizationDrawer: React.FC<CustomizationDrawerProps> = ({
               <LogOut className="w-4 h-4" />
               <span>Se déconnecter</span>
             </button>
+
+            <div className="mt-6 rounded-lg border border-rose-200 dark:border-rose-900 p-4">
+              <h3 className="text-xs font-semibold text-rose-700 dark:text-rose-400">Supprimer mon compte</h3>
+              {!deleteOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setDeleteOpen(true)}
+                  className="mt-2 text-xs font-semibold text-rose-700 dark:text-rose-400 underline underline-offset-2 cursor-pointer"
+                >
+                  Supprimer mon compte et toutes mes données…
+                </button>
+              ) : (
+                <div className="mt-2 space-y-2">
+                  <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                    Ton compte, ta progression, tes réponses, tes examens, tes badges et tes messages seront définitivement effacés.
+                    Cette action est irréversible. Les sauvegardes chiffrées disparaissent d’elles-mêmes sous 30 jours.
+                  </p>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Pour confirmer, tape SUPPRIMER
+                    <input
+                      type="text"
+                      value={deleteConfirm}
+                      onChange={(e) => setDeleteConfirm(e.target.value)}
+                      autoComplete="off"
+                      className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-white"
+                    />
+                  </label>
+                  {deleteError && (
+                    <p role="alert" className="text-xs text-rose-600 dark:text-rose-400">
+                      {deleteError}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteOpen(false);
+                        setDeleteConfirm('');
+                      }}
+                      className="flex-1 py-2 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deleteConfirm.trim().toUpperCase() !== 'SUPPRIMER' || deleting}
+                      onClick={handleDeleteAccount}
+                      className="flex-1 py-2 text-xs font-semibold rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {deleting ? 'Suppression…' : 'Supprimer définitivement'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

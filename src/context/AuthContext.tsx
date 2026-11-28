@@ -1,5 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { onIdTokenChanged, signInWithPopup, signOut, User as FirebaseUser } from 'firebase/auth';
+import {
+  deleteUser,
+  onIdTokenChanged,
+  reauthenticateWithPopup,
+  signInWithPopup,
+  signOut,
+  User as FirebaseUser,
+} from 'firebase/auth';
 import { auth, googleAuthProvider } from '../lib/firebase.ts';
 import { apiUrl } from '../lib/api.ts';
 import {
@@ -35,6 +42,35 @@ interface AuthContextValue {
   applyXpAndBadges: (newXp: number, newBadges?: BadgeItem[]) => void;
   setProfileState: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   authProviderMode: 'firebase' | 'supabase';
+  /** Connecté à Google mais âge minimum pas encore confirmé : aucun compte tant que ce n'est pas fait */
+  ageRequired: boolean;
+  confirmAge: (birthYear: number, birthMonth: number) => Promise<'ok' | 'under_age' | 'error'>;
+  deleteAccount: () => Promise<boolean>;
+}
+
+/** Préférences et données locales d'Euleria sur cet appareil (effacées avec le compte). */
+function clearLocalEuleriaData() {
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('euleria')) localStorage.removeItem(key);
+    }
+  } catch {
+    // stockage indisponible
+  }
+}
+
+/** Supprime la connexion Google côté Firebase (nouvelle authentification si la session est trop ancienne). */
+async function deleteFirebaseAccount() {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    await deleteUser(user);
+  } catch (err: unknown) {
+    const code = typeof err === 'object' && err !== null && 'code' in err ? String((err as { code?: unknown }).code) : '';
+    if (code !== 'auth/requires-recent-login') throw err;
+    await reauthenticateWithPopup(user, googleAuthProvider);
+    await deleteUser(user);
+  }
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -50,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authError, setAuthError] = useState<string | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
   const [authProviderMode, setAuthProviderMode] = useState<'firebase' | 'supabase'>('firebase');
+  const [ageRequired, setAgeRequired] = useState<boolean>(false);
 
   const tokenRef = useRef<string | null>(null);
   const signInPromiseRef = useRef<Promise<boolean> | null>(null);
@@ -125,10 +162,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     try {
       const res = await apiFetch('/api/me');
+      if (res.status === 403) {
+        const body = await res.json().catch(() => ({}));
+        if (body?.code === 'age_required') {
+          // Connecté à Google mais pas encore de compte : l'écran d'âge s'affiche
+          setProfile(null);
+          setAgeRequired(true);
+          return;
+        }
+      }
       if (!res.ok) {
         throw new Error('Impossible de synchroniser le profil élève.');
       }
       const data = await res.json();
+      setAgeRequired(false);
       setProfile(data.user);
       setProgress(data.progress || []);
       setBadges(data.badges || []);
@@ -308,7 +355,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProgress([]);
     setBadges([]);
     setOverallPrediction(null);
+    setAgeRequired(false);
   }, []);
+
+  // Âge minimum : 15 ans ou plus → compte créé ; sinon la connexion Google est effacée (aucun compte)
+  const confirmAge = useCallback(
+    async (birthYear: number, birthMonth: number): Promise<'ok' | 'under_age' | 'error'> => {
+      try {
+        const res = await apiFetch('/api/me/age', {
+          method: 'POST',
+          body: JSON.stringify({ birthYear, birthMonth }),
+        });
+        if (res.ok) {
+          setAgeRequired(false);
+          await refreshDashboard();
+          return 'ok';
+        }
+        const body = await res.json().catch(() => ({}));
+        if (body?.code === 'under_age') {
+          try {
+            await deleteFirebaseAccount();
+          } catch {
+            // échec de suppression Firebase : la déconnexion suffit, aucun compte n'existe côté Euleria
+          }
+          await logout();
+          return 'under_age';
+        }
+        return 'error';
+      } catch {
+        return 'error';
+      }
+    },
+    [apiFetch, refreshDashboard, logout]
+  );
+
+  // Suppression réelle du compte : données effacées sur le serveur, puis connexion Google, puis données locales
+  const deleteAccount = useCallback(async (): Promise<boolean> => {
+    try {
+      const res = await apiFetch('/api/me', { method: 'DELETE' });
+      if (!res.ok) return false;
+      try {
+        await deleteFirebaseAccount();
+      } catch (err) {
+        console.warn('Firebase account deletion failed:', err);
+      }
+      clearLocalEuleriaData();
+      await logout();
+      return true;
+    } catch {
+      return false;
+    }
+  }, [apiFetch, logout]);
 
   const updateLocalProgress = useCallback(
     (prog: ChapterProgress, newXp: number, newBadges: BadgeItem[] = []) => {
@@ -376,6 +473,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         applyXpAndBadges,
         setProfileState: setProfile,
         authProviderMode,
+        ageRequired,
+        confirmAge,
+        deleteAccount,
       }}
     >
       {children}

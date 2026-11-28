@@ -56,6 +56,8 @@ export interface UserProfile {
   /** Classement public : désactivé par défaut */
   leaderboardOptIn?: boolean;
   pseudonym?: string | null;
+  /** Règles du chat acceptées (obligatoire avant le premier message) */
+  chatRulesAcceptedAt?: string | null;
 }
 
 export interface StudyPlanDailyActivity {
