@@ -269,7 +269,7 @@ export const ChapterStudyDeck: React.FC<ChapterStudyDeckProps> = ({
     >
       {/* Barre d'onglets : Cours | Fiche synthétique | Flashcards SM-2 */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-        <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+        <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
           <button
             type="button"
             onClick={() => setActiveTab('course')}

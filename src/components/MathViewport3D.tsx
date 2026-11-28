@@ -59,7 +59,8 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
   const [paramC, setParamC] = useState<number>(defaultParams.c ?? 1);
   const [explode, setExplode] = useState<number>(0);
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('perspective');
-  const [dockOpen, setDockOpen] = useState<boolean>(true);
+  // Téléphone : réglages repliés au départ, sinon ils recouvrent toute la scène
+  const [dockOpen, setDockOpen] = useState<boolean>(() => window.matchMedia('(min-width: 640px)').matches);
   const [contextLost, setContextLost] = useState<boolean>(false);
 
   // Synchronise immédiatement les valeurs par défaut avant le rendu 3D lors d'un changement de chapitre
@@ -406,7 +407,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
 
       {/* En-tête minimaliste en haut à gauche (surface opaque/rgba sans backdrop-blur sur WebGL) */}
       <div className="pointer-events-none absolute top-3 left-3 right-3 flex items-start justify-between gap-3">
-        <div className="pointer-events-auto rounded-lg px-3.5 py-2 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm max-w-md">
+        <div className="pointer-events-auto rounded-lg px-3.5 py-2 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm max-w-[calc(100%-7.5rem)] sm:max-w-md">
           <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
             Modèle 3D · {chapterTitle}
           </div>
@@ -576,7 +577,7 @@ export const MathViewport3D: React.FC<MathViewport3DProps> = ({
         <button
           type="button"
           onClick={() => setMissionsOpen(true)}
-          className="absolute top-16 right-3 z-10 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium px-3 py-2 min-h-[44px] shadow-lg cursor-pointer"
+          className="absolute top-3 sm:top-16 right-3 z-10 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium px-3 py-2 min-h-[44px] shadow-lg cursor-pointer"
         >
           <Gamepad2 className="w-4 h-4" /> Missions
         </button>

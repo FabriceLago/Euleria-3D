@@ -583,7 +583,7 @@ export const DynamicQuizView: React.FC<DynamicQuizViewProps> = ({
 
               {/* Filtres matière + niveau */}
               <div className="flex flex-wrap items-center gap-2 pt-1">
-                <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+                <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
                   <button
                     type="button"
                     onClick={() => setFilterSubject('all')}
