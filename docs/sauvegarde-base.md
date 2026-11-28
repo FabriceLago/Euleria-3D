@@ -42,7 +42,7 @@
 
 | Date | Sauvegarde testée | Résultat | Par |
 |---|---|---|---|
-| *à compléter* | | | |
+| 28 novembre 2026 | `euleria-2026-11-28T0025Z.dump.enc` (exécution GitHub Actions 46087741536) | ✅ Réussi : empreinte SHA-256 vérifiée, déchiffrement OK, 12 tables restaurées sans erreur, nombre de lignes identique à la production pour les 12 tables (users 2, chapters 126, exercises 378, chat_messages 1…) | Fabrice Lago |
 
 ## Limites connues
 

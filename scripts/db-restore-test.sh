@@ -49,10 +49,13 @@ CREATE SCHEMA auth;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS 'SELECT NULL::uuid';
 SQL
 docker cp "$WORK/backup.dump" "$CONTAINER:/backup.dump"
-docker exec "$CONTAINER" pg_restore -U postgres -d postgres --no-owner --no-privileges --clean --if-exists /backup.dump \
+# MSYS_NO_PATHCONV : sous Git Bash (Windows), « /backup.dump » serait réécrit en chemin Windows
+MSYS_NO_PATHCONV=1 docker exec "$CONTAINER" pg_restore -U postgres -d postgres --no-owner --no-privileges --clean --if-exists /backup.dump \
   || echo "   (avertissements de pg_restore ci-dessus : vérifier qu'aucun ne concerne une table)"
 
-echo "4/4 Nombre de lignes par table restaurée :"
+TABLES=$(docker exec "$CONTAINER" psql -U postgres -At -c "SELECT count(*) FROM pg_tables WHERE schemaname = 'public'")
+[ "$TABLES" -gt 0 ] || { echo "ÉCHEC : aucune table restaurée."; exit 1; }
+echo "4/4 Nombre de lignes par table restaurée ($TABLES tables) :"
 docker exec -i "$CONTAINER" psql -q -U postgres -At <<'SQL'
 DO $$
 DECLARE t text; n bigint;
