@@ -1653,7 +1653,7 @@ export class MathSceneEngine {
   private camera: THREE.PerspectiveCamera;
   private controls: OrbitControls;
   private isSoftwareGl: boolean;
-  private clock: THREE.Clock;
+  private timer: THREE.Timer;
   private frameId = 0;
   private disposed = false;
 
@@ -1694,7 +1694,9 @@ export class MathSceneEngine {
     this.params = { ...initialParams };
     this.onContextLostCb = onContextLost;
     this.isSoftwareGl = detectSoftwareWebGL();
-    this.clock = new THREE.Clock();
+    // THREE.Timer remplace THREE.Clock (obsolète) ; connect() le met en pause quand l'onglet est caché
+    this.timer = new THREE.Timer();
+    this.timer.connect(document);
 
     const width = Math.max(320, container.clientWidth);
     const height = Math.max(240, container.clientHeight);
@@ -1709,7 +1711,7 @@ export class MathSceneEngine {
     this.renderer.setPixelRatio(this.isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(width, height);
     this.renderer.shadowMap.enabled = !this.isSoftwareGl;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap est obsolète depuis three r186
 
     this.renderer.domElement.style.display = 'block';
     this.renderer.domElement.style.width = '100%';
@@ -5271,8 +5273,9 @@ export class MathSceneEngine {
   private startLoop() {
     const tick = () => {
       if (this.disposed) return;
-      const delta = Math.min(this.clock.getDelta(), 0.1);
-      const elapsed = this.clock.getElapsedTime();
+      this.timer.update();
+      const delta = Math.min(this.timer.getDelta(), 0.1);
+      const elapsed = this.timer.getElapsed();
 
       if (this.cameraTransitionActive) {
         this.camera.position.x = THREE.MathUtils.damp(this.camera.position.x, _camTargetPos.x, 5.5, delta);
@@ -5364,6 +5367,7 @@ export class MathSceneEngine {
     this.renderer.domElement.removeEventListener('webglcontextlost', this.handleContextLost);
     this.renderer.domElement.removeEventListener('webglcontextrestored', this.handleContextRestored);
     this.clearModelGroup();
+    this.timer.dispose(); // retire l'écouteur de visibilité de la page
     this.pmremEnvTex.dispose();
     this.controls.dispose();
     this.renderer.dispose();
