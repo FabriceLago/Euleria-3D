@@ -51,8 +51,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white/95 dark:bg-slate-950/95 border-b border-slate-200 dark:border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-8">
+    <header className="sticky top-0 z-30 w-full bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3 sm:gap-8">
         {/* Zone 1 : Wordmark unique */}
         <a
           {...linkProps('curriculum')}
@@ -115,14 +115,23 @@ export const TopBar: React.FC<TopBarProps> = ({
               onClick={onSignIn}
               className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 disabled:opacity-60 cursor-pointer ${ACCENT_BTN_MAP[accentColor]}`}
             >
-              {signingIn ? t('Connexion...') : t('Connexion Google')}
+              {signingIn ? (
+                t('Connexion...')
+              ) : (
+                <>
+                  {/* 375 px : libellé court, sinon la barre déborde */}
+                  <span className="sm:hidden">{t('Connexion')}</span>
+                  <span className="hidden sm:inline">{t('Connexion Google')}</span>
+                </>
+              )}
             </button>
           )}
         </div>
       </div>
 
       {/* Navigation mobile compacte */}
-      <nav className="flex md:hidden items-center justify-around border-t border-slate-200 dark:border-slate-800 px-2 py-2 text-xs font-medium">
+      {/* 5 colonnes égales : les libellés longs passent sur deux lignes au lieu de déborder */}
+      <nav className="grid grid-cols-5 gap-1 md:hidden border-t border-slate-200 dark:border-slate-800 px-1 py-1.5 text-[11px] leading-tight font-medium">
         {navItems.map((item) => {
           const active = activeSection === item.id;
           return (
@@ -130,7 +139,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               key={item.id}
               {...linkProps(item.id)}
               aria-current={active ? 'page' : undefined}
-              className={`px-2.5 py-1 rounded-md whitespace-nowrap shrink-0 ${
+              className={`flex items-center justify-center min-h-11 px-1 py-1 rounded-md text-center ${
                 active
                   ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
                   : 'text-slate-600 dark:text-slate-400'
