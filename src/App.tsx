@@ -2,6 +2,7 @@ import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react
 import { lazyWithReload } from './utils/lazyWithReload.ts';
 import { AgeGate } from './components/AgeGate.tsx';
 import { LegalFooter } from './components/LegalFooter.tsx';
+import { UpdatePrompt } from './components/UpdatePrompt.tsx';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { AppSection, TopBar } from './components/TopBar.tsx';
 import { ChapterWorkspace } from './components/ChapterWorkspace.tsx';
@@ -830,6 +831,7 @@ const PlatformShell: React.FC = () => {
 
       <PrintDocumentPortal document={printableDoc} />
       <OfflineIndicator />
+      <UpdatePrompt />
     </>
   );
 };

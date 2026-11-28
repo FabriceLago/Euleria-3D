@@ -33,7 +33,9 @@ export default defineConfig(({mode}) => {
       react(),
       tailwindcss(),
       VitePWA({
-        registerType: 'autoUpdate',
+        // Nouvelle version : l'élève voit « Mise à jour disponible » et recharge quand il veut (audit 3.9)
+        registerType: 'prompt',
+        injectRegister: false, // enregistrement fait dans src/components/UpdatePrompt.tsx
         includeAssets: [
           'icon.svg',
           'apple-touch-icon.png',
