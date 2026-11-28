@@ -694,7 +694,8 @@ const PlatformShell: React.FC = () => {
         </div>
       </div>
 
-      <main id="contenu" tabIndex={-1} className="pb-14 focus:outline-none">
+      {/* min-h-screen : pendant le chargement le pied de page reste sous l'écran au lieu d'être repoussé (CLS) */}
+      <main id="contenu" tabIndex={-1} className="min-h-screen pb-14 focus:outline-none">
         {loadingCurriculum ? (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-sm text-slate-500 dark:text-slate-400">
             {t('Initialisation des programmes scientifiques et du moteur WebGL...')}
